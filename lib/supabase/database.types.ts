@@ -440,6 +440,14 @@ export type Database = {
           total: number
         }[]
       }
+      crear_llamada: {
+        Args: {
+          p_contacto_id: string
+          p_lanzada_por?: string
+          p_lote_id?: string
+        }
+        Returns: string
+      }
       llamadas_activas: { Args: never; Returns: number }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }

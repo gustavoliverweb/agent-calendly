@@ -589,7 +589,7 @@ Convenciones: todos `runtime = 'nodejs'`, región `fra1`, validación Zod de ent
 ### 10.2 Disponibilidad
 
 - `GET /event_type_available_times?event_type=<uri>&start_time=<iso>&end_time=<iso>`
-  - Rango máximo 7 días; `start_time` debe ser futuro.
+  - Rango máximo 31 días (la doc vigente; antes eran 7); `start_time` debe ser futuro.
   - Devuelve `collection[]` con `start_time` (UTC) y `status = "available"`.
 - Respeta el horario configurado en Calendly (horario laboral del negocio), buffers y avisos mínimos definidos allí → **la lógica de horarios de citas vive en Calendly**, la app no la duplica.
 

@@ -4,7 +4,15 @@ import { CheckCircle2Icon, CircleDashedIcon } from "lucide-react";
 import { PageHeader } from "@/components/panel/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { appEnv, calendlyEnv, elevenLabsEnv, isConfigured, supabaseEnv } from "@/lib/env";
+import {
+  appEnv,
+  calendlyEnv,
+  calendlyWebhookEnv,
+  elevenLabsEnv,
+  elevenLabsWebhookEnv,
+  isConfigured,
+  supabaseEnv,
+} from "@/lib/env";
 
 export const metadata: Metadata = { title: "Resumen" };
 
@@ -49,7 +57,9 @@ function IntegracionesCard() {
     { nombre: "Base de datos (Supabase)", ok: isConfigured(supabaseEnv) },
     { nombre: "Ajustes de la app", ok: isConfigured(appEnv) },
     { nombre: "Agente de voz (ElevenLabs)", ok: isConfigured(elevenLabsEnv) },
+    { nombre: "Webhook de ElevenLabs", ok: isConfigured(elevenLabsWebhookEnv) },
     { nombre: "Agenda (Calendly)", ok: isConfigured(calendlyEnv) },
+    { nombre: "Webhook de Calendly", ok: isConfigured(calendlyWebhookEnv) },
   ];
 
   return (

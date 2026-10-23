@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeftIcon, PhoneIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EstadoBadge } from "@/components/contactos/estado-badge";
 import { EditarContacto } from "@/components/contactos/editar-contacto";
 import { ZonaExclusion } from "@/components/contactos/zona-exclusion";
+import { BotonLlamar } from "@/components/llamadas/boton-llamar";
+import { EstadoLlamada } from "@/components/llamadas/estado-llamada";
+import { etiquetaClasificacion, formatearDuracion } from "@/lib/calls/estados";
 import { formatPhone } from "@/lib/contacts/phone";
 import { obtenerContacto } from "@/lib/contacts/queries";
 
@@ -57,10 +59,10 @@ async function Ficha({ params }: Pick<PageProps<"/contactos/[id]">, "params">) {
             {contacto.requiere_seguimiento && ` · requiere seguimiento${contacto.seguimiento_motivo ? `: ${contacto.seguimiento_motivo}` : ""}`}
           </p>
         </div>
-        <Button disabled title="Disponible cuando se conecte el agente de voz (fase 5)">
-          <PhoneIcon data-icon="inline-start" />
-          Llamar
-        </Button>
+        <BotonLlamar
+          contactoId={contacto.id}
+          motivoBloqueo={contacto.estado === "no_llamar" ? "El contacto ha pedido no ser llamado" : undefined}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
@@ -134,12 +136,14 @@ async function Ficha({ params }: Pick<PageProps<"/contactos/[id]">, "params">) {
           {llamadas.length ? (
             <ul className="divide-y">
               {llamadas.map((l) => (
-                <li key={l.id} className="flex flex-wrap justify-between gap-2 py-2">
-                  <span>{fecha.format(new Date(l.creado_en))}</span>
-                  <span className="text-muted-foreground">
-                    {l.estado}
-                    {l.duracion_seg != null && ` · ${Math.round(l.duracion_seg / 60)} min`}
-                    {l.cita_agendada && " · cita agendada"}
+                <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <Link href={`/llamadas/${l.id}`} className="hover:underline">
+                    {fecha.format(new Date(l.creado_en))}
+                  </Link>
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    {etiquetaClasificacion(l.clasificacion)}
+                    {l.duracion_seg != null && <span className="tabular-nums">{formatearDuracion(l.duracion_seg)}</span>}
+                    <EstadoLlamada estado={l.estado} />
                   </span>
                 </li>
               ))}

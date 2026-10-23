@@ -1,6 +1,6 @@
 # Agente de voz saliente con agenda en Calendly
 
-Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md).
+Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md). Configuración de integraciones: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md) y [`docs/configuracion-elevenlabs.md`](docs/configuracion-elevenlabs.md).
 
 **Stack:** Next.js 16 (App Router, TypeScript) · Supabase (Postgres + Auth) en la nube · Vercel (`fra1`) · ElevenLabs Agents · Calendly Scheduling API.
 
@@ -52,6 +52,8 @@ El usuario recibe un correo, pulsa el enlace, elige su contraseña (mínimo 10 c
 | `pnpm db:push` | Aplica migraciones pendientes |
 | `pnpm db:types` | Regenera los tipos de la base de datos |
 | `pnpm invitar <email>` | Invita a un usuario al panel |
+| `pnpm calendly tipos` | Tipos de evento de Calendly (para `CALENDLY_EVENT_TYPE_URI`) |
+| `pnpm calendly webhooks` · `crear-webhook <url>` · `borrar-webhook <uri>` | Suscripción del webhook de Calendly |
 
 `scripts/db.sh` conecta por el pooler en modo transacción (puerto **6543**), porque desde algunas redes o VPN el 5432 no responde. Nunca imprime la contraseña.
 
@@ -65,6 +67,15 @@ app/cuenta/contrasena       Elegir/cambiar contraseña
 app/(panel)/…               Panel protegido: resumen, contactos, llamadas, lotes, configuración
 app/(panel)/contactos       Listado (filtros, búsqueda, selección), ficha, importación CSV
 lib/contacts/               Teléfonos E.164, lectura de CSV, validación de importación (con tests)
+app/api/tools/              Tools del agente: disponibilidad, agendar, no-llamar (Bearer TOOLS_SECRET)
+app/api/webhooks/calendly   Citas creadas, canceladas y reprogramadas (firma HMAC)
+app/api/webhooks/elevenlabs Fin de llamada (transcripción, análisis) y fallos al iniciarla (firma HMAC)
+app/(panel)/llamadas        Listado con filtros y detalle con transcripción (se actualiza solo)
+lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados
+lib/elevenlabs/             Cliente de la API (llamada saliente SIP, conversación)
+lib/calendly/               Cliente, huecos (caché 60 s), formato en español, reserva, webhook
+lib/tools/                  Lógica de cada tool, separada de la ruta HTTP
+lib/time/madrid.ts          Conversión Europe/Madrid ↔ UTC (cambios de horario incluidos)
 scripts/fixtures/           CSV de 50 contactos del criterio de aceptación 1
 proxy.ts                    Refresca la sesión y protege rutas (antes "middleware")
 lib/env.ts                  Variables de entorno validadas por grupos (Zod)
@@ -79,4 +90,5 @@ supabase/templates/         Plantillas de correo de Auth
 - RLS activado en todas las tablas: `anon` no ve nada; los usuarios autenticados leen todo (un único negocio). Tools, webhooks y cron usan la service role, solo en el servidor.
 - La lista de exclusión es permanente: un trigger impide sacar a un contacto de `no_llamar` y lo retira de los lotes pendientes.
 - Los contactos solo se borran con `borrar_contacto_rgpd()`, que borra en cascada y deja auditoría sin datos personales.
+- Tools: `Authorization: Bearer <TOOLS_SECRET>` comparado en tiempo constante; webhooks con firma HMAC-SHA256, ventana anti-replay e idempotencia en `eventos_webhook`.
 - Secretos solo en `.env.local` / Vercel; nunca en el cliente salvo la URL y la clave pública de Supabase, protegidas por RLS.

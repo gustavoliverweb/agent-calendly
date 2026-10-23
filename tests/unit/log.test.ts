@@ -28,6 +28,12 @@ describe("maskText", () => {
       "Llamando a +34******233 (m***@example.com)",
     );
   });
+  it("no confunde UUID con teléfonos", () => {
+    for (const id of ["00000000-0000-4000-8000-000000000000", "12345678-1234-4abc-8def-123456789012"]) {
+      expect(maskText(`llamada ${id}`)).toBe(`llamada ${id}`);
+    }
+    expect(maskText("tel:600 11 22 33.")).toBe("tel:60****233.");
+  });
 });
 
 describe("sanitize", () => {

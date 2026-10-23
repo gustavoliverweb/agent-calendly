@@ -15,7 +15,8 @@
     "db:dry-run": "scripts/db.sh dry-run",
     "db:push": "scripts/db.sh push",
     "db:types": "scripts/db.sh types",
-    "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts"
+    "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts",
+    "calendly": "node --env-file=.env.local scripts/calendly.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

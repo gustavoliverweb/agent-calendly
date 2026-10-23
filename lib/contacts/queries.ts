@@ -76,7 +76,7 @@ export async function obtenerContacto(id: string) {
     supabase.from("contactos").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("llamadas")
-      .select("id, estado, resultado, duracion_seg, cita_agendada, fecha_cita, creado_en")
+      .select("id, estado, clasificacion, duracion_seg, cita_agendada, fecha_cita, creado_en")
       .eq("contacto_id", id)
       .order("creado_en", { ascending: false })
       .limit(50),

@@ -18,12 +18,14 @@ export function maskEmail(email: string): string {
   return `${email[0]}***${email.slice(at)}`;
 }
 
-const PHONE_RE = /\+?\d[\d\s-]{7,}\d/g;
+// Sin letras ni guiones pegados: así no se confunden UUID con teléfonos.
+const PHONE_RE = /(?<![\w-])\+?\d[\d\s-]{7,}\d(?![\w-])/g;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /[^\s@"'<>()[\],;:]+@[^\s@"'<>()[\],;:]+\.[a-z]{2,}/gi;
 
 /** Enmascara teléfonos y emails dentro de un texto libre. */
 export function maskText(text: string): string {
-  return text.replace(EMAIL_RE, maskEmail).replace(PHONE_RE, maskPhone);
+  return text.replace(EMAIL_RE, maskEmail).replace(PHONE_RE, (m) => (UUID_RE.test(m) ? m : maskPhone(m)));
 }
 
 type Fields = Record<string, unknown>;
