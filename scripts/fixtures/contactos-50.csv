@@ -1,0 +1,51 @@
+Nombre;Teléfono;Correo electrónico;Consentimiento;Fecha consentimiento;Origen;Observaciones
+María López;600 11 22 10;maria0@example.com;no;;;
+Juan García;+34 601-112-211;juan1@example.com;sí;02/02/2026;formulario web;
+Lucía Fernández;0034602112212;lucia2@example.com;sí;03/03/2026;formulario web;
+Pablo Martín;603112213;pablo3@example.com;sí;04/04/2026;formulario web;
+Carmen Sánchez;604 11 22 14;carmen4@example.com;sí;05/05/2026;formulario web;
+Javier Gómez;+34 605-112-215;correo-sin-arroba.com;no;;;
+Ana Ruiz;0034606112216;ana6@example.com;sí;07/07/2026;formulario web;
+David Díaz;607112217;;sí;08/08/2026;formulario web;
+Laura Moreno;608 11 22 18;;sí;09/09/2026;formulario web;
+Sergio Muñoz;+34 609-112-219;sergio9@example.com;sí;10/01/2026;formulario web;
+Elena Álvarez;0034610112220;elena10@example.com;no;;;
+Carlos Romero;611112221;carlos11@example.com;sí;12/03/2026;formulario web;
+Paula Navarro;612 11 22 22;paula12@example.com;sí;13/04/2026;formulario web;
+Diego Torres;+34 613-112-223;diego13@example.com;sí;14/05/2026;formulario web;
+Marta Domínguez;0034614112224;marta14@example.com;sí;15/06/2026;formulario web;
+Alberto Vázquez;615112225;alberto15@example.com;no;;;
+Sara Ramos;616 11 22 26;sara16@example.com;sí;17/08/2026;formulario web;
+Raúl Gil;+34 617-112-227;raul17@example.com;sí;18/09/2026;formulario web;
+Irene Serrano;0034618112228;irene18@example.com;sí;19/01/2026;formulario web;
+Jorge Blanco;619112229;jorge19@example.com;sí;20/02/2026;formulario web;
+Cristina Molina;620 11 22 30;cristina20@example.com;no;;;
+Andrés Castro;+34 621-112-231;andres21@example.com;sí;22/04/2026;formulario web;
+Noelia Ortiz;0034622112232;noelia22@example.com;sí;23/05/2026;formulario web;
+Rubén Rubio;623112233;ruben23@example.com;sí;24/06/2026;formulario web;
+Beatriz Marín;624 11 22 34;beatriz24@example.com;sí;25/07/2026;formulario web;
+Óscar Sanz;+34 625-112-235;oscar25@example.com;no;;;
+Rocío Iglesias;0034626112236;rocio26@example.com;sí;27/09/2026;formulario web;
+Iván Núñez;627112237;ivan27@example.com;sí;28/01/2026;formulario web;
+Silvia Medina;628 11 22 38;silvia28@example.com;sí;01/02/2026;formulario web;
+Hugo Garrido;+34 629-112-239;hugo29@example.com;sí;02/03/2026;formulario web;
+Alicia Cortés;0034630112240;alicia30@example.com;no;;;
+Adrián Castillo;631112241;adrian31@example.com;sí;04/05/2026;formulario web;
+Nuria Santos;632 11 22 42;nuria32@example.com;sí;05/06/2026;formulario web;
+Víctor Lozano;+34 633-112-243;victor33@example.com;sí;06/07/2026;formulario web;
+Eva Guerrero;0034634112244;eva34@example.com;sí;07/08/2026;formulario web;
+Mario Cano;635112245;mario35@example.com;no;;;
+Patricia Prieto;636 11 22 46;patricia36@example.com;sí;09/01/2026;formulario web;
+Álvaro Méndez;+34 637-112-247;alvaro37@example.com;sí;10/02/2026;formulario web;
+Lorena Cruz;0034638112248;lorena38@example.com;sí;11/03/2026;formulario web;
+Daniel Calvo;639112249;daniel39@example.com;sí;12/04/2026;formulario web;
+María López (repetido);+34600112210;;sí;;;duplicado
+Juan García (repetido);+34601112211;;sí;;;duplicado
+Lucía Fernández (repetido);+34602112212;;sí;;;duplicado
+Pablo Martín (repetido);+34603112213;;sí;;;duplicado
+Ya Existe Uno;699 00 00 01;;sí;;;
+Ya Existe Dos;+34699000002;;sí;;;
+Teléfono Corto;60011;;sí;;;
+Teléfono Letras;seis cero cero;;sí;;;
+Prefijo Inexistente;+34 500 000 000;;sí;;;
+;611 99 88 77;;sí;;;
