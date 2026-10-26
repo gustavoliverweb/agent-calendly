@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { appEnv } from "@/lib/env";
+import { rutaInterna } from "@/lib/security/redirect";
 
 export type LoginState = { error?: string; info?: string };
 
@@ -12,11 +13,6 @@ const loginSchema = z.object({
   password: z.string().min(1, "Introduce la contraseña"),
   next: z.string().optional(),
 });
-
-/** Solo rutas internas: evita redirecciones abiertas a otros dominios. */
-function safeNext(next: string | undefined) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
 
 export async function iniciarSesion(
   _prev: LoginState,
@@ -32,7 +28,7 @@ export async function iniciarSesion(
   });
   if (error) return { error: "Email o contraseña incorrectos" };
 
-  redirect(safeNext(parsed.data.next));
+  redirect(rutaInterna(parsed.data.next));
 }
 
 export async function recuperarContrasena(

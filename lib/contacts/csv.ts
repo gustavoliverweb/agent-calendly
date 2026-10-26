@@ -102,7 +102,17 @@ export function aplicarMapeo(
   });
 }
 
-/** Genera un CSV (separado por ';', para Excel en español). */
+/**
+ * Celdas que Excel ejecutaría como fórmula: empiezan por =, @, tabulador o
+ * retorno, o por + / - seguido de algo que no sea un número. Así
+ * "+34 600 11 22 33" queda intacto y "+HYPERLINK(…)" se escapa.
+ */
+const FORMULA = /^(?:[=@\t\r]|[+-](?![\d\s().]*$))/;
+
+/**
+ * Genera un CSV (separado por ';', para Excel en español), escapando las
+ * fórmulas: los datos vienen de archivos de terceros.
+ */
 export function generarCsv(filas: Record<string, unknown>[]): string {
-  return "﻿" + Papa.unparse(filas, { delimiter: ";" });
+  return "﻿" + Papa.unparse(filas, { delimiter: ";", escapeFormulae: FORMULA });
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { firmar, igualesSeguro, verificarFirma } from "@/lib/security/hmac";
 import { crearLimitador } from "@/lib/security/rate-limit";
+import { rutaInterna } from "@/lib/security/redirect";
 
 const secreto = "clave-de-firma-de-prueba";
 const cuerpo = JSON.stringify({ event: "invitee.created", payload: { uri: "x" } });
@@ -67,5 +68,21 @@ describe("crearLimitador", () => {
     expect([limitar("a", 0), limitar("a", 10), limitar("a", 20)]).toEqual([true, true, false]);
     expect(limitar("b", 20)).toBe(true);
     expect(limitar("a", 1000)).toBe(true);
+  });
+});
+
+describe("rutaInterna (redirección tras login)", () => {
+  it.each([
+    ["/contactos?q=ana#x", "/contactos?q=ana#x"],
+    ["/", "/"],
+    [undefined, "/"],
+    ["https://evil.com", "/"],
+    ["//evil.com", "/"],
+    ["/\\evil.com", "/"],
+    ["/\t/evil.com", "/"],
+    ["javascript:alert(1)", "/"],
+    ["contactos", "/"],
+  ])("%j → %j", (entrada, esperado) => {
+    expect(rutaInterna(entrada)).toBe(esperado);
   });
 });

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { normalizePhone } from "@/lib/contacts/phone";
 import { parseConsent, parseFecha } from "@/lib/contacts/parse";
-import { aplicarMapeo, decodificar, detectarMapeo, parsearCsv } from "@/lib/contacts/csv";
+import { aplicarMapeo, decodificar, detectarMapeo, generarCsv, parsearCsv } from "@/lib/contacts/csv";
 import { resumir, validarFilas } from "@/lib/contacts/import";
 
 describe("normalizePhone", () => {
@@ -126,5 +126,18 @@ describe("criterio de aceptación 1: CSV de 50 contactos", () => {
       falta_nombre: 1,
       sinConsentimiento: 8,
     });
+  });
+});
+
+describe("generarCsv", () => {
+  it("escapa celdas que Excel ejecutaría como fórmula", () => {
+    const csv = generarCsv([{ nombre: '=HYPERLINK("https://evil.com","x")', telefono: "+34600112233" }]);
+    expect(csv).toContain(`"'=HYPERLINK(""https://evil.com"",""x"")"`);
+    expect(csv).not.toMatch(/;=|^=|\n=/m);
+  });
+
+  it("no toca teléfonos ni números", () => {
+    const csv = generarCsv([{ a: "+34 600 11 22 33", b: "-5", c: "+SUM(A1)", d: "@cmd", e: "-1+1" }]);
+    expect(csv.split("\r\n")[1]).toBe(`+34 600 11 22 33;-5;"'+SUM(A1)";"'@cmd";"'-1+1"`);
   });
 });

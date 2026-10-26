@@ -1,13 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { rutaInterna } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 const OTP_TYPES: EmailOtpType[] = ["invite", "recovery", "magiclink", "email", "email_change", "signup"];
-
-/** Solo rutas internas: evita redirecciones abiertas a otros dominios. */
-function safeNext(next: string | null) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
 
 /**
  * Destino de los enlaces de los correos de Supabase (invitación y
@@ -17,7 +13,7 @@ function safeNext(next: string | null) {
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const next = safeNext(searchParams.get("next"));
+  const next = new URL(rutaInterna(searchParams.get("next")), request.nextUrl.origin);
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
@@ -36,7 +32,8 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
   url.search = "";
   if (ok) {
-    url.pathname = next;
+    url.pathname = next.pathname;
+    url.search = next.search;
   } else {
     url.pathname = "/login";
     url.searchParams.set("error", "enlace_invalido");
