@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cambiarEstadoLote } from "@/app/(panel)/lotes/actions";
+import { cambiarEstadoLote } from "@/app/(panel)/app/lotes/actions";
 import type { LoteEstado } from "@/lib/lotes/estados";
 
 const OK = { pausar: "Lote pausado", reanudar: "Lote reanudado", cancelar: "Lote cancelado" } as const;

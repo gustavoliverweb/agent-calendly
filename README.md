@@ -64,15 +64,17 @@ app/(auth)/login            Login con email y contraseña + recuperación
 app/auth/confirm            Destino de los enlaces de invitación/recuperación
 app/auth/salir              Cerrar sesión (POST)
 app/cuenta/contrasena       Elegir/cambiar contraseña
-app/(panel)/…               Panel protegido: resumen, contactos, llamadas, lotes, configuración
-app/(panel)/contactos       Listado (filtros, búsqueda, selección), ficha, importación CSV
+app/(marketing)            Landing pública en / (secciones, demo de llamada, FAQ); componentes en components/landing
+lib/marca.ts                Nombre, descripción y email de contacto de la marca (provisionales)
+app/(panel)/app/…           Panel protegido en /app: resumen, contactos, llamadas, lotes, configuración
+app/(panel)/app/contactos   Listado (filtros, búsqueda, selección), ficha, importación CSV
 lib/contacts/               Teléfonos E.164, lectura de CSV, validación de importación (con tests)
 app/api/tools/              Tools del agente: disponibilidad, agendar, no-llamar (Bearer TOOLS_SECRET)
 app/api/webhooks/calendly   Citas creadas, canceladas y reprogramadas (firma HMAC)
 app/api/webhooks/elevenlabs Fin de llamada (transcripción, análisis) y fallos al iniciarla (firma HMAC)
-app/(panel)/llamadas        Listado con filtros y detalle con transcripción (se actualiza solo)
-app/(panel)/lotes           Lotes con progreso; pausar, reanudar y cancelar
-app/(panel)/configuracion   Franjas, festivos, concurrencia, reintentos y tipo de campaña (+ pausa global en la cabecera)
+app/(panel)/app/llamadas    Listado con filtros y detalle con transcripción (se actualiza solo)
+app/(panel)/app/lotes       Lotes con progreso; pausar, reanudar y cancelar
+app/(panel)/app/configuracion Franjas, festivos, concurrencia, reintentos y tipo de campaña (+ pausa global en la cabecera)
 app/api/cron/despachar      Pasada del motor de lotes cada minuto (Bearer CRON_SECRET)
 lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados,
                             dispatcher de lotes y reconciliación de llamadas sin webhook
@@ -82,7 +84,7 @@ lib/calendly/               Cliente, huecos (caché 60 s), formato en español, 
 lib/tools/                  Lógica de cada tool, separada de la ruta HTTP
 lib/time/madrid.ts          Conversión Europe/Madrid ↔ UTC (cambios de horario incluidos)
 scripts/fixtures/           CSV de 50 contactos del criterio de aceptación 1
-proxy.ts                    Refresca la sesión y protege rutas (antes "middleware")
+proxy.ts                    Refresca la sesión y protege /app y /cuenta (antes "middleware")
 lib/env.ts                  Variables de entorno validadas por grupos (Zod)
 lib/supabase/               Clientes: server (sesión), admin (service role), client (navegador)
 lib/log.ts                  Logger JSON que enmascara teléfonos y emails

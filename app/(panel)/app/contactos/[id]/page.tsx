@@ -27,10 +27,10 @@ const ACCIONES: Record<string, string> = {
   marcar_no_llamar: "Marcado como “no llamar”",
 };
 
-export default function ContactoPage({ params }: PageProps<"/contactos/[id]">) {
+export default function ContactoPage({ params }: PageProps<"/app/contactos/[id]">) {
   return (
     <div className="mx-auto flex max-w-5xl flex-col">
-      <Link href="/contactos" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/app/contactos" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" /> Contactos
       </Link>
       <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-muted" />}>
@@ -40,7 +40,7 @@ export default function ContactoPage({ params }: PageProps<"/contactos/[id]">) {
   );
 }
 
-async function Ficha({ params }: Pick<PageProps<"/contactos/[id]">, "params">) {
+async function Ficha({ params }: Pick<PageProps<"/app/contactos/[id]">, "params">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { contacto, llamadas, citas, auditoria } = await obtenerContacto(id);
@@ -137,7 +137,7 @@ async function Ficha({ params }: Pick<PageProps<"/contactos/[id]">, "params">) {
             <ul className="divide-y">
               {llamadas.map((l) => (
                 <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <Link href={`/llamadas/${l.id}`} className="hover:underline">
+                  <Link href={`/app/llamadas/${l.id}`} className="hover:underline">
                     {fecha.format(new Date(l.creado_en))}
                   </Link>
                   <span className="flex items-center gap-2 text-muted-foreground">

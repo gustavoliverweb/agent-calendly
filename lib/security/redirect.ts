@@ -6,13 +6,13 @@ const BASE = "http://interno.invalid";
  * basta: "/\evil.com" o "/<tab>/evil.com" empiezan por una sola barra y aun
  * así el navegador los lleva a evil.com.
  */
-export function rutaInterna(destino: string | null | undefined): string {
-  if (!destino || !destino.startsWith("/")) return "/";
+export function rutaInterna(destino: string | null | undefined, porDefecto = "/"): string {
+  if (!destino || !destino.startsWith("/")) return porDefecto;
   try {
     const url = new URL(destino, BASE);
-    if (url.origin !== BASE) return "/";
+    if (url.origin !== BASE) return porDefecto;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
-    return "/";
+    return porDefecto;
   }
 }

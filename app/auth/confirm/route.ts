@@ -13,7 +13,7 @@ const OTP_TYPES: EmailOtpType[] = ["invite", "recovery", "magiclink", "email", "
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const next = new URL(rutaInterna(searchParams.get("next")), request.nextUrl.origin);
+  const next = new URL(rutaInterna(searchParams.get("next"), "/app"), request.nextUrl.origin);
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");

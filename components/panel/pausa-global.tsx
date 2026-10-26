@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cambiarPausaGlobal } from "@/app/(panel)/configuracion/actions";
+import { cambiarPausaGlobal } from "@/app/(panel)/app/configuracion/actions";
 
 /**
  * Interruptor de emergencia. Activarlo es inmediato (es el caso urgente);

@@ -145,7 +145,7 @@ async function EnCurso() {
           <ul className="divide-y text-sm">
             {llamadas.map((l) => (
               <li key={l.id}>
-                <Link href={`/llamadas/${l.id}`} className="flex items-center gap-3 py-2 hover:underline">
+                <Link href={`/app/llamadas/${l.id}`} className="flex items-center gap-3 py-2 hover:underline">
                   <EstadoLlamada estado={l.estado} />
                   <span className="font-medium">{l.contactos?.nombre ?? "—"}</span>
                   <span className="ml-auto text-xs text-muted-foreground">
@@ -189,7 +189,7 @@ async function Seguimientos() {
             <ul className="divide-y text-sm">
               {contactos.map((c) => (
                 <li key={c.id}>
-                  <Link href={`/contactos/${c.id}`} className="flex items-center gap-3 py-2 hover:underline">
+                  <Link href={`/app/contactos/${c.id}`} className="flex items-center gap-3 py-2 hover:underline">
                     <span className="font-medium">{c.nombre}</span>
                     <span className="ml-auto text-right text-xs text-muted-foreground">
                       {motivoSeguimiento(c.seguimiento_motivo)}
@@ -199,7 +199,7 @@ async function Seguimientos() {
               ))}
             </ul>
             {total > contactos.length && (
-              <Link href="/contactos?seguimiento=1" className="mt-3 inline-block text-sm font-medium underline underline-offset-2">
+              <Link href="/app/contactos?seguimiento=1" className="mt-3 inline-block text-sm font-medium underline underline-offset-2">
                 Ver los {total}
               </Link>
             )}
@@ -229,11 +229,11 @@ async function Totales() {
           <p className="col-span-2 text-sm text-destructive">No se ha podido leer la base de datos.</p>
         ) : (
           <>
-            <Link href="/contactos" className="flex flex-col hover:underline">
+            <Link href="/app/contactos" className="flex flex-col hover:underline">
               <span className="text-xs text-muted-foreground">Contactos</span>
               <span className="text-3xl font-semibold tabular-nums">{entero.format(contactos.count ?? 0)}</span>
             </Link>
-            <Link href="/lotes" className="flex flex-col hover:underline">
+            <Link href="/app/lotes" className="flex flex-col hover:underline">
               <span className="text-xs text-muted-foreground">Lotes activos</span>
               <span className="text-3xl font-semibold tabular-nums">{entero.format(lotes.count ?? 0)}</span>
             </Link>

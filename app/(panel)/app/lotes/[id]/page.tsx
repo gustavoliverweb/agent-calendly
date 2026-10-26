@@ -19,10 +19,10 @@ export const metadata: Metadata = { title: "Lote" };
 
 const fecha = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", dateStyle: "short", timeStyle: "short" });
 
-export default function LotePage({ params }: PageProps<"/lotes/[id]">) {
+export default function LotePage({ params }: PageProps<"/app/lotes/[id]">) {
   return (
     <div className="mx-auto flex max-w-6xl flex-col">
-      <Link href="/lotes" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/app/lotes" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" /> Lotes
       </Link>
       <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-muted" />}>
@@ -32,7 +32,7 @@ export default function LotePage({ params }: PageProps<"/lotes/[id]">) {
   );
 }
 
-async function Detalle({ params }: Pick<PageProps<"/lotes/[id]">, "params">) {
+async function Detalle({ params }: Pick<PageProps<"/app/lotes/[id]">, "params">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const [lote, aviso] = await Promise.all([obtenerLote(id), avisoDespacho()]);
@@ -86,7 +86,7 @@ async function Detalle({ params }: Pick<PageProps<"/lotes/[id]">, "params">) {
               <TableRow key={i.id}>
                 <TableCell>
                   {i.contactos ? (
-                    <Link href={`/contactos/${i.contactos.id}`} className="font-medium hover:underline">
+                    <Link href={`/app/contactos/${i.contactos.id}`} className="font-medium hover:underline">
                       {i.contactos.nombre}
                     </Link>
                   ) : (
@@ -107,7 +107,7 @@ async function Detalle({ params }: Pick<PageProps<"/lotes/[id]">, "params">) {
                 </TableCell>
                 <TableCell>
                   {i.llamadas ? (
-                    <Link href={`/llamadas/${i.llamadas.id}`} className="inline-flex items-center gap-2 hover:underline">
+                    <Link href={`/app/llamadas/${i.llamadas.id}`} className="inline-flex items-center gap-2 hover:underline">
                       <EstadoLlamada estado={i.llamadas.estado} />
                       <span className="text-sm text-muted-foreground">
                         {i.llamadas.cita_agendada ? "Cita agendada" : etiquetaClasificacion(i.llamadas.clasificacion)}

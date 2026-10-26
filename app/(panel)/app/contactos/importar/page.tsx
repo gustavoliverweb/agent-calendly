@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Importar contactos" };
 export default function ImportarPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col">
-      <Link href="/contactos" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/app/contactos" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" /> Contactos
       </Link>
       <PageHeader

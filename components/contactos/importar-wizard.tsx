@@ -29,7 +29,7 @@ import {
   type FilaValidada,
 } from "@/lib/contacts/import";
 import { normalizePhone } from "@/lib/contacts/phone";
-import { buscarExistentes, importarContactos, type ResultadoImportacion } from "@/app/(panel)/contactos/importar/actions";
+import { buscarExistentes, importarContactos, type ResultadoImportacion } from "@/app/(panel)/app/contactos/importar/actions";
 
 const MAX_BYTES = 3 * 1024 * 1024;
 const FILAS_VISTA = 200;
@@ -365,7 +365,7 @@ export function ImportarWizard() {
             </li>
           </ul>
           <div className="flex flex-wrap gap-2">
-            <Link href="/contactos" className={buttonVariants()}>
+            <Link href="/app/contactos" className={buttonVariants()}>
               Ver contactos
             </Link>
             {resultado.rechazadas.length > 0 && (

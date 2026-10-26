@@ -12,11 +12,11 @@ import {
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
-  { href: "/", label: "Resumen", icon: LayoutDashboardIcon },
-  { href: "/contactos", label: "Contactos", icon: UsersIcon },
-  { href: "/llamadas", label: "Llamadas", icon: PhoneIcon },
-  { href: "/lotes", label: "Lotes", icon: ListOrderedIcon },
-  { href: "/configuracion", label: "Configuración", icon: SettingsIcon },
+  { href: "/app", label: "Resumen", icon: LayoutDashboardIcon },
+  { href: "/app/contactos", label: "Contactos", icon: UsersIcon },
+  { href: "/app/llamadas", label: "Llamadas", icon: PhoneIcon },
+  { href: "/app/lotes", label: "Lotes", icon: ListOrderedIcon },
+  { href: "/app/configuracion", label: "Configuración", icon: SettingsIcon },
 ] as const;
 
 /** Resalta la sección activa. Usa la URL: renderizar dentro de <Suspense>. */
@@ -29,7 +29,7 @@ export function NavLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav className="flex gap-1 md:flex-col">
       {ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = pathname !== null && (href === "/" ? pathname === "/" : pathname.startsWith(href));
+        const active = pathname !== null && (href === "/app" ? pathname === "/app" : pathname.startsWith(href));
         return (
           <Link
             key={href}

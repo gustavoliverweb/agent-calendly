@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { guardarConfiguracion } from "@/app/(panel)/configuracion/actions";
+import { guardarConfiguracion } from "@/app/(panel)/app/configuracion/actions";
 import type { ConfiguracionForm } from "@/lib/calls/config-form";
 import type { Franja } from "@/lib/calls/window";
 import { cn } from "@/lib/utils";

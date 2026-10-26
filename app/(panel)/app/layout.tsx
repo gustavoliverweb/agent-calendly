@@ -1,18 +1,21 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { PhoneOutgoingIcon } from "lucide-react";
+import { Logo } from "@/components/marca/logo";
 import { NavLinks, PanelNav } from "@/components/panel/nav";
 import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
 import { createClient } from "@/lib/supabase/server";
 
-export default function PanelLayout({ children }: LayoutProps<"/">) {
+/** El panel es privado: fuera de los buscadores. */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
+export default function PanelLayout({ children }: LayoutProps<"/app">) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <PhoneOutgoingIcon className="size-5" />
-          Agente de voz
+        <Link href="/app" aria-label="Resumen del panel">
+          <Logo />
         </Link>
         <div className="flex items-center gap-2">
           <Suspense fallback={null}>

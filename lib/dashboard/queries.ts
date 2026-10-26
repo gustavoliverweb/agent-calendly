@@ -105,14 +105,14 @@ export async function leerAvisos(ahora: Date): Promise<Aviso[]> {
         ultimoDespacho == null
           ? "Hay lotes activos pero la tarea programada nunca se ha ejecutado: los lotes no avanzarán solos."
           : `Hay lotes activos pero la tarea programada no se ejecuta desde hace ${Math.round((ahora.getTime() - ultimoDespacho) / 60_000)} min.`,
-      enlace: { href: "/lotes", texto: "Ver lotes" },
+      enlace: { href: "/app/lotes", texto: "Ver lotes" },
     });
   }
   if (fallosApi.count) {
     avisos.push({
       nivel: "error",
       texto: `${fallosApi.count} ${fallosApi.count === 1 ? "llamada no pudo iniciarse" : "llamadas no pudieron iniciarse"} en la última hora por un error del servicio de voz (ElevenLabs o la línea).`,
-      enlace: { href: "/llamadas?estado=fallida", texto: "Ver fallidas" },
+      enlace: { href: "/app/llamadas?estado=fallida", texto: "Ver fallidas" },
     });
   }
   if (webhooks.count) {
@@ -125,7 +125,7 @@ export async function leerAvisos(ahora: Date): Promise<Aviso[]> {
     avisos.push({
       nivel: "error",
       texto: `Calendly no respondió durante ${calendly.count} ${calendly.count === 1 ? "llamada" : "llamadas"} en la última hora: esos contactos quedan para seguimiento.`,
-      enlace: { href: "/contactos?seguimiento=1", texto: "Ver seguimientos" },
+      enlace: { href: "/app/contactos?seguimiento=1", texto: "Ver seguimientos" },
     });
   }
   return avisos;

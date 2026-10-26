@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { borrarContacto, marcarNoLlamar } from "@/app/(panel)/contactos/actions";
+import { borrarContacto, marcarNoLlamar } from "@/app/(panel)/app/contactos/actions";
 
 export function ZonaExclusion({ id, nombre, noLlamar }: { id: string; nombre: string; noLlamar: boolean }) {
   const [pending, startTransition] = useTransition();

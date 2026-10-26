@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { MARCA } from "@/lib/marca";
 import "./globals.css";
 
-const geistSans = Geist({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -15,20 +16,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Agente de voz",
-    template: "%s · Agente de voz",
+    default: `${MARCA.nombre} · Agente de voz que agenda citas`,
+    template: `%s · ${MARCA.nombre}`,
   },
-  description: "Panel de llamadas salientes con agenda en Calendly",
-  robots: { index: false, follow: false },
+  description: MARCA.descripcion,
+  ...(process.env.APP_URL ? { metadataBase: new URL(process.env.APP_URL) } : {}),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="es" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
         {children}
         <Toaster richColors position="top-right" />
       </body>

@@ -13,7 +13,7 @@ export default function NoEncontrado() {
         </p>
       </div>
       <Link href="/" className={buttonVariants()}>
-        Ir al resumen
+        Ir al inicio
       </Link>
     </main>
   );

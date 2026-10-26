@@ -35,5 +35,5 @@ export async function cambiarContrasena(
           : "No se ha podido guardar la contraseña. Inténtalo de nuevo.",
     };
   }
-  redirect("/");
+  redirect("/app");
 }

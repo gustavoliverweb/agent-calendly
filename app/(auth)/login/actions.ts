@@ -28,7 +28,7 @@ export async function iniciarSesion(
   });
   if (error) return { error: "Email o contraseña incorrectos" };
 
-  redirect(rutaInterna(parsed.data.next));
+  redirect(rutaInterna(parsed.data.next, "/app"));
 }
 
 export async function recuperarContrasena(

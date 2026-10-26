@@ -12,13 +12,13 @@ import { contarPorEstado, leerFiltros, listarContactos, POR_PAGINA } from "@/lib
 
 export const metadata: Metadata = { title: "Contactos" };
 
-export default function ContactosPage({ searchParams }: PageProps<"/contactos">) {
+export default function ContactosPage({ searchParams }: PageProps<"/app/contactos">) {
   return (
     <>
       <PageHeader title="Contactos" description="Importa, busca y gestiona a quién llama el agente.">
         <div className="flex gap-2">
           <NuevoContacto />
-          <Link href="/contactos/importar" className={buttonVariants()}>
+          <Link href="/app/contactos/importar" className={buttonVariants()}>
             <UploadIcon data-icon="inline-start" />
             Importar CSV
           </Link>
@@ -31,7 +31,7 @@ export default function ContactosPage({ searchParams }: PageProps<"/contactos">)
   );
 }
 
-async function Listado({ searchParams }: Pick<PageProps<"/contactos">, "searchParams">) {
+async function Listado({ searchParams }: Pick<PageProps<"/app/contactos">, "searchParams">) {
   const filtros = leerFiltros(await searchParams);
   const [{ contactos, total }, totales] = await Promise.all([listarContactos(filtros), contarPorEstado()]);
 

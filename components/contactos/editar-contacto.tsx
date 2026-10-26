@@ -1,6 +1,6 @@
 "use client";
 
-import { actualizarContacto } from "@/app/(panel)/contactos/actions";
+import { actualizarContacto } from "@/app/(panel)/app/contactos/actions";
 import { ContactoForm, type ContactoValores } from "./contacto-form";
 
 export function EditarContacto({ id, valores }: { id: string; valores: ContactoValores }) {

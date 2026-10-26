@@ -51,7 +51,7 @@ async function Listado() {
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   Todavía no hay lotes. Selecciona contactos en{" "}
-                  <Link href="/contactos" className="underline">
+                  <Link href="/app/contactos" className="underline">
                     Contactos
                   </Link>{" "}
                   y pulsa “Llamar a seleccionados”.
@@ -61,7 +61,7 @@ async function Listado() {
             {lotes.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="font-medium">
-                  <Link href={`/lotes/${l.id}`} className="hover:underline">
+                  <Link href={`/app/lotes/${l.id}`} className="hover:underline">
                     {l.nombre ?? `Lote del ${fecha.format(new Date(l.creado_en))}`}
                   </Link>
                 </TableCell>

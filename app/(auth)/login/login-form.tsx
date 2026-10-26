@@ -10,7 +10,7 @@ import { iniciarSesion, recuperarContrasena, type LoginState } from "./actions";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/app";
   const linkError =
     searchParams.get("error") === "enlace_invalido"
       ? "El enlace no es válido o ha caducado. Pide una invitación nueva o recupera la contraseña."
@@ -58,7 +58,7 @@ export function LoginForm() {
         </Alert>
       )}
 
-      <Button type="submit" size="lg" disabled={loginPending}>
+      <Button type="submit" size="lg" className="rounded-full" disabled={loginPending}>
         {loginPending ? "Entrando…" : "Entrar"}
       </Button>
       <Button

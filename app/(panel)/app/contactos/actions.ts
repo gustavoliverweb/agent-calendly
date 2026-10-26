@@ -139,5 +139,5 @@ export async function borrarContacto(id: string): Promise<FormState> {
     });
   if (pendientes.length)
     log.warn("conversaciones de ElevenLabs sin borrar", { contacto_id: id, pendientes });
-  redirect("/contactos");
+  redirect("/app/contactos");
 }

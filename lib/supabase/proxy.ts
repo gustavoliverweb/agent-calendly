@@ -2,11 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 
-/** Rutas accesibles sin sesión. */
-const PUBLIC_PATHS = ["/login", "/auth"];
+/**
+ * Rutas que exigen sesión: el panel y la cuenta. Todo lo demás (landing,
+ * login, enlaces de los correos) es público; los datos siguen protegidos por
+ * RLS aunque una página se publicara por error.
+ */
+const PRIVATE_PATHS = ["/app", "/cuenta"];
 
-function isPublic(pathname: string) {
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+function isPrivate(pathname: string) {
+  return PRIVATE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 /**
@@ -44,16 +48,16 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
   const { pathname } = request.nextUrl;
 
-  if (!user && !isPublic(pathname)) {
+  if (!user && isPrivate(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname)}`;
+    url.search = pathname === "/app" ? "" : `?next=${encodeURIComponent(pathname)}`;
     return copyCookies(response, NextResponse.redirect(url));
   }
 
   if (user && pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/app";
     url.search = "";
     return copyCookies(response, NextResponse.redirect(url));
   }

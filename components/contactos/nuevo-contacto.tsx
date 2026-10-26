@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { crearContacto } from "@/app/(panel)/contactos/actions";
+import { crearContacto } from "@/app/(panel)/app/contactos/actions";
 import { ContactoForm } from "./contacto-form";
 
 export function NuevoContacto() {

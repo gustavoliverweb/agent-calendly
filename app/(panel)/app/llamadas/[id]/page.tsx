@@ -27,10 +27,10 @@ const DATOS: Record<string, string> = {
   email_confirmado: "Email confirmado",
 };
 
-export default function LlamadaPage({ params }: PageProps<"/llamadas/[id]">) {
+export default function LlamadaPage({ params }: PageProps<"/app/llamadas/[id]">) {
   return (
     <div className="mx-auto flex max-w-5xl flex-col">
-      <Link href="/llamadas" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/app/llamadas" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-4" /> Llamadas
       </Link>
       <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-muted" />}>
@@ -47,7 +47,7 @@ function valorDato(v: unknown): string {
   return String(v);
 }
 
-async function Detalle({ params }: Pick<PageProps<"/llamadas/[id]">, "params">) {
+async function Detalle({ params }: Pick<PageProps<"/app/llamadas/[id]">, "params">) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const llamada = await obtenerLlamada(id);
@@ -65,7 +65,7 @@ async function Detalle({ params }: Pick<PageProps<"/llamadas/[id]">, "params">) 
     ["Resultado", etiquetaClasificacion(llamada.clasificacion) ?? (abierta ? "En curso" : "—")],
   ];
   if (llamada.motivo_fallo) filas.push(["Motivo del fallo", MOTIVO_FALLO[llamada.motivo_fallo] ?? llamada.motivo_fallo]);
-  if (llamada.lote_id) filas.push(["Lote", <Link key="l" href={`/lotes`} className="underline">Ver lotes</Link>]);
+  if (llamada.lote_id) filas.push(["Lote", <Link key="l" href={`/app/lotes`} className="underline">Ver lotes</Link>]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -131,7 +131,7 @@ async function Detalle({ params }: Pick<PageProps<"/llamadas/[id]">, "params">) 
             <CardContent className="flex flex-col gap-2 text-sm">
               {contacto ? (
                 <>
-                  <Link href={`/contactos/${contacto.id}`} className="font-medium hover:underline">
+                  <Link href={`/app/contactos/${contacto.id}`} className="font-medium hover:underline">
                     {contacto.nombre}
                   </Link>
                   <span className="tabular-nums text-muted-foreground">{formatPhone(contacto.telefono)}</span>

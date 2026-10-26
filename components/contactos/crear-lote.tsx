@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { crearLote } from "@/app/(panel)/lotes/actions";
+import { crearLote } from "@/app/(panel)/app/lotes/actions";
 import { MOTIVO_ITEM } from "@/lib/lotes/estados";
 
 const MOTIVOS: Record<string, string> = { ...MOTIVO_ITEM, no_encontrado: "Ya no existe" };
@@ -37,7 +37,7 @@ export function CrearLote({ ids, onCreado }: { ids: string[]; onCreado: () => vo
       setOpen(false);
       setNombre("");
       onCreado();
-      router.push(`/lotes/${r.loteId}`);
+      router.push(`/app/lotes/${r.loteId}`);
     });
   }
 

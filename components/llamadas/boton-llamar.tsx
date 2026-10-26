@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PhoneIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { llamarContacto } from "@/app/(panel)/llamadas/actions";
+import { llamarContacto } from "@/app/(panel)/app/llamadas/actions";
 
 export function BotonLlamar({ contactoId, motivoBloqueo }: { contactoId: string; motivoBloqueo?: string }) {
   const [pending, startTransition] = useTransition();
@@ -20,7 +20,7 @@ export function BotonLlamar({ contactoId, motivoBloqueo }: { contactoId: string;
           const r = await llamarContacto(contactoId);
           if (r.ok && r.llamadaId) {
             toast.success("Llamada iniciada");
-            router.push(`/llamadas/${r.llamadaId}`);
+            router.push(`/app/llamadas/${r.llamadaId}`);
           } else {
             toast.error(r.error ?? "No se ha podido lanzar la llamada");
           }

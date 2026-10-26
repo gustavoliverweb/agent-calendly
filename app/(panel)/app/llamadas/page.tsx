@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Llamadas" };
 
 const fecha = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", dateStyle: "short", timeStyle: "short" });
 
-export default function LlamadasPage({ searchParams }: PageProps<"/llamadas">) {
+export default function LlamadasPage({ searchParams }: PageProps<"/app/llamadas">) {
   return (
     <>
       <PageHeader title="Llamadas" description="Estado, resultado y transcripción de cada llamada." />
@@ -35,7 +35,7 @@ function hrefFiltro(f: FiltrosLlamadas, cambio: Partial<FiltrosLlamadas>) {
   return `?${p}`;
 }
 
-async function Listado({ searchParams }: Pick<PageProps<"/llamadas">, "searchParams">) {
+async function Listado({ searchParams }: Pick<PageProps<"/app/llamadas">, "searchParams">) {
   const filtros = leerFiltrosLlamadas(await searchParams);
   const { llamadas, total } = await listarLlamadas(filtros);
   const hayActivas = llamadas.some((l) => l.estado === "iniciada" || l.estado === "en_curso");
@@ -86,7 +86,7 @@ async function Listado({ searchParams }: Pick<PageProps<"/llamadas">, "searchPar
             {llamadas.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="whitespace-nowrap tabular-nums">
-                  <Link href={`/llamadas/${l.id}`} className="font-medium hover:underline">
+                  <Link href={`/app/llamadas/${l.id}`} className="font-medium hover:underline">
                     {fecha.format(new Date(l.creado_en))}
                   </Link>
                 </TableCell>

@@ -25,7 +25,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatPhone } from "@/lib/contacts/phone";
 import type { ContactoFila } from "@/lib/contacts/queries";
-import { marcarNoLlamar } from "@/app/(panel)/contactos/actions";
+import { marcarNoLlamar } from "@/app/(panel)/app/contactos/actions";
 import { CrearLote } from "./crear-lote";
 import { EstadoBadge } from "./estado-badge";
 
@@ -132,7 +132,7 @@ export function TablaContactos({ contactos }: { contactos: ContactoFila[] }) {
                   />
                 </TableCell>
                 <TableCell className="font-medium">
-                  <Link href={`/contactos/${c.id}`} className="hover:underline">
+                  <Link href={`/app/contactos/${c.id}`} className="hover:underline">
                     {c.nombre}
                   </Link>
                   {c.requiere_seguimiento && (
@@ -154,7 +154,7 @@ export function TablaContactos({ contactos }: { contactos: ContactoFila[] }) {
                       <MoreHorizontalIcon />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem render={<Link href={`/contactos/${c.id}`} />}>Ver ficha</DropdownMenuItem>
+                      <DropdownMenuItem render={<Link href={`/app/contactos/${c.id}`} />}>Ver ficha</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
