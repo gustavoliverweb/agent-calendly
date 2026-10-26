@@ -40,6 +40,14 @@ pnpm invitar persona@empresa.com
 
 El usuario recibe un correo, pulsa el enlace, elige su contraseña (mínimo 10 caracteres) y entra al panel.
 
+Mientras no haya SMTP propio para los correos de Auth, se puede crear el usuario directamente con una contraseña provisional:
+
+```bash
+pnpm crear-usuario persona@empresa.com
+```
+
+Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entrar.
+
 ## Scripts
 
 | Comando | Qué hace |

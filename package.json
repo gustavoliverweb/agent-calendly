@@ -16,6 +16,7 @@
     "db:push": "scripts/db.sh push",
     "db:types": "scripts/db.sh types",
     "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts",
+    "crear-usuario": "node --env-file=.env.local scripts/crear-usuario.ts",
     "calendly": "node --env-file=.env.local scripts/calendly.ts"
   },
   "dependencies": {

@@ -28,7 +28,7 @@ export function PasswordForm() {
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" className="rounded-full" disabled={pending}>
         {pending ? "Guardando…" : "Guardar contraseña"}
       </Button>
     </form>
