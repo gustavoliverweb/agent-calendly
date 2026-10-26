@@ -433,6 +433,7 @@ export type Database = {
         Args: { p_contacto_id: string }
         Returns: undefined
       }
+      cerrar_lotes_terminados: { Args: never; Returns: number }
       contactos_por_estado: {
         Args: never
         Returns: {
@@ -448,10 +449,30 @@ export type Database = {
         }
         Returns: string
       }
+      crear_lote: {
+        Args: {
+          p_contacto_ids: string[]
+          p_creado_por?: string
+          p_nombre?: string
+        }
+        Returns: string
+      }
       llamadas_activas: { Args: never; Returns: number }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }
         Returns: undefined
+      }
+      reservar_llamadas_lote: {
+        Args: never
+        Returns: {
+          contacto_id: string
+          email: string
+          item_id: string
+          llamada_id: string
+          lote_id: string
+          nombre: string
+          telefono: string
+        }[]
       }
     }
     Enums: {

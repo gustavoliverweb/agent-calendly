@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { ahoraEnTexto } from "@/lib/calls/launch";
-import { decidirResultado, esBuzon, leerDatosRecogidos, type Contexto, type EventoLlamada } from "@/lib/calls/outcome";
+import { configuracionFormSchema } from "@/lib/calls/config-form";
+import {
+  decidirItemLote,
+  decidirResultado,
+  esBuzon,
+  leerDatosRecogidos,
+  type Contexto,
+  type EventoLlamada,
+} from "@/lib/calls/outcome";
+import { webhookElevenLabsSchema } from "@/lib/calls/post-call";
+import { contarItems } from "@/lib/lotes/estados";
 import { describirFranjas, estaEnFranja, franjasSchema, siguienteInicioFranja, type Calendario } from "@/lib/calls/window";
 
 const cal: Calendario = {
@@ -194,5 +204,109 @@ describe("lectura del análisis de ElevenLabs", () => {
     expect(esBuzon("Voicemail detected", null)).toBe(true);
     expect(esBuzon(null, "voicemail")).toBe(true);
     expect(esBuzon("end_call tool was called", "answered")).toBe(false);
+  });
+});
+
+describe("item de lote al terminar su llamada (§7.3)", () => {
+  const config = { ...cal, horas_entre_reintentos: 24 };
+  const sin = { tipo: "fallo_inicio", motivo: "no-answer" } as const;
+  const ctx = (intentos: number): Contexto => ({
+    citaAgendada: false,
+    clasificacionPrevia: null,
+    contactoEstado: "pendiente",
+    intentos,
+    maxReintentos: 2,
+  });
+
+  it("los reintentos se agotan en el intento 1 + max_reintentos", () => {
+    expect(decidirResultado(sin, ctx(0)).reintentosAgotados).toBe(false);
+    expect(decidirResultado(sin, ctx(1)).reintentosAgotados).toBe(false);
+    expect(decidirResultado(sin, ctx(2)).reintentosAgotados).toBe(true);
+  });
+
+  it("contestó (con o sin resultado) → completado", () => {
+    const d = decidirResultado({ tipo: "fin", hablo: true, buzon: false, datos: {} }, ctx(0));
+    expect(decidirItemLote(d, iso("2026-10-23T09:00:00Z"), config)).toEqual({
+      estado: "completado",
+      proximo_intento_en: null,
+      motivo_omision: null,
+    });
+  });
+
+  it("sin respuesta → reintento a las 24 h si cae en franja", () => {
+    // viernes 11:00 → +24 h = sábado: salta al lunes 10:00 (ya en horario de invierno, UTC+1)
+    const r = decidirItemLote(decidirResultado(sin, ctx(0)), iso("2026-10-23T09:00:00Z"), config);
+    expect(r).toEqual({ estado: "esperando_reintento", proximo_intento_en: "2026-10-26T09:00:00.000Z", motivo_omision: null });
+  });
+
+  it("sin respuesta un lunes → el martes a la misma hora", () => {
+    const r = decidirItemLote(decidirResultado(sin, ctx(0)), iso("2026-10-26T10:30:00Z"), config);
+    expect(r.proximo_intento_en).toBe("2026-10-27T10:30:00.000Z");
+  });
+
+  it("sin reintentos → fallido por no contesta", () => {
+    expect(decidirItemLote(decidirResultado(sin, ctx(2)), iso("2026-10-23T09:00:00Z"), config)).toEqual({
+      estado: "fallido",
+      proximo_intento_en: null,
+      motivo_omision: "no_contesta",
+    });
+  });
+
+  it("sin ninguna franja futura → fallido por sin_franja", () => {
+    const r = decidirItemLote(decidirResultado(sin, ctx(0)), iso("2026-10-23T09:00:00Z"), { ...config, franjas: [] });
+    expect(r).toMatchObject({ estado: "fallido", motivo_omision: "sin_franja" });
+  });
+
+  it("cuenta los items por estado", () => {
+    const p = contarItems([{ estado: "en_cola" }, { estado: "en_cola" }, { estado: "completado" }]);
+    expect(p).toMatchObject({ total: 3, en_cola: 2, completado: 1, fallido: 0 });
+  });
+});
+
+describe("formulario de configuración", () => {
+  const base = {
+    max_concurrencia: 2,
+    franjas: cal.franjas,
+    festivos: ["2026-12-25", "2026-12-08", "2026-12-25"],
+    max_reintentos: 2,
+    horas_entre_reintentos: 24,
+    tipo_campana: "comercial" as const,
+    timeout_llamada_min: 15,
+  };
+
+  it("ordena y quita festivos repetidos", () => {
+    const r = configuracionFormSchema.parse(base);
+    expect(r.festivos).toEqual(["2026-12-08", "2026-12-25"]);
+  });
+
+  it.each([
+    [{ max_concurrencia: 0 }],
+    [{ max_concurrencia: 11 }],
+    [{ franjas: [] }],
+    [{ franjas: [{ dias: [1], desde: "14:00", hasta: "10:00" }] }],
+    [{ franjas: [{ dias: [], desde: "10:00", hasta: "14:00" }] }],
+    [{ festivos: ["25/12/2026"] }],
+    [{ horas_entre_reintentos: 0 }],
+    [{ timeout_llamada_min: Number.NaN }],
+  ])("rechaza %o", (cambio) => {
+    expect(configuracionFormSchema.safeParse({ ...base, ...cambio }).success).toBe(false);
+  });
+});
+
+describe("esquema del webhook de ElevenLabs", () => {
+  it("acepta un análisis sin criterios de evaluación ni datos recogidos", () => {
+    const r = webhookElevenLabsSchema.safeParse({
+      type: "post_call_transcription",
+      data: { conversation_id: "c1", transcript: [], analysis: { transcript_summary: "x" } },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("acepta la forma mínima de un fallo al iniciar", () => {
+    const r = webhookElevenLabsSchema.safeParse({
+      type: "call_initiation_failure",
+      data: { conversation_id: "c1", failure_reason: "busy" },
+    });
+    expect(r.success).toBe(true);
   });
 });

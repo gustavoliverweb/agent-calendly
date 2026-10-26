@@ -4,7 +4,7 @@ import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/database.types";
 import { leerConfiguracion } from "./config";
-import { decidirResultado, esBuzon, leerDatosRecogidos, type EventoLlamada } from "./outcome";
+import { decidirItemLote, decidirResultado, esBuzon, leerDatosRecogidos, type EventoLlamada } from "./outcome";
 
 const turnoSchema = z
   .object({
@@ -38,8 +38,8 @@ export const webhookElevenLabsSchema = z.object({
         .object({
           call_successful: z.string().nullish(),
           transcript_summary: z.string().nullish(),
-          evaluation_criteria_results: z.unknown(),
-          data_collection_results: z.unknown(),
+          evaluation_criteria_results: z.unknown().optional(),
+          data_collection_results: z.unknown().optional(),
         })
         .loose()
         .nullish(),
@@ -54,7 +54,20 @@ export const webhookElevenLabsSchema = z.object({
 
 export type WebhookElevenLabs = z.infer<typeof webhookElevenLabsSchema>;
 
-export type ResultadoPostLlamada = "procesado" | "llamada_desconocida" | "ignorado";
+export type ResultadoPostLlamada =
+  | { resultado: "procesado"; loteId: string | null }
+  | { resultado: "llamada_desconocida" | "ignorado" };
+
+const COLUMNAS_LLAMADA = "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id, lote_id";
+
+export type LlamadaAbierta = {
+  id: string;
+  contacto_id: string;
+  clasificacion: string | null;
+  cita_agendada: boolean;
+  finalizada_en: string | null;
+  lote_id: string | null;
+};
 
 /** Transcripción para guardar: solo lo útil para leerla en el panel. */
 function transcripcionLimpia(turnos: z.infer<typeof turnoSchema>[]) {
@@ -73,18 +86,33 @@ function transcripcionLimpia(turnos: z.infer<typeof turnoSchema>[]) {
  * `intentos`, que solo se incrementa si la llamada no estaba ya finalizada.
  */
 export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<ResultadoPostLlamada> {
-  if (w.type !== "post_call_transcription" && w.type !== "call_initiation_failure") return "ignorado";
+  if (w.type !== "post_call_transcription" && w.type !== "call_initiation_failure") return { resultado: "ignorado" };
   const supabase = createAdminClient();
   const d = w.data;
 
-  const columnas = "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id";
-  let { data: llamada } = await supabase.from("llamadas").select(columnas).eq("conversation_id", d.conversation_id).maybeSingle();
+  let { data: llamada } = await supabase
+    .from("llamadas")
+    .select(COLUMNAS_LLAMADA)
+    .eq("conversation_id", d.conversation_id)
+    .maybeSingle();
   // Respaldo: el webhook llegó antes de que se guardara conversation_id.
   const llamadaIdVar = d.conversation_initiation_client_data?.dynamic_variables?.llamada_id;
   if (!llamada && typeof llamadaIdVar === "string" && z.uuid().safeParse(llamadaIdVar).success) {
-    ({ data: llamada } = await supabase.from("llamadas").select(columnas).eq("id", llamadaIdVar).maybeSingle());
+    ({ data: llamada } = await supabase.from("llamadas").select(COLUMNAS_LLAMADA).eq("id", llamadaIdVar).maybeSingle());
   }
-  if (!llamada) return "llamada_desconocida";
+  if (!llamada) return { resultado: "llamada_desconocida" };
+  await aplicarEvento(llamada, w);
+  return { resultado: "procesado", loteId: llamada.lote_id };
+}
+
+/**
+ * Aplica el fin (o el fallo) de una llamada ya localizada: la propia
+ * llamada, el contacto y, si viene de un lote, su item. También lo usa la
+ * reconciliación de llamadas sin webhook.
+ */
+export async function aplicarEvento(llamada: LlamadaAbierta, w: WebhookElevenLabs) {
+  const supabase = createAdminClient();
+  const d = w.data;
 
   const { data: contacto, error: errContacto } = await supabase
     .from("contactos")
@@ -123,7 +151,7 @@ export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<R
   const { error: errLlamada } = await supabase
     .from("llamadas")
     .update({
-      conversation_id: d.conversation_id,
+      ...(d.conversation_id ? { conversation_id: d.conversation_id } : {}),
       estado: decision.llamada.estado,
       clasificacion: decision.llamada.clasificacion,
       finalizada_en: finalizada.toISOString(),
@@ -162,6 +190,17 @@ export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<R
     if (error) throw new Error(`contactos: ${error.message}`);
   }
 
+  // Solo el item que sigue esperando a esta llamada: reprocesar no lo mueve.
+  if (llamada.lote_id) {
+    const cambio = decidirItemLote(decision, new Date(), config);
+    const { error } = await supabase
+      .from("lote_items")
+      .update(cambio)
+      .eq("ultima_llamada_id", llamada.id)
+      .eq("estado", "en_llamada");
+    if (error) throw new Error(`lote_items: ${error.message}`);
+  }
+
   log.info("llamada finalizada", {
     llamada_id: llamada.id,
     conversation_id: d.conversation_id,
@@ -169,7 +208,6 @@ export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<R
     clasificacion: decision.llamada.clasificacion,
     duracion_seg: duracion,
   });
-  return "procesado";
 }
 
 /**
@@ -189,7 +227,7 @@ export async function procesarEventosPendientes(conversationId: string) {
     if (!parsed.success) continue;
     try {
       const r = await procesarWebhookElevenLabs(parsed.data);
-      if (r !== "llamada_desconocida") {
+      if (r.resultado !== "llamada_desconocida") {
         await supabase.from("eventos_webhook").update({ procesado_en: new Date().toISOString(), error: null }).eq("id", ev.id);
       }
     } catch (e) {

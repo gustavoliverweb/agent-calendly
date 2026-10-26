@@ -102,6 +102,33 @@ export async function lanzarLlamada(opciones: {
     return { ok: false, motivo: "error", mensaje: "No se ha podido registrar la llamada." };
   }
 
+  const r = await iniciarConversacion({ llamadaId, contacto, ahora, loteId: opciones.loteId });
+  if (!r.ok) {
+    return {
+      ok: false,
+      motivo: "error_elevenlabs",
+      llamadaId,
+      mensaje: "El servicio de voz no ha podido iniciar la llamada. Inténtalo de nuevo en unos minutos.",
+    };
+  }
+  return { ok: true, llamadaId, conversationId: r.conversationId };
+}
+
+type ContactoLlamada = { id: string; nombre: string; telefono: string; email: string | null };
+
+/**
+ * Pide a ElevenLabs la llamada de una fila de `llamadas` ya creada (por
+ * crear_llamada o por el dispatcher). Si falla, la deja como fallida.
+ */
+export async function iniciarConversacion(opciones: {
+  llamadaId: string;
+  contacto: ContactoLlamada;
+  ahora: Date;
+  loteId?: string;
+}): Promise<{ ok: true; conversationId: string } | { ok: false; error: unknown }> {
+  const { llamadaId, contacto, ahora } = opciones;
+  const supabase = createAdminClient();
+
   let conversacion;
   try {
     conversacion = await llamadaSaliente(contacto.telefono, {
@@ -120,12 +147,7 @@ export async function lanzarLlamada(opciones: {
       .from("llamadas")
       .update({ estado: "fallida", motivo_fallo: `api: ${detalle}`.slice(0, 300), finalizada_en: new Date().toISOString() })
       .eq("id", llamadaId);
-    return {
-      ok: false,
-      motivo: "error_elevenlabs",
-      llamadaId,
-      mensaje: "El servicio de voz no ha podido iniciar la llamada. Inténtalo de nuevo en unos minutos.",
-    };
+    return { ok: false, error: e };
   }
 
   const { error: errUpdate } = await supabase
@@ -147,5 +169,5 @@ export async function lanzarLlamada(opciones: {
     }
   });
 
-  return { ok: true, llamadaId, conversationId: conversacion.conversationId };
+  return { ok: true, conversationId: conversacion.conversationId };
 }

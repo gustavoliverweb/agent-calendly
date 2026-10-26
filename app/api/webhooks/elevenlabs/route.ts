@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { despachar } from "@/lib/calls/dispatcher";
 import { procesarWebhookElevenLabs, webhookElevenLabsSchema } from "@/lib/calls/post-call";
 import { elevenLabsWebhookEnv } from "@/lib/env";
 import { log } from "@/lib/log";
@@ -71,8 +73,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const resultado = await procesarWebhookElevenLabs(evento);
-    if (resultado === "llamada_desconocida") {
+    const r = await procesarWebhookElevenLabs(evento);
+    if (r.resultado === "llamada_desconocida") {
       // Queda registrado sin procesar: al guardar el conversation_id de la
       // llamada se reprocesa (procesarEventosPendientes).
       await supabase.from("eventos_webhook").update({ error: "llamada no encontrada (pendiente)" }).eq("id", eventoId);
@@ -83,7 +85,9 @@ export async function POST(req: Request) {
       .from("eventos_webhook")
       .update({ procesado_en: new Date().toISOString(), error: null })
       .eq("id", eventoId);
-    return Response.json({ ok: true, resultado });
+    // Se liberó un hueco de un lote: la cola avanza sin esperar al cron.
+    if (r.resultado === "procesado" && r.loteId) after(() => despachar());
+    return Response.json({ ok: true, resultado: r.resultado });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);
     await supabase.from("eventos_webhook").update({ error: mensaje.slice(0, 1000) }).eq("id", eventoId);

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { BanIcon, MoreHorizontalIcon, PhoneIcon } from "lucide-react";
+import { BanIcon, MoreHorizontalIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatPhone } from "@/lib/contacts/phone";
 import type { ContactoFila } from "@/lib/contacts/queries";
 import { marcarNoLlamar } from "@/app/(panel)/contactos/actions";
+import { CrearLote } from "./crear-lote";
 import { EstadoBadge } from "./estado-badge";
 
 const fecha = new Intl.DateTimeFormat("es-ES", {
@@ -81,14 +82,7 @@ export function TablaContactos({ contactos }: { contactos: ContactoFila[] }) {
       {seleccion.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-sm">
           <span className="font-medium">{seleccion.size} seleccionados</span>
-          <Button
-            size="sm"
-            disabled
-            title="Disponible cuando se active el motor de lotes (fase 6)"
-          >
-            <PhoneIcon data-icon="inline-start" />
-            Llamar a seleccionados ({llamables.length})
-          </Button>
+          <CrearLote ids={llamables.map((c) => c.id)} onCreado={() => setSeleccion(new Set())} />
           <Button
             size="sm"
             variant="destructive"
@@ -161,7 +155,6 @@ export function TablaContactos({ contactos }: { contactos: ContactoFila[] }) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem render={<Link href={`/contactos/${c.id}`} />}>Ver ficha</DropdownMenuItem>
-                      <DropdownMenuItem disabled>Llamar (fase 5)</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"

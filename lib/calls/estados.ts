@@ -35,6 +35,7 @@ export const MOTIVO_FALLO: Record<string, string> = {
   busy: "Ocupado",
   "no-answer": "No contesta",
   unknown: "Error desconocido",
+  timeout: "Sin respuesta del servicio de voz (cerrada por tiempo)",
 };
 
 export function isLlamadaEstado(v: string): v is LlamadaEstado {

@@ -1,6 +1,6 @@
 # Agente de voz saliente con agenda en Calendly
 
-Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md). Configuración de integraciones: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md) y [`docs/configuracion-elevenlabs.md`](docs/configuracion-elevenlabs.md).
+Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md). Configuración de integraciones: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md) y [`docs/configuracion-elevenlabs.md`](docs/configuracion-elevenlabs.md). Tarea programada del motor de lotes: [`docs/configuracion-cron.md`](docs/configuracion-cron.md).
 
 **Stack:** Next.js 16 (App Router, TypeScript) · Supabase (Postgres + Auth) en la nube · Vercel (`fra1`) · ElevenLabs Agents · Calendly Scheduling API.
 
@@ -71,7 +71,12 @@ app/api/tools/              Tools del agente: disponibilidad, agendar, no-llamar
 app/api/webhooks/calendly   Citas creadas, canceladas y reprogramadas (firma HMAC)
 app/api/webhooks/elevenlabs Fin de llamada (transcripción, análisis) y fallos al iniciarla (firma HMAC)
 app/(panel)/llamadas        Listado con filtros y detalle con transcripción (se actualiza solo)
-lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados
+app/(panel)/lotes           Lotes con progreso; pausar, reanudar y cancelar
+app/(panel)/configuracion   Franjas, festivos, concurrencia, reintentos y tipo de campaña (+ pausa global en la cabecera)
+app/api/cron/despachar      Pasada del motor de lotes cada minuto (Bearer CRON_SECRET)
+lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados,
+                            dispatcher de lotes y reconciliación de llamadas sin webhook
+lib/lotes/                  Estados, etiquetas y consultas de lotes
 lib/elevenlabs/             Cliente de la API (llamada saliente SIP, conversación)
 lib/calendly/               Cliente, huecos (caché 60 s), formato en español, reserva, webhook
 lib/tools/                  Lógica de cada tool, separada de la ruta HTTP
@@ -90,5 +95,6 @@ supabase/templates/         Plantillas de correo de Auth
 - RLS activado en todas las tablas: `anon` no ve nada; los usuarios autenticados leen todo (un único negocio). Tools, webhooks y cron usan la service role, solo en el servidor.
 - La lista de exclusión es permanente: un trigger impide sacar a un contacto de `no_llamar` y lo retira de los lotes pendientes.
 - Los contactos solo se borran con `borrar_contacto_rgpd()`, que borra en cascada y deja auditoría sin datos personales.
-- Tools: `Authorization: Bearer <TOOLS_SECRET>` comparado en tiempo constante; webhooks con firma HMAC-SHA256, ventana anti-replay e idempotencia en `eventos_webhook`.
+- La concurrencia la garantiza la BD: `crear_llamada()` y `reservar_llamadas_lote()` comparten un advisory lock, así que ni dos clics ni dos pasadas del cron superan `max_concurrencia`.
+- Tools y cron: `Authorization: Bearer <TOOLS_SECRET>` / `<CRON_SECRET>` comparado en tiempo constante; webhooks con firma HMAC-SHA256, ventana anti-replay e idempotencia en `eventos_webhook`.
 - Secretos solo en `.env.local` / Vercel; nunca en el cliente salvo la URL y la clave pública de Supabase, protegidas por RLS.

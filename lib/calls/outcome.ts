@@ -1,7 +1,9 @@
 import type { Database } from "@/lib/supabase/database.types";
+import { siguienteInicioFranja, type Calendario } from "./window";
 
 type ContactoEstado = Database["public"]["Enums"]["contacto_estado"];
 type LlamadaEstado = Database["public"]["Enums"]["llamada_estado"];
+type ItemEstado = Database["public"]["Enums"]["lote_item_estado"];
 
 export type Clasificacion =
   | "cita_agendada"
@@ -59,6 +61,8 @@ export type Decision = {
   contacto: CambioContacto;
   /** No hubo conversación: cuenta como intento sin respuesta (reintentos). */
   sinRespuesta: boolean;
+  /** Sin respuesta y ya sin reintentos: no se vuelve a intentar. */
+  reintentosAgotados: boolean;
 };
 
 /** Estados desde los que una falta de respuesta puede llevar a no_contesta. */
@@ -82,11 +86,12 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
       llamada: { estado: estadoLlamada, clasificacion: "no_llamar" },
       contacto: { tipo: "no_llamar" },
       sinRespuesta: false,
+      reintentosAgotados: false,
     };
   }
   // Nunca se toca a un excluido (la BD también lo impide).
   if (ctx.contactoEstado === "no_llamar") {
-    return { llamada: { estado: estadoLlamada, clasificacion: "otro" }, contacto: { tipo: "ninguno" }, sinRespuesta: false };
+    return { llamada: { estado: estadoLlamada, clasificacion: "otro" }, contacto: { tipo: "ninguno" }, sinRespuesta: false, reintentosAgotados: false };
   }
 
   if (ctx.citaAgendada) {
@@ -94,6 +99,7 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
       llamada: { estado: estadoLlamada, clasificacion: "cita_agendada" },
       contacto: { tipo: "actualizar", campos: { estado: "cita_agendada", intentos: 0 } },
       sinRespuesta: false,
+      reintentosAgotados: false,
     };
   }
 
@@ -106,6 +112,7 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
       llamada: { estado: estadoLlamada, clasificacion: ev.tipo === "fin" && ev.buzon ? "buzon" : "sin_respuesta" },
       contacto: { tipo: "actualizar", campos },
       sinRespuesta: true,
+      reintentosAgotados: agotado,
     };
   }
 
@@ -114,6 +121,7 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
       llamada: { estado: estadoLlamada, clasificacion: "no_interesado" },
       contacto: { tipo: "actualizar", campos: { estado: "no_interesado", intentos: 0 } },
       sinRespuesta: false,
+      reintentosAgotados: false,
     };
   }
 
@@ -133,13 +141,39 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
         },
       },
       sinRespuesta: false,
+      reintentosAgotados: false,
     };
   }
   return {
     llamada: { estado: estadoLlamada, clasificacion: "otro" },
     contacto: { tipo: "actualizar", campos: { estado, intentos: 0 } },
     sinRespuesta: false,
+    reintentosAgotados: false,
   };
+}
+
+export type CambioItem = {
+  estado: ItemEstado;
+  proximo_intento_en: string | null;
+  motivo_omision: string | null;
+};
+
+/**
+ * Qué pasa con el item de lote cuando termina su llamada (§7.3). Sin
+ * respuesta y con reintentos: se reprograma a `horas_entre_reintentos`
+ * vista, ajustado al siguiente inicio de franja.
+ */
+export function decidirItemLote(
+  d: Pick<Decision, "sinRespuesta" | "reintentosAgotados">,
+  ahora: Date,
+  config: Calendario & { horas_entre_reintentos: number },
+): CambioItem {
+  if (!d.sinRespuesta) return { estado: "completado", proximo_intento_en: null, motivo_omision: null };
+  if (d.reintentosAgotados) return { estado: "fallido", proximo_intento_en: null, motivo_omision: "no_contesta" };
+  const proximo = siguienteInicioFranja(new Date(ahora.getTime() + config.horas_entre_reintentos * 3_600_000), config);
+  return proximo
+    ? { estado: "esperando_reintento", proximo_intento_en: proximo.toISOString(), motivo_omision: null }
+    : { estado: "fallido", proximo_intento_en: null, motivo_omision: "sin_franja" };
 }
 
 const SI = new Set(["true", "si", "sí", "yes", "1"]);
