@@ -69,6 +69,12 @@ La primera regla que se cumple gana (plan §7.2):
 4. No contestó, ocupado, buzón o nadie habló → suma un intento; agotados `1 + max_reintentos` → **no contesta**.
 5. Habló sin resultado → **llamado**; si pidió rellamada, queda marcado para seguimiento con el momento indicado.
 
+## Ajustes recomendados del agente
+
+- **Duración máxima de la llamada: 300 s.** Es un control de coste (plan §19).
+- **Retención de datos en ElevenLabs:** ajustarla al mismo plazo que en Configuración → Conservación de datos, o menor. El panel borra las conversaciones de un contacto cuando se ejerce el derecho de supresión.
+- **Residencia de datos:** si el plan lo permite, usar la región de la UE.
+
 ## Tools de sistema recomendadas
 
 - `end_call` (colgar).

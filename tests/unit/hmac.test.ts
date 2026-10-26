@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { firmar, igualesSeguro, verificarFirma } from "@/lib/security/hmac";
+import { crearLimitador } from "@/lib/security/rate-limit";
 
 const secreto = "clave-de-firma-de-prueba";
 const cuerpo = JSON.stringify({ event: "invitee.created", payload: { uri: "x" } });
@@ -57,5 +58,14 @@ describe("igualesSeguro", () => {
     expect(igualesSeguro("abc", "abd")).toBe(false);
     expect(igualesSeguro("abc", "abcd")).toBe(false);
     expect(igualesSeguro("", "")).toBe(true);
+  });
+});
+
+describe("crearLimitador", () => {
+  it("deja pasar hasta max por ventana y reinicia al acabarla", () => {
+    const limitar = crearLimitador({ max: 2, ventanaMs: 1000 });
+    expect([limitar("a", 0), limitar("a", 10), limitar("a", 20)]).toEqual([true, true, false]);
+    expect(limitar("b", 20)).toBe(true);
+    expect(limitar("a", 1000)).toBe(true);
   });
 });

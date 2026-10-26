@@ -122,6 +122,8 @@ export type Database = {
           max_concurrencia: number
           max_reintentos: number
           pausa_global: boolean
+          retencion_transcripciones_dias: number
+          retencion_webhooks_dias: number
           timeout_llamada_min: number
           tipo_campana: Database["public"]["Enums"]["tipo_campana"]
         }
@@ -135,6 +137,8 @@ export type Database = {
           max_concurrencia?: number
           max_reintentos?: number
           pausa_global?: boolean
+          retencion_transcripciones_dias?: number
+          retencion_webhooks_dias?: number
           timeout_llamada_min?: number
           tipo_campana?: Database["public"]["Enums"]["tipo_campana"]
         }
@@ -148,6 +152,8 @@ export type Database = {
           max_concurrencia?: number
           max_reintentos?: number
           pausa_global?: boolean
+          retencion_transcripciones_dias?: number
+          retencion_webhooks_dias?: number
           timeout_llamada_min?: number
           tipo_campana?: Database["public"]["Enums"]["tipo_campana"]
         }
@@ -240,6 +246,21 @@ export type Database = {
           procesado_en?: string | null
           recibido_en?: string
           tipo?: string
+        }
+        Relationships: []
+      }
+      latidos: {
+        Row: {
+          en: string
+          nombre: string
+        }
+        Insert: {
+          en?: string
+          nombre: string
+        }
+        Update: {
+          en?: string
+          nombre?: string
         }
         Relationships: []
       }
@@ -457,11 +478,21 @@ export type Database = {
         }
         Returns: string
       }
+      kpis_llamadas: {
+        Args: { p_desde: string }
+        Returns: {
+          citas: number
+          contestadas: number
+          llamadas: number
+          segundos: number
+        }[]
+      }
       llamadas_activas: { Args: never; Returns: number }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }
         Returns: undefined
       }
+      purgar_datos_antiguos: { Args: never; Returns: Json }
       reservar_llamadas_lote: {
         Args: never
         Returns: {

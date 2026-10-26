@@ -34,6 +34,8 @@ async function Formulario() {
     horas_entre_reintentos: config.horas_entre_reintentos,
     tipo_campana: config.tipo_campana,
     timeout_llamada_min: config.timeout_llamada_min,
+    retencion_transcripciones_dias: config.retencion_transcripciones_dias,
+    retencion_webhooks_dias: config.retencion_webhooks_dias,
   };
   return (
     <div className="flex max-w-3xl flex-col gap-2">

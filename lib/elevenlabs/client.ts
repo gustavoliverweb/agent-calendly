@@ -37,7 +37,8 @@ async function elevenFetch<T>(ruta: string, init: { method?: string; body?: unkn
     throw new ElevenLabsError(`ElevenLabs respondió ${res.status}`, res.status);
   }
   log.info("elevenlabs ok", { ruta: url.pathname, status: res.status, ms });
-  return (await res.json()) as T;
+  const texto = await res.text();
+  return (texto ? JSON.parse(texto) : null) as T;
 }
 
 export type VariablesDinamicas = Record<string, string | number | boolean>;
@@ -89,4 +90,20 @@ export function obtenerConversacion(conversationId: string) {
   return elevenFetch<Conversacion>(`/v1/convai/conversations/${encodeURIComponent(conversationId)}`, {
     timeoutMs: 8000,
   });
+}
+
+/**
+ * Borra una conversación (transcripción y audio) en ElevenLabs: derecho de
+ * supresión. Si ya no existe, se da por borrada.
+ */
+export async function borrarConversacion(conversationId: string) {
+  try {
+    await elevenFetch<unknown>(`/v1/convai/conversations/${encodeURIComponent(conversationId)}`, {
+      method: "DELETE",
+      timeoutMs: 8000,
+    });
+  } catch (e) {
+    if (e instanceof ElevenLabsError && e.status === 404) return;
+    throw e;
+  }
 }

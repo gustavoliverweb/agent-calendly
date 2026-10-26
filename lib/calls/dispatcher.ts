@@ -13,6 +13,8 @@ export type ResumenDespacho = {
   fallidas: number;
   reconciliadas: number;
   lotesCerrados: number;
+  /** Resultado de la purga de retención, si tocaba hoy. */
+  purga?: unknown;
   /** Por qué no se lanzó nada, si es el caso. */
   parado?: "pausa_global" | "fuera_de_franja" | "sin_configurar";
 };
@@ -23,6 +25,8 @@ const ESPERA_TRAS_ERROR_MS = 10 * 60_000;
 const MAX_ERRORES_API = 3;
 /** Llamadas colgadas que se revisan por pasada (cada una es un GET a ElevenLabs). */
 const RECONCILIAR_POR_PASADA = 20;
+/** La purga de retención va en la misma tarea programada, una vez al día. */
+const CADA_PURGA_MS = 24 * 3_600_000;
 
 /**
  * Una pasada del motor de lotes (§9.2): reconcilia llamadas sin webhook,
@@ -64,14 +68,31 @@ export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
     const { data: cerrados, error: errCerrar } = await supabase.rpc("cerrar_lotes_terminados");
     if (errCerrar) throw new Error(`cerrar_lotes_terminados: ${errCerrar.message}`);
     resumen.lotesCerrados = cerrados ?? 0;
+
+    resumen.purga = await purgarSiToca(ahora);
   } catch (e) {
     log.error("despacho falló", { error: e instanceof Error ? e.message : String(e) });
   }
+
+  // El panel avisa si este latido se queda viejo (la tarea programada no corre).
+  const { error: errLatido } = await supabase.from("latidos").upsert({ nombre: "despacho", en: ahora.toISOString() });
+  if (errLatido) log.warn("no se pudo registrar el latido", { code: errLatido.code });
 
   if (resumen.lanzadas || resumen.fallidas || resumen.reconciliadas || resumen.lotesCerrados) {
     log.info("despacho", resumen);
   }
   return resumen;
+}
+
+/** Retención RGPD: borra conversaciones y webhooks antiguos (§13.3). */
+async function purgarSiToca(ahora: Date) {
+  const supabase = createAdminClient();
+  const { data: ultima } = await supabase.from("latidos").select("en").eq("nombre", "purga").maybeSingle();
+  if (ultima && ahora.getTime() - new Date(ultima.en).getTime() < CADA_PURGA_MS) return undefined;
+  const { data, error } = await supabase.rpc("purgar_datos_antiguos");
+  if (error) throw new Error(`purgar_datos_antiguos: ${error.message}`);
+  log.info("purga de retención", { resultado: data });
+  return data;
 }
 
 /**

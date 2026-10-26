@@ -3,13 +3,19 @@ import type { z } from "zod";
 import { appEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { igualesSeguro } from "@/lib/security/hmac";
+import { crearLimitador, ipCliente, limitarFallosAuth } from "@/lib/security/rate-limit";
 
 /** Las tools reciben unos pocos campos: nada justifica un body grande. */
 const MAX_BODY = 16 * 1024;
+/**
+ * Peticiones autenticadas por tool y minuto. Con 10 llamadas simultáneas y
+ * varias tools por llamada se queda muy por debajo; más es abuso.
+ */
+const limitarTool = crearLimitador({ max: 300, ventanaMs: 60_000 });
 
 /**
  * Autentica y valida la petición de una tool del agente. Devuelve una
- * Response si hay que cortar (401/413) o los datos ya validados.
+ * Response si hay que cortar (401/413/429) o los datos ya validados.
  *
  * Un body inválido no devuelve 4xx sino `invalido`, para que la tool responda
  * 200 con un mensaje que el LLM pueda usar para corregirse.
@@ -22,8 +28,13 @@ export async function leerPeticionTool<T extends z.ZodType>(
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (!token || !igualesSeguro(token, appEnv().TOOLS_SECRET)) {
-    log.warn("tool sin autorización", { tool });
-    return new Response(null, { status: 401 });
+    const permitido = limitarFallosAuth(`tool:${ipCliente(req)}`);
+    log.warn("tool sin autorización", { tool, limitado: !permitido });
+    return new Response(null, { status: permitido ? 401 : 429 });
+  }
+  if (!limitarTool(tool)) {
+    log.warn("tool: límite de peticiones superado", { tool });
+    return new Response(null, { status: 429, headers: { "Retry-After": "60" } });
   }
 
   const texto = await req.text();

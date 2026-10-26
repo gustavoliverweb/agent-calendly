@@ -14,6 +14,8 @@ Cada pasada hace lo siguiente:
 2. Si hay pausa global, está fuera de franja o es festivo, no lanza nada.
 3. Reclama tantos contactos como huecos libres haya y los llama. Lo hace la función SQL `reservar_llamadas_lote()`, bajo el mismo bloqueo que las llamadas manuales, así que nunca se supera `max_concurrencia`.
 4. Cierra como completados los lotes que ya no tienen nada pendiente.
+5. Una vez al día, purga los datos que superan los plazos de retención (Configuración → Conservación de datos).
+6. Registra su latido. Si hay lotes activos y no hay latido en 5 minutos, el Resumen avisa de que la tarea no se está ejecutando.
 
 Es seguro llamarla varias veces a la vez.
 

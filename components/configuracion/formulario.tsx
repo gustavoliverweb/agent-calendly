@@ -283,6 +283,48 @@ export function FormularioConfiguracion({ inicial }: { inicial: Valores }) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Conservación de datos (RGPD)</CardTitle>
+          <CardDescription>
+            Pasado el plazo se borran cada noche la transcripción, el resumen y los datos recogidos de cada llamada; se
+            conservan el estado, la duración y la cita.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5 sm:grid-cols-2">
+          <Campo
+            id="retencion_transcripciones_dias"
+            label="Conservar conversaciones (días)"
+            ayuda="Entre 30 y 3.650. Por defecto, 365."
+          >
+            <Input
+              id="retencion_transcripciones_dias"
+              type="number"
+              min={30}
+              max={3650}
+              value={v.retencion_transcripciones_dias as number}
+              onChange={(e) => set("retencion_transcripciones_dias", e.target.valueAsNumber)}
+              required
+            />
+          </Campo>
+          <Campo
+            id="retencion_webhooks_dias"
+            label="Conservar avisos recibidos (días)"
+            ayuda="Copia técnica de lo que envían ElevenLabs y Calendly. Entre 7 y 365."
+          >
+            <Input
+              id="retencion_webhooks_dias"
+              type="number"
+              min={7}
+              max={365}
+              value={v.retencion_webhooks_dias as number}
+              onChange={(e) => set("retencion_webhooks_dias", e.target.valueAsNumber)}
+              required
+            />
+          </Campo>
+        </CardContent>
+      </Card>
+
       <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background/95 py-3 backdrop-blur">
         {cambiado && <span className="mr-auto text-sm text-muted-foreground">Hay cambios sin guardar</span>}
         <Button type="button" variant="ghost" disabled={!cambiado || pending} onClick={() => setV(inicial)}>

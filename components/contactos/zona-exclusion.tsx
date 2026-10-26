@@ -68,7 +68,7 @@ export function ZonaExclusion({ id, nombre, noLlamar }: { id: string; nombre: st
         <div className="text-sm">
           <p className="font-medium">Borrar datos (RGPD)</p>
           <p className="text-muted-foreground">
-            Elimina el contacto, sus llamadas, transcripciones y citas. No se puede deshacer.
+            Elimina el contacto, sus llamadas, transcripciones y citas, también en ElevenLabs. No se puede deshacer.
           </p>
         </div>
         <AlertDialog
@@ -85,7 +85,7 @@ export function ZonaExclusion({ id, nombre, noLlamar }: { id: string; nombre: st
             <AlertDialogHeader>
               <AlertDialogTitle>¿Borrar todos los datos de {nombre}?</AlertDialogTitle>
               <AlertDialogDescription>
-                Se eliminan el contacto, sus llamadas, transcripciones y citas registradas en el panel. Escribe{" "}
+                Se eliminan el contacto, sus llamadas, transcripciones y citas registradas en el panel, y sus conversaciones en ElevenLabs. La cita en Calendly, si la hay, no se toca. Escribe{" "}
                 <strong>BORRAR</strong> para confirmar.
               </AlertDialogDescription>
             </AlertDialogHeader>

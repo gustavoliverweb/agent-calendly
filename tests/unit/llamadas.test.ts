@@ -272,6 +272,8 @@ describe("formulario de configuración", () => {
     horas_entre_reintentos: 24,
     tipo_campana: "comercial" as const,
     timeout_llamada_min: 15,
+    retencion_transcripciones_dias: 365,
+    retencion_webhooks_dias: 30,
   };
 
   it("ordena y quita festivos repetidos", () => {
@@ -288,6 +290,8 @@ describe("formulario de configuración", () => {
     [{ festivos: ["25/12/2026"] }],
     [{ horas_entre_reintentos: 0 }],
     [{ timeout_llamada_min: Number.NaN }],
+    [{ retencion_transcripciones_dias: 7 }],
+    [{ retencion_webhooks_dias: 400 }],
   ])("rechaza %o", (cambio) => {
     expect(configuracionFormSchema.safeParse({ ...base, ...cambio }).success).toBe(false);
   });
