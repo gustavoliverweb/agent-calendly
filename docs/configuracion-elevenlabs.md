@@ -1,6 +1,6 @@
 # Configuración de ElevenLabs
 
-Lo que la app espera del agente de ElevenLabs. El guion (system prompt) lo aporta el negocio; este documento recoge solo la parte técnica que debe coincidir con el código.
+Lo que la app espera del agente de ElevenLabs. El guion (system prompt) lo aporta el negocio; este documento recoge solo la parte técnica que debe coincidir con el código. Hay un guion de ejemplo, listo para el tester web, en [system-prompt.md](system-prompt.md).
 
 ## Variables de entorno
 
