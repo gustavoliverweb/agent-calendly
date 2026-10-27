@@ -8,11 +8,11 @@ import { enlaceDemo } from "@/lib/marca";
 import { cn } from "@/lib/utils";
 
 const SECCIONES = [
-  { href: "#como-funciona", texto: "Cómo funciona" },
-  { href: "#llamada", texto: "Una llamada" },
-  { href: "#panel", texto: "El panel" },
-  { href: "#seguridad", texto: "RGPD" },
-  { href: "#preguntas", texto: "Preguntas" },
+  { href: "/#como-funciona", texto: "Cómo funciona" },
+  { href: "/#llamada", texto: "Una llamada" },
+  { href: "/#panel", texto: "El panel" },
+  { href: "/#seguridad", texto: "RGPD" },
+  { href: "/#preguntas", texto: "Preguntas" },
 ];
 
 /**
@@ -66,9 +66,9 @@ export function Cabecera() {
           className={cn("hidden items-center gap-7 text-sm lg:flex", oscuro ? "text-white/65" : "text-neutral-600")}
         >
           {SECCIONES.map((s) => (
-            <a key={s.href} href={s.href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-neutral-950")}>
+            <Link key={s.href} href={s.href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-neutral-950")}>
               {s.texto}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="flex items-center gap-1.5">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DOCUMENTOS_LEGALES } from "@/components/legal/documento-legal";
 import { Logo } from "@/components/marca/logo";
 import { enlaceDemo, MARCA } from "@/lib/marca";
 
@@ -13,10 +14,10 @@ export function Pie() {
         <div>
           <p className="font-mono text-[11px] tracking-[0.2em] text-white/40 uppercase">Producto</p>
           <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
-            <li><a href="#como-funciona" className="hover:text-white">Cómo funciona</a></li>
-            <li><a href="#panel" className="hover:text-white">El panel</a></li>
-            <li><a href="#seguridad" className="hover:text-white">Seguridad y RGPD</a></li>
-            <li><a href="#preguntas" className="hover:text-white">Preguntas</a></li>
+            <li><Link href="/#como-funciona" className="hover:text-white">Cómo funciona</Link></li>
+            <li><Link href="/#panel" className="hover:text-white">El panel</Link></li>
+            <li><Link href="/#seguridad" className="hover:text-white">Seguridad y RGPD</Link></li>
+            <li><Link href="/#preguntas" className="hover:text-white">Preguntas</Link></li>
           </ul>
         </div>
         <div>
@@ -30,6 +31,13 @@ export function Pie() {
       </div>
       <div className="mx-auto mt-16 flex max-w-7xl flex-wrap justify-between gap-4 border-t border-white/10 pt-6 font-mono text-[11px] tracking-[0.14em] text-white/35 uppercase">
         <span>© {MARCA.nombre}</span>
+        <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">
+          {DOCUMENTOS_LEGALES.map((d) => (
+            <Link key={d.href} href={d.href} className="hover:text-white">
+              {d.texto}
+            </Link>
+          ))}
+        </nav>
         <span>Datos alojados en la UE</span>
       </div>
     </footer>
