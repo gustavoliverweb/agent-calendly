@@ -62,6 +62,7 @@ Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entr
 | `pnpm invitar <email>` | Invita a un usuario al panel |
 | `pnpm calendly tipos` | Tipos de evento de Calendly (para `CALENDLY_EVENT_TYPE_URI`) |
 | `pnpm calendly webhooks` · `crear-webhook <url>` · `borrar-webhook <uri>` | Suscripción del webhook de Calendly |
+| `pnpm llamada-prueba <email\|teléfono\|id>` · `cerrar <id>` | Llamada de prueba para el tester web de ElevenLabs (no marca ningún teléfono) |
 
 `scripts/db.sh` conecta por el pooler en modo transacción (puerto **6543**), porque desde algunas redes o VPN el 5432 no responde. Nunca imprime la contraseña.
 

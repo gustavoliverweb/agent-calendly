@@ -117,10 +117,11 @@ Valores de prueba para las variables dinámicas:
 | `email` | `gustavo@example.com` |
 | `tiene_email` | `true` (repetir alguna prueba con `false` y `email` vacío) |
 | `ahora_madrid` | La fecha y hora reales de la prueba, p. ej. `martes 27 de octubre de 2026, 11:15` |
-| `llamada_id` | El `id` de una llamada existente en la base de datos (ver nota) |
-| `contacto_id`, `telefono` | Los de ese contacto |
+| `llamada_id`, `contacto_id`, `telefono` | Los que imprime `pnpm llamada-prueba` (ver nota) |
 
 > **Nota sobre `llamada_id`:** `agendar` y `no_llamar` necesitan una llamada que exista en la tabla `llamadas`. Con un id inventado, `agendar` responde `llamada_no_encontrada` y `no_llamar` no marca a nadie. `disponibilidad` funciona sin él.
+>
+> Para crearla sin marcar ningún teléfono: `pnpm llamada-prueba <email o teléfono del contacto>`. Imprime todas las variables, listas para copiar. Al terminar la conversación, el webhook post-llamada la cierra con la transcripción; si no llega, `pnpm llamada-prueba cerrar <id>` la da por fallida. Cada llamada de prueba solo sirve para una conversación.
 
 Escenarios mínimos antes de llamar a un teléfono real (plan §15.3):
 
