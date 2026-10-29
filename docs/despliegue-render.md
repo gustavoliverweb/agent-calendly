@@ -65,4 +65,5 @@ Con una URL fija ya no hace falta el túnel para probar el agente.
 ## Si el build falla
 
 - **Versión de pnpm**: el proyecto declara `packageManager: pnpm@12.9.1`. Si el pnpm preinstalado de Render no la acepta, cambia el `buildCommand` del servicio a `corepack enable && pnpm install --frozen-lockfile && pnpm build`.
+- **`JavaScript heap out of memory` en el build**: no definas `NODE_OPTIONS` en **Environment**, porque también se aplica al build y lo limita a 384 MB (el build necesita unos 900 MB y la máquina de build tiene 8 GB). El límite va solo en el `startCommand`.
 - **Falta una variable**: la app valida las variables al usarlas; el error de los logs dice cuál falta.
