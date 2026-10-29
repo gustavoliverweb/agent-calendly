@@ -1,5 +1,5 @@
 /**
- * Logger JSON estructurado para Vercel. Nunca registrar datos personales
+ * Logger JSON estructurado (los logs de Render lo muestran tal cual). Nunca registrar datos personales
  * completos: los teléfonos y emails se enmascaran automáticamente.
  */
 

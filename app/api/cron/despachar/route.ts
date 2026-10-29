@@ -5,8 +5,8 @@ import { igualesSeguro } from "@/lib/security/hmac";
 import { ipCliente, limitarFallosAuth } from "@/lib/security/rate-limit";
 
 /**
- * Una pasada del motor de lotes. La dispara cada minuto pg_cron (POST) o
- * Vercel Cron (GET), siempre con `Authorization: Bearer <CRON_SECRET>`.
+ * Una pasada del motor de lotes. La dispara cada minuto pg_cron (POST), siempre
+ * con `Authorization: Bearer <CRON_SECRET>`. GET sirve para probarla a mano.
  */
 async function handler(req: Request) {
   const token = req.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];

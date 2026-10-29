@@ -161,7 +161,7 @@ export default function Privacidad() {
             <td>UE (Fráncfort)</td>
           </tr>
           <tr>
-            <td>Vercel</td>
+            <td>Render</td>
             <td>Alojamiento de la web y del panel</td>
             <td>UE (Fráncfort); empresa con sede en EE. UU.</td>
           </tr>

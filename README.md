@@ -1,8 +1,8 @@
 # Agente de voz saliente con agenda en Calendly
 
-Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md). Configuración de integraciones: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md) y [`docs/configuracion-elevenlabs.md`](docs/configuracion-elevenlabs.md); guion de ejemplo del agente en [`docs/system-prompt.md`](docs/system-prompt.md). Tarea programada del motor de lotes: [`docs/configuracion-cron.md`](docs/configuracion-cron.md). Operación (avisos, rotar secretos, RGPD, retención): [`docs/runbook.md`](docs/runbook.md).
+Panel web para lanzar llamadas salientes con un agente de voz de ElevenLabs que agenda citas en Calendly. Plan completo en [`PLAN.md`](PLAN.md). Configuración de integraciones: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md) y [`docs/configuracion-elevenlabs.md`](docs/configuracion-elevenlabs.md); guion de ejemplo del agente en [`docs/system-prompt.md`](docs/system-prompt.md). Despliegue: [`docs/despliegue-render.md`](docs/despliegue-render.md). Tarea programada del motor de lotes: [`docs/configuracion-cron.md`](docs/configuracion-cron.md). Operación (avisos, rotar secretos, RGPD, retención): [`docs/runbook.md`](docs/runbook.md).
 
-**Stack:** Next.js 16 (App Router, TypeScript) · Supabase (Postgres + Auth) en la nube · Vercel (`fra1`) · ElevenLabs Agents · Calendly Scheduling API.
+**Stack:** Next.js 16 (App Router, TypeScript) · Supabase (Postgres + Auth) en la nube · Render (Fráncfort) · ElevenLabs Agents · Calendly Scheduling API.
 
 ## Requisitos
 
@@ -110,4 +110,4 @@ supabase/templates/         Plantillas de correo de Auth
 - Límite de peticiones en tools y cron; cabeceras de seguridad con CSP (`frame-ancestors 'none'`, `object-src 'none'`).
 - La concurrencia la garantiza la BD: `crear_llamada()` y `reservar_llamadas_lote()` comparten un advisory lock, así que ni dos clics ni dos pasadas del cron superan `max_concurrencia`.
 - Tools y cron: `Authorization: Bearer <TOOLS_SECRET>` / `<CRON_SECRET>` comparado en tiempo constante; webhooks con firma HMAC-SHA256, ventana anti-replay e idempotencia en `eventos_webhook`.
-- Secretos solo en `.env.local` / Vercel; nunca en el cliente salvo la URL y la clave pública de Supabase, protegidas por RLS.
+- Secretos solo en `.env.local` / Render; nunca en el cliente salvo la URL y la clave pública de Supabase, protegidas por RLS.

@@ -26,7 +26,7 @@ Crea (o elige) en Calendly el tipo de evento que reservará el agente. Recomenda
 
 Calendly avisa a la app cuando una cita se cancela o se reprograma (también si se reserva desde fuera del agente).
 
-1. `CALENDLY_WEBHOOK_SIGNING_KEY` debe estar en `.env.local` **y en Vercel** con el mismo valor (`openssl rand -hex 32` si no existe).
+1. `CALENDLY_WEBHOOK_SIGNING_KEY` debe estar en `.env.local` **y en Render** con el mismo valor (`openssl rand -hex 32` si no existe).
 2. Con la app ya en producción:
 
    ```bash
@@ -36,7 +36,7 @@ Calendly avisa a la app cuando una cita se cancela o se reprograma (también si 
 
 Para cambiar la URL: `pnpm calendly borrar-webhook <uri>` y volver a crearla.
 
-## 4. Variables en Vercel
+## 4. Variables en Render
 
 `CALENDLY_TOKEN`, `CALENDLY_EVENT_TYPE_URI`, `CALENDLY_WEBHOOK_SIGNING_KEY` y, si hacen falta, `CALENDLY_LOCATION_KIND` / `CALENDLY_LOCATION`. `CALENDLY_API_BASE` **no** se define en producción (solo sirve para pruebas con un Calendly simulado).
 

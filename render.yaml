@@ -1,0 +1,54 @@
+# Blueprint de Render: un servicio web Node en Fráncfort, junto a Supabase.
+# Guía de despliegue: docs/despliegue-render.md
+services:
+  - type: web
+    name: agent-calendly
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb # Starter: 0,5 CPU y 512 MB, siempre encendido
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      # Next lee PORT (Render lo define); el límite de heap deja margen en 512 MB.
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
+
+      # Supabase. Las NEXT_PUBLIC_* se incrustan al compilar: si cambian, redesplegar.
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # ElevenLabs
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_PHONE_NUMBER_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+
+      # Calendly
+      - key: CALENDLY_TOKEN
+        sync: false
+      - key: CALENDLY_EVENT_TYPE_URI
+        sync: false
+      - key: CALENDLY_WEBHOOK_SIGNING_KEY
+        sync: false
+
+      # App
+      - key: APP_URL # https://<dominio> o https://<servicio>.onrender.com, sin barra final
+        sync: false
+      - key: TOOLS_SECRET
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: NEGOCIO_NOMBRE
+        sync: false
+      - key: COSTE_MINUTO_ESTIMADO
+        value: "0.12"

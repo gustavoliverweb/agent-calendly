@@ -18,7 +18,7 @@ export function crearLimitador({ max, ventanaMs }: { max: number; ventanaMs: num
   };
 }
 
-/** IP del cliente tras el proxy de Vercel (primer salto de x-forwarded-for). */
+/** IP del cliente tras el proxy de Render (primer salto de x-forwarded-for). */
 export function ipCliente(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "desconocida";
 }

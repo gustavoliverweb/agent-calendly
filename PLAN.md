@@ -2,6 +2,8 @@
 
 > Basado en el brief *"Requisitos: agente de voz saliente con agenda en Calendly"* (20/10/2026, @Gustavo Oliver).
 > Este documento es el plan de ejecución: arquitectura, modelo de datos, contratos de API, fases, pruebas, riesgos y checklist de entrega.
+>
+> **Cambio del 29/10/2026:** por coste, la app se despliega en **Render** (servicio web Starter en Fráncfort, cuenta Pro del cliente) en lugar de Vercel. Donde este plan dice Vercel o `fra1`, léase Render en Fráncfort; el cron sigue siendo pg_cron. Guía: [`docs/despliegue-render.md`](docs/despliegue-render.md).
 
 ---
 

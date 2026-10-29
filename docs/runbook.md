@@ -20,14 +20,14 @@ update public.configuracion set pausa_global = true where id = 1;
 
 | Aviso | Causa probable | Qué hacer |
 |---|---|---|
-| La tarea programada no se ejecuta | El job `despachar-llamadas` de pg_cron está parado, o `CRON_SECRET` no coincide | Revisar `cron.job_run_details` y `net._http_response` ([configuracion-cron.md](configuracion-cron.md)). Un 401 indica que el secreto de Vault y el de Vercel son distintos. |
+| La tarea programada no se ejecuta | El job `despachar-llamadas` de pg_cron está parado, o `CRON_SECRET` no coincide | Revisar `cron.job_run_details` y `net._http_response` ([configuracion-cron.md](configuracion-cron.md)). Un 401 indica que el secreto de Vault y el de Render son distintos. |
 | Llamadas que no pudieron iniciarse | ElevenLabs caído, sin saldo, línea SIP caída o agente mal configurado | Ver `motivo_fallo` en Llamadas → Fallidas (`api: ElevenLabs respondió 4xx/5xx`). Si son 401/403, la `ELEVENLABS_API_KEY` es incorrecta. Si se repiten, activar la pausa global hasta resolverlo. |
 | Avisos sin poder procesar | Fallo de la base de datos o un payload inesperado | Ver la columna `error` de `eventos_webhook` (SQL Editor). ElevenLabs y Calendly reintentan solos; un mismo aviso nunca se aplica dos veces. |
 | Calendly no respondió | Calendly caído o token caducado | Comprobar `CALENDLY_TOKEN` (`pnpm calendly tipos`). Los contactos afectados quedan en "Requieren seguimiento" para llamarles a mano. |
 
 ## Rotar secretos
 
-Cambiar siempre el secreto **en los dos lados a la vez**, y redesplegar en Vercel para que se aplique.
+Cambiar siempre el secreto **en los dos lados a la vez**, y guardar el cambio en Render (Environment → *Save, rebuild, and deploy*) para que se aplique.
 
 | Secreto | Dónde más hay que cambiarlo |
 |---|---|
@@ -35,7 +35,7 @@ Cambiar siempre el secreto **en los dos lados a la vez**, y redesplegar en Verce
 | `CRON_SECRET` | Supabase: `select vault.update_secret((select id from vault.secrets where name = 'cron_secret'), 'NUEVO');` |
 | `ELEVENLABS_WEBHOOK_SECRET` | ElevenLabs → Settings → Webhooks. Hay que regenerar el webhook y copiar el nuevo secreto. |
 | `CALENDLY_WEBHOOK_SIGNING_KEY` | Hay que recrear la suscripción (`pnpm calendly borrar-webhook` y luego `crear-webhook`) con la nueva clave |
-| `ELEVENLABS_API_KEY`, `CALENDLY_TOKEN` | Solo en Vercel. Revocar la clave antigua en el proveedor. |
+| `ELEVENLABS_API_KEY`, `CALENDLY_TOKEN` | Solo en Render. Revocar la clave antigua en el proveedor. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → regenerar. Afecta a todo el servidor. |
 
 Generar un secreto nuevo: `openssl rand -hex 32`.
@@ -107,4 +107,4 @@ select coalesce(motivo_fallo, clasificacion) as motivo, count(*)
  group by 1 order by 2 desc;
 ```
 
-Los logs de Vercel son JSON, con los teléfonos y emails enmascarados. Para seguir una llamada, filtrar por `llamada_id` o `conversation_id`.
+Los logs de Render (servicio → *Logs*) son JSON, con los teléfonos y emails enmascarados. Para seguir una llamada, filtrar por `llamada_id` o `conversation_id`.

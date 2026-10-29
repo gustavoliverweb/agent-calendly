@@ -21,7 +21,7 @@ Es seguro llamarla varias veces a la vez.
 
 ## Opción recomendada: Supabase `pg_cron` + `pg_net`
 
-Funciona con cualquier plan de Vercel (Vercel Cron solo permite una ejecución al día en el plan Hobby). Se configura una vez, cuando la app ya está desplegada, en **Supabase → SQL Editor**:
+No depende del alojamiento: la base de datos llama cada minuto a la URL pública de la app. Se configura una vez, cuando la app ya está desplegada, en **Supabase → SQL Editor**:
 
 ```sql
 create extension if not exists pg_cron;
@@ -29,7 +29,7 @@ create extension if not exists pg_net;
 
 -- Secretos en Vault (no quedan en texto plano en la definición del job).
 select vault.create_secret('https://TU-DOMINIO', 'app_url');
-select vault.create_secret('EL_MISMO_CRON_SECRET_QUE_EN_VERCEL', 'cron_secret');
+select vault.create_secret('EL_MISMO_CRON_SECRET_QUE_EN_RENDER', 'cron_secret');
 
 select cron.schedule(
   'despachar-llamadas',
@@ -65,16 +65,6 @@ select status_code, content, created
 ```
 
 Para cambiar el secreto: `select vault.update_secret((select id from vault.secrets where name = 'cron_secret'), 'NUEVO');`. Para pararlo: `select cron.unschedule('despachar-llamadas');`.
-
-## Alternativa: Vercel Cron (plan Pro)
-
-En `vercel.json`:
-
-```json
-{ "crons": [{ "path": "/api/cron/despachar", "schedule": "* * * * *" }] }
-```
-
-Vercel envía `Authorization: Bearer <CRON_SECRET>` si la variable `CRON_SECRET` está definida en el proyecto. La ruta acepta tanto `GET` como `POST`.
 
 ## Probarlo a mano
 
