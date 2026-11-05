@@ -110,14 +110,14 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
   // Idempotencia: la misma reserva repetida devuelve la confirmación sin volver a reservar.
   if (llamada.cita_agendada && llamada.fecha_cita) {
     const yaReservada = new Date(llamada.fecha_cita);
-    const textoCita = formatearHueco(yaReservada, ahora);
+    const textoCita = paraCuando(yaReservada, ahora);
     if (yaReservada.getTime() === inicio.getTime()) {
-      return { ok: true, start_time: inicio.toISOString(), mensaje: `La cita ya está confirmada para el ${textoCita}.` };
+      return { ok: true, start_time: inicio.toISOString(), mensaje: `La cita ya está confirmada para ${textoCita}.` };
     }
     return {
       ok: false,
       error: "ya_tiene_cita",
-      mensaje: `En esta llamada ya se reservó una cita para el ${textoCita}. Para cambiarla puede usar el enlace del correo de confirmación.`,
+      mensaje: `En esta llamada ya se reservó una cita para ${textoCita}. Para cambiarla puede usar el enlace del correo de confirmación.`,
     };
   }
   if (contacto.estado === "no_llamar") {
@@ -155,14 +155,17 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
   // comunica al contacto. El webhook invitee.created sirve de respaldo.
   await guardarReserva(llamada.id, llamada.contacto_id, inicio, email, reserva);
 
-  // "para hoy…" / "para mañana…", pero "para el lunes…".
-  const cuando = formatearHueco(inicio, ahora);
-  const para = /^(hoy|mañana) /.test(cuando) ? cuando : `el ${cuando}`;
   return {
     ok: true,
     start_time: inicio.toISOString(),
-    mensaje: `Cita confirmada para ${para}. Recibirá un correo de confirmación en ${email}.`,
+    mensaje: `Cita confirmada para ${paraCuando(inicio, ahora)}. Recibirá un correo de confirmación en ${email}.`,
   };
+}
+
+/** Texto tras "para": "hoy…" / "mañana…", pero "el lunes…". */
+function paraCuando(inicio: Date, ahora: Date): string {
+  const cuando = formatearHueco(inicio, ahora);
+  return /^(hoy|mañana) /.test(cuando) ? cuando : `el ${cuando}`;
 }
 
 async function guardarReserva(

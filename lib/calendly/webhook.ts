@@ -45,15 +45,18 @@ export async function procesarWebhookCalendly(
   w: WebhookCalendly,
   eventTypeUri: string,
 ): Promise<ResultadoWebhook> {
-  // Otras reuniones del mismo calendario no son cosa de la app.
-  const tipo = w.payload.scheduled_event.event_type;
-  if (tipo && tipo !== eventTypeUri) return "otro_tipo_de_evento";
-
   const supabase = createAdminClient();
   let resultado: ResultadoWebhook;
-  if (w.event === "invitee.created") resultado = await citaCreada(supabase, w.payload);
-  else if (w.event === "invitee.canceled") resultado = await citaCancelada(supabase, w.payload);
-  else return "evento_ignorado";
+  if (w.event === "invitee.created") {
+    // Otras reuniones del mismo calendario no son cosa de la app.
+    const tipo = w.payload.scheduled_event.event_type;
+    if (tipo && tipo !== eventTypeUri) return "otro_tipo_de_evento";
+    resultado = await citaCreada(supabase, w.payload);
+  } else if (w.event === "invitee.canceled") {
+    // Sin filtro de tipo: solo toca citas que la app ya registró, y deben
+    // cancelarse aunque CALENDLY_EVENT_TYPE_URI haya cambiado después.
+    resultado = await citaCancelada(supabase, w.payload);
+  } else return "evento_ignorado";
 
   invalidarDisponibilidad();
   return resultado;
