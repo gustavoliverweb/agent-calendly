@@ -6,7 +6,7 @@ La app consulta huecos y reserva citas con la API de Calendly. **La reserva por 
 
 Crea (o elige) en Calendly el tipo de evento que reservará el agente. Recomendaciones:
 
-- **Una sola ubicación** (p. ej. "Llamada telefónica: yo llamo al invitado", o una dirección fija). Si tiene varias, hay que indicar cuál con `CALENDLY_LOCATION_KIND` (y `CALENDLY_LOCATION` si la ubicación lleva texto).
+- **Una sola ubicación** (p. ej. "Llamada telefónica: yo llamo al invitado", o una dirección fija), indicada **siempre** en `CALENDLY_LOCATION_KIND` (y `CALENDLY_LOCATION` si la ubicación lleva texto). Sin ella, Calendly rechaza la reserva por API con `invalid_location_choice` aunque el tipo de evento tenga una sola ubicación. Valores habituales: `google_conference` (Google Meet), `zoom_conference`, `physical` (con la dirección en `CALENDLY_LOCATION`), `outbound_call` (el anfitrión llama; la app envía el teléfono del contacto).
 - **Sin preguntas obligatorias**: la reserva por API fallaría si falta alguna.
 - Horario, duración, antelación mínima y descansos se configuran **en Calendly**: la app no los duplica, solo ofrece lo que Calendly da como libre. Además, la app no ofrece huecos que empiecen en menos de 2 horas.
 

@@ -16,8 +16,8 @@ type InviteeResponse = {
 
 /**
  * Ubicación para el invitee según CALENDLY_LOCATION_KIND. Debe coincidir con
- * la del tipo de evento; sin variable, no se envía (Calendly usa la única
- * configurada).
+ * la del tipo de evento: sin ella Calendly rechaza la reserva
+ * (`invalid_location_choice`), aunque el tipo tenga una sola ubicación.
  */
 function ubicacion(telefono: string) {
   const { CALENDLY_LOCATION_KIND: kind, CALENDLY_LOCATION: location } = calendlyEnv();

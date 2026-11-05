@@ -155,10 +155,13 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
   // comunica al contacto. El webhook invitee.created sirve de respaldo.
   await guardarReserva(llamada.id, llamada.contacto_id, inicio, email, reserva);
 
+  // "para hoy…" / "para mañana…", pero "para el lunes…".
+  const cuando = formatearHueco(inicio, ahora);
+  const para = /^(hoy|mañana) /.test(cuando) ? cuando : `el ${cuando}`;
   return {
     ok: true,
     start_time: inicio.toISOString(),
-    mensaje: `Cita confirmada para el ${formatearHueco(inicio, ahora)}. Recibirá un correo de confirmación en ${email}.`,
+    mensaje: `Cita confirmada para ${para}. Recibirá un correo de confirmación en ${email}.`,
   };
 }
 
