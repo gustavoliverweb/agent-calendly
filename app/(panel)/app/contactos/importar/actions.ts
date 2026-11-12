@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { getEmpresaActual } from "@/lib/empresa";
 import { CAMPOS } from "@/lib/contacts/csv";
 import { MAX_FILAS, resumir, validarFilas, type FilaValidada, type Resumen } from "@/lib/contacts/import";
 import { normalizePhone } from "@/lib/contacts/phone";
@@ -15,13 +16,14 @@ const LOTE = 500;
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-async function telefonosExistentes(supabase: Supabase, telefonos: string[]) {
+async function telefonosExistentes(supabase: Supabase, empresaId: string, telefonos: string[]) {
   const existentes = new Set<string>();
   const unicos = [...new Set(telefonos)];
   for (let i = 0; i < unicos.length; i += 300) {
     const { data, error } = await supabase
       .from("contactos")
       .select("telefono")
+      .eq("empresa_id", empresaId)
       .in("telefono", unicos.slice(i, i + 300));
     if (error) throw new Error(error.message);
     data.forEach((r) => existentes.add(r.telefono));
@@ -34,8 +36,9 @@ export async function buscarExistentes(telefonos: string[]): Promise<string[]> {
   await getCurrentUser();
   const parsed = z.array(z.string().regex(/^\+[1-9]\d{7,14}$/)).max(MAX_FILAS).safeParse(telefonos);
   if (!parsed.success) return [];
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  return [...(await telefonosExistentes(supabase, parsed.data))];
+  return [...(await telefonosExistentes(supabase, empresa.id, parsed.data))];
 }
 
 const filaSchema = z.object(Object.fromEntries(CAMPOS.map((c) => [c, z.string().max(2000).optional()])));
@@ -64,13 +67,14 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
   if (!parsed.success) return { error: `El archivo no es válido (máximo ${MAX_FILAS} filas).` };
   const { filas, modoDuplicados } = parsed.data;
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   try {
     const telefonos = filas.flatMap((f) => {
       const r = normalizePhone(f.telefono);
       return r.ok ? [r.e164] : [];
     });
-    const existentes = await telefonosExistentes(supabase, telefonos);
+    const existentes = await telefonosExistentes(supabase, empresa.id, telefonos);
     const validadas = validarFilas(filas, existentes);
     const ahora = new Date().toISOString();
 
@@ -80,6 +84,7 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
     for (let i = 0; i < nuevos.length; i += LOTE) {
       const lote = nuevos.slice(i, i + LOTE).map(({ contacto }) => ({
         ...contacto,
+        empresa_id: empresa.id,
         nombre: contacto.nombre!,
         telefono: contacto.telefono!,
         consentimiento_fecha: contacto.consentimiento ? (contacto.consentimiento_fecha ?? ahora) : null,
@@ -89,7 +94,7 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
       }));
       const { data, error } = await supabase
         .from("contactos")
-        .upsert(lote, { onConflict: "telefono", ignoreDuplicates: true })
+        .upsert(lote, { onConflict: "empresa_id,telefono", ignoreDuplicates: true })
         .select("telefono");
       if (error) throw new Error(error.message);
       data.forEach((r) => insertados.add(r.telefono));
@@ -107,6 +112,7 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
         const { data, error } = await supabase
           .from("contactos")
           .select("id, telefono, email, notas, consentimiento")
+          .eq("empresa_id", empresa.id)
           .in("telefono", duplicados.slice(i, i + 300).map((f) => f.contacto.telefono!));
         if (error) throw new Error(error.message);
         data.forEach((r) => actuales.set(r.telefono, r));
@@ -123,7 +129,11 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
           cambios.consentimiento_origen = f.contacto.consentimiento_origen ?? "importación CSV";
         }
         if (!Object.keys(cambios).length) continue;
-        const { error } = await supabase.from("contactos").update(cambios).eq("id", actual.id);
+        const { error } = await supabase
+          .from("contactos")
+          .update(cambios)
+          .eq("id", actual.id)
+          .eq("empresa_id", empresa.id);
         if (error) throw new Error(error.message);
         completados++;
       }
@@ -132,6 +142,7 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
     const resumen = resumir(validadas);
     await registrarAuditoria(supabase, {
       usuario: user.id,
+      empresa_id: empresa.id,
       accion: "importar_csv",
       entidad: "contacto",
       detalle: { ...resumen, importados: insertados.size, completados, modoDuplicados },

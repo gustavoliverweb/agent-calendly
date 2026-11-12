@@ -1,6 +1,7 @@
 import "server-only";
 import { appEnv, isConfigured } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { madridAUtc, partesMadrid } from "@/lib/time/madrid";
 
@@ -24,10 +25,14 @@ function inicioDia(ahora: Date, dias: number): Date {
 }
 
 export async function leerKpis(ahora: Date): Promise<{ hoy: Kpis; semana: Kpis }> {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const costeMinuto = isConfigured(appEnv) ? appEnv().COSTE_MINUTO_ESTIMADO : 0.12;
   const leer = async (desde: Date): Promise<Kpis> => {
-    const { data, error } = await supabase.rpc("kpis_llamadas", { p_desde: desde.toISOString() });
+    const { data, error } = await supabase.rpc("kpis_llamadas", {
+      p_empresa_id: empresa.id,
+      p_desde: desde.toISOString(),
+    });
     if (error) throw new Error(`kpis: ${error.message}`);
     const k = data[0] ?? { llamadas: 0, contestadas: 0, citas: 0, segundos: 0 };
     const minutos = Number(k.segundos) / 60;
@@ -38,10 +43,12 @@ export async function leerKpis(ahora: Date): Promise<{ hoy: Kpis; semana: Kpis }
 }
 
 export async function llamadasEnCurso() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("llamadas")
     .select("id, estado, creado_en, lote_id, contactos (nombre)")
+    .eq("empresa_id", empresa.id)
     .in("estado", ["iniciada", "en_curso"])
     .order("creado_en", { ascending: false })
     .limit(20);
@@ -50,10 +57,12 @@ export async function llamadasEnCurso() {
 }
 
 export async function seguimientos() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, count, error } = await supabase
     .from("contactos")
     .select("id, nombre, seguimiento_motivo, actualizado_en", { count: "exact" })
+    .eq("empresa_id", empresa.id)
     .eq("requiere_seguimiento", true)
     .neq("estado", "no_llamar")
     .order("actualizado_en", { ascending: false })
@@ -66,29 +75,37 @@ export type Aviso = { nivel: "error" | "aviso"; texto: string; enlace?: { href: 
 
 /** Problemas recientes que alguien debería mirar (§12.2). */
 export async function leerAvisos(ahora: Date): Promise<Aviso[]> {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   // eventos_webhook no es legible con la sesión (payloads crudos): solo se cuentan.
   const admin = createAdminClient();
   const haceUnaHora = new Date(ahora.getTime() - UNA_HORA_MS).toISOString();
 
   const [config, latido, lotes, fallosApi, webhooks, calendly] = await Promise.all([
-    supabase.from("configuracion").select("pausa_global").eq("id", 1).single(),
+    supabase.from("configuracion").select("pausa_global").eq("empresa_id", empresa.id).single(),
     supabase.from("latidos").select("en").eq("nombre", "despacho").maybeSingle(),
-    supabase.from("lotes").select("id", { count: "exact", head: true }).eq("estado", "activo"),
+    supabase
+      .from("lotes")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
+      .eq("estado", "activo"),
     supabase
       .from("llamadas")
       .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
       .like("motivo_fallo", "api:%")
       .gte("creado_en", haceUnaHora),
     admin
       .from("eventos_webhook")
       .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
       .not("error", "is", null)
       .is("procesado_en", null)
       .gte("recibido_en", haceUnaHora),
     supabase
       .from("contactos")
       .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
       .eq("seguimiento_motivo", "fallo_calendly")
       .gte("actualizado_en", haceUnaHora),
   ]);

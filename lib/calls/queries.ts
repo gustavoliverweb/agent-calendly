@@ -1,4 +1,5 @@
 import "server-only";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { isLlamadaEstado, type LlamadaEstado } from "./estados";
 
@@ -19,6 +20,7 @@ export function leerFiltrosLlamadas(sp: SearchParams): FiltrosLlamadas {
 }
 
 export async function listarLlamadas(f: FiltrosLlamadas) {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   let query = supabase
     .from("llamadas")
@@ -26,6 +28,7 @@ export async function listarLlamadas(f: FiltrosLlamadas) {
       "id, estado, clasificacion, duracion_seg, cita_agendada, fecha_cita, motivo_fallo, creado_en, lote_id, contactos (id, nombre, telefono)",
       { count: "exact" },
     )
+    .eq("empresa_id", empresa.id)
     .order("creado_en", { ascending: false })
     .order("id")
     .range((f.pagina - 1) * POR_PAGINA, f.pagina * POR_PAGINA - 1);
@@ -40,11 +43,13 @@ export async function listarLlamadas(f: FiltrosLlamadas) {
 export type LlamadaFila = Awaited<ReturnType<typeof listarLlamadas>>["llamadas"][number];
 
 export async function obtenerLlamada(id: string) {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("llamadas")
     .select("*, contactos (id, nombre, telefono, email, estado)")
     .eq("id", id)
+    .eq("empresa_id", empresa.id)
     .maybeSingle();
   if (error) throw new Error(`No se pudo cargar la llamada: ${error.message}`);
   return data;

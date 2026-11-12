@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { configuracionFormSchema, type ConfiguracionForm } from "@/lib/calls/config-form";
 import { despachar } from "@/lib/calls/dispatcher";
+import { getEmpresaActual } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,11 +20,12 @@ export async function guardarConfiguracion(datos: ConfiguracionForm): Promise<Gu
     return { error: i.path[0] === "franjas" ? `Franjas: ${i.message}` : i.message };
   }
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { error } = await supabase
     .from("configuracion")
     .update({ ...parsed.data, actualizado_por: user.id })
-    .eq("id", 1);
+    .eq("empresa_id", empresa.id);
   if (error) {
     log.error("guardar configuración", { code: error.code, message: error.message });
     return { error: "No se ha podido guardar la configuración." };
@@ -31,6 +33,7 @@ export async function guardarConfiguracion(datos: ConfiguracionForm): Promise<Gu
 
   await registrarAuditoria(supabase, {
     usuario: user.id,
+    empresa_id: empresa.id,
     accion: "editar_configuracion",
     entidad: "configuracion",
     detalle: parsed.data,
@@ -44,11 +47,12 @@ export async function guardarConfiguracion(datos: ConfiguracionForm): Promise<Gu
 /** Interruptor de emergencia: detiene todo despacho nuevo al instante. */
 export async function cambiarPausaGlobal(activar: boolean): Promise<GuardarState> {
   const user = await getCurrentUser();
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { error } = await supabase
     .from("configuracion")
     .update({ pausa_global: activar === true, actualizado_por: user.id })
-    .eq("id", 1);
+    .eq("empresa_id", empresa.id);
   if (error) {
     log.error("pausa global", { code: error.code, message: error.message });
     return { error: "No se ha podido cambiar la pausa global." };
@@ -56,6 +60,7 @@ export async function cambiarPausaGlobal(activar: boolean): Promise<GuardarState
 
   await registrarAuditoria(supabase, {
     usuario: user.id,
+    empresa_id: empresa.id,
     accion: activar ? "activar_pausa_global" : "desactivar_pausa_global",
     entidad: "configuracion",
   });

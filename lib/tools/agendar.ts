@@ -90,7 +90,7 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
   const supabase = createAdminClient();
   const { data: llamada, error: errLlamada } = await supabase
     .from("llamadas")
-    .select("id, contacto_id, cita_agendada, fecha_cita, contactos (nombre, telefono, estado)")
+    .select("id, contacto_id, empresa_id, cita_agendada, fecha_cita, contactos (nombre, telefono, estado)")
     .eq("id", params.llamada_id)
     .maybeSingle();
   if (errLlamada) {
@@ -153,7 +153,7 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
 
   // La cita ya existe en Calendly: a partir de aquí un fallo de BD no se
   // comunica al contacto. El webhook invitee.created sirve de respaldo.
-  await guardarReserva(llamada.id, llamada.contacto_id, inicio, email, reserva);
+  await guardarReserva(llamada.id, llamada.contacto_id, llamada.empresa_id, inicio, email, reserva);
 
   return {
     ok: true,
@@ -171,6 +171,7 @@ function paraCuando(inicio: Date, ahora: Date): string {
 async function guardarReserva(
   llamadaId: string,
   contactoId: string,
+  empresaId: string,
   inicio: Date,
   email: string,
   reserva: Awaited<ReturnType<typeof reservarEnCalendly>>,
@@ -182,6 +183,7 @@ async function guardarReserva(
     // upsert: el webhook puede haber llegado antes y registrado la cita sin llamada.
     supabase.from("citas").upsert(
       {
+        empresa_id: empresaId,
         contacto_id: contactoId,
         llamada_id: llamadaId,
         calendly_event_uri: reserva.eventUri,

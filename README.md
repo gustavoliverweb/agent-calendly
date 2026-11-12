@@ -34,16 +34,18 @@ pnpm dev
 
 ### Invitar usuarios
 
+Cada usuario pertenece a una o varias **empresas** y solo ve los datos de ellas. Los datos que había antes del paso a multi-empresa están en la empresa `principal`.
+
 ```bash
-pnpm invitar persona@empresa.com
+pnpm invitar persona@empresa.com [slug-empresa]
 ```
 
-El usuario recibe un correo, pulsa el enlace, elige su contraseña (mínimo 10 caracteres) y entra al panel.
+La empresa es obligatoria si hay más de una. El primer usuario de una empresa entra como propietario; los siguientes, como operadores. El usuario recibe un correo, pulsa el enlace, elige su contraseña (mínimo 10 caracteres) y entra al panel.
 
 Mientras no haya SMTP propio para los correos de Auth, se puede crear el usuario directamente con una contraseña provisional:
 
 ```bash
-pnpm crear-usuario persona@empresa.com
+pnpm crear-usuario persona@empresa.com [slug-empresa]
 ```
 
 Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entrar.
@@ -59,7 +61,8 @@ Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entr
 | `pnpm db:dry-run` | Qué migraciones se aplicarían, sin aplicarlas |
 | `pnpm db:push` | Aplica migraciones pendientes |
 | `pnpm db:types` | Regenera los tipos de la base de datos |
-| `pnpm invitar <email>` | Invita a un usuario al panel |
+| `pnpm db:test [migración.sql…]` | Pruebas de aislamiento entre empresas contra la base real, dentro de una transacción que se deshace. Con migraciones, las aplica antes en la misma transacción (para probarlas sin aplicarlas) |
+| `pnpm invitar <email> [empresa]` · `pnpm crear-usuario <email> [empresa]` | Alta de un usuario del panel en una empresa |
 | `pnpm calendly tipos` | Tipos de evento de Calendly (para `CALENDLY_EVENT_TYPE_URI`) |
 | `pnpm calendly webhooks` · `crear-webhook <url>` · `borrar-webhook <uri>` | Suscripción del webhook de Calendly |
 | `pnpm llamada-prueba <email\|teléfono\|id>` · `cerrar <id>` | Llamada de prueba para el tester web de ElevenLabs (no marca ningún teléfono) |

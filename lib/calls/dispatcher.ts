@@ -8,6 +8,8 @@ import { iniciarConversacion } from "./launch";
 import { aplicarEvento, webhookElevenLabsSchema, type LlamadaAbierta, type WebhookElevenLabs } from "./post-call";
 import { siguienteInicioFranja, estaEnFranja } from "./window";
 
+type MotivoParada = "pausa_global" | "fuera_de_franja" | "sin_configurar";
+
 export type ResumenDespacho = {
   lanzadas: number;
   fallidas: number;
@@ -15,54 +17,41 @@ export type ResumenDespacho = {
   lotesCerrados: number;
   /** Resultado de la purga de retención, si tocaba hoy. */
   purga?: unknown;
-  /** Por qué no se lanzó nada, si es el caso. */
-  parado?: "pausa_global" | "fuera_de_franja" | "sin_configurar";
+  /** Empresas en las que no se lanzó nada y por qué (clave: id de empresa). */
+  paradas?: Record<string, MotivoParada>;
 };
 
 /** Tras un error de la API, cuándo se vuelve a probar. */
 const ESPERA_TRAS_ERROR_MS = 10 * 60_000;
 /** Errores de API tolerados por item (no son intentos del contacto). */
 const MAX_ERRORES_API = 3;
-/** Llamadas colgadas que se revisan por pasada (cada una es un GET a ElevenLabs). */
+/** Llamadas colgadas que se revisan por pasada y empresa (cada una es un GET a ElevenLabs). */
 const RECONCILIAR_POR_PASADA = 20;
 /** La purga de retención va en la misma tarea programada, una vez al día. */
 const CADA_PURGA_MS = 24 * 3_600_000;
 
 /**
- * Una pasada del motor de lotes (§9.2): reconcilia llamadas sin webhook,
- * reclama tantos items como huecos libres haya y lanza sus llamadas.
- * Se puede llamar a la vez desde varios sitios (cron, webhook, panel): la
- * reserva en BD está serializada. No lanza excepciones.
+ * Una pasada del motor de lotes (§9.2) por cada empresa activa: reconcilia
+ * llamadas sin webhook, reclama tantos items como huecos libres tenga y
+ * lanza sus llamadas. Se puede llamar a la vez desde varios sitios (cron,
+ * webhook, panel): la reserva en BD está serializada por empresa. No lanza
+ * excepciones; el fallo de una empresa no para a las demás.
  */
 export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
   const resumen: ResumenDespacho = { lanzadas: 0, fallidas: 0, reconciliadas: 0, lotesCerrados: 0 };
   const supabase = createAdminClient();
   try {
-    const config = await leerConfiguracion(supabase);
+    const { data: empresas, error } = await supabase.from("empresas").select("id").eq("estado", "activa");
+    if (error) throw new Error(`empresas: ${error.message}`);
     const configurado = isConfigured(elevenLabsEnv);
-    if (configurado) resumen.reconciliadas = await reconciliar(config, ahora);
 
-    if (config.pausa_global) resumen.parado = "pausa_global";
-    else if (!estaEnFranja(ahora, config)) resumen.parado = "fuera_de_franja";
-    else if (!configurado) resumen.parado = "sin_configurar";
-    else {
-      const { data: reservas, error } = await supabase.rpc("reservar_llamadas_lote");
-      if (error) throw new Error(`reservar_llamadas_lote: ${error.message}`);
-
-      const resultados = await Promise.all(
-        (reservas ?? []).map(async (r) => {
-          const res = await iniciarConversacion({
-            llamadaId: r.llamada_id,
-            contacto: { id: r.contacto_id, nombre: r.nombre, telefono: r.telefono, email: r.email },
-            ahora,
-            loteId: r.lote_id,
-          });
-          if (!res.ok) await reprogramarTrasError(r.item_id, res.error, ahora, config);
-          return res.ok;
-        }),
-      );
-      resumen.lanzadas = resultados.filter(Boolean).length;
-      resumen.fallidas = resultados.length - resumen.lanzadas;
+    for (const { id } of empresas) {
+      try {
+        const parada = await despacharEmpresa(id, ahora, configurado, resumen);
+        if (parada) resumen.paradas = { ...resumen.paradas, [id]: parada };
+      } catch (e) {
+        log.error("despacho de empresa falló", { empresa_id: id, error: e instanceof Error ? e.message : String(e) });
+      }
     }
 
     const { data: cerrados, error: errCerrar } = await supabase.rpc("cerrar_lotes_terminados");
@@ -82,6 +71,42 @@ export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
     log.info("despacho", resumen);
   }
   return resumen;
+}
+
+/** La pasada de una empresa. Devuelve por qué no lanzó nada, si es el caso. */
+async function despacharEmpresa(
+  empresaId: string,
+  ahora: Date,
+  configurado: boolean,
+  resumen: ResumenDespacho,
+): Promise<MotivoParada | undefined> {
+  const supabase = createAdminClient();
+  const config = await leerConfiguracion(supabase, empresaId);
+  if (configurado) resumen.reconciliadas += await reconciliar(empresaId, config, ahora);
+
+  if (config.pausa_global) return "pausa_global";
+  if (!estaEnFranja(ahora, config)) return "fuera_de_franja";
+  if (!configurado) return "sin_configurar";
+
+  const { data: reservas, error } = await supabase.rpc("reservar_llamadas_lote", { p_empresa_id: empresaId });
+  if (error) throw new Error(`reservar_llamadas_lote: ${error.message}`);
+
+  const resultados = await Promise.all(
+    reservas.map(async (r) => {
+      const res = await iniciarConversacion({
+        llamadaId: r.llamada_id,
+        contacto: { id: r.contacto_id, nombre: r.nombre, telefono: r.telefono, email: r.email },
+        ahora,
+        loteId: r.lote_id,
+      });
+      if (!res.ok) await reprogramarTrasError(r.item_id, res.error, ahora, config);
+      return res.ok;
+    }),
+  );
+  const lanzadas = resultados.filter(Boolean).length;
+  resumen.lanzadas += lanzadas;
+  resumen.fallidas += resultados.length - lanzadas;
+  return undefined;
 }
 
 /** Retención RGPD: borra conversaciones y webhooks antiguos (§13.3). */
@@ -124,12 +149,13 @@ async function reprogramarTrasError(itemId: string, error: unknown, ahora: Date,
  * pregunta a ElevenLabs por la conversación y se aplica como si hubiera
  * llegado el webhook. Si no hay datos, se cierran como fallidas por timeout.
  */
-async function reconciliar(config: Configuracion, ahora: Date): Promise<number> {
+async function reconciliar(empresaId: string, config: Configuracion, ahora: Date): Promise<number> {
   const supabase = createAdminClient();
   const limite = new Date(ahora.getTime() - config.timeout_llamada_min * 60_000);
   const { data: colgadas, error } = await supabase
     .from("llamadas")
     .select("id, contacto_id, clasificacion, cita_agendada, finalizada_en, lote_id, conversation_id, creado_en")
+    .eq("empresa_id", empresaId)
     .in("estado", ["iniciada", "en_curso"])
     .lt("creado_en", limite.toISOString())
     .order("creado_en")

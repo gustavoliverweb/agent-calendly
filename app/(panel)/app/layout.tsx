@@ -5,6 +5,7 @@ import { Logo } from "@/components/marca/logo";
 import { NavLinks, PanelNav } from "@/components/panel/nav";
 import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
 /** El panel es privado: fuera de los buscadores. */
@@ -39,8 +40,13 @@ export default function PanelLayout({ children }: LayoutProps<"/app">) {
 }
 
 async function EstadoPausa() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const { data } = await supabase.from("configuracion").select("pausa_global").eq("id", 1).maybeSingle();
+  const { data } = await supabase
+    .from("configuracion")
+    .select("pausa_global")
+    .eq("empresa_id", empresa.id)
+    .maybeSingle();
   if (!data) return null;
   return <PausaGlobal activa={data.pausa_global} />;
 }

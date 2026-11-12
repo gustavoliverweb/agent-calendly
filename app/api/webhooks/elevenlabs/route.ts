@@ -83,7 +83,11 @@ export async function POST(req: Request) {
     }
     await supabase
       .from("eventos_webhook")
-      .update({ procesado_en: new Date().toISOString(), error: null })
+      .update({
+        procesado_en: new Date().toISOString(),
+        error: null,
+        ...(r.resultado === "procesado" && { empresa_id: r.empresaId }),
+      })
       .eq("id", eventoId);
     // Se liberó un hueco de un lote: la cola avanza sin esperar al cron.
     if (r.resultado === "procesado" && r.loteId) after(() => despachar());

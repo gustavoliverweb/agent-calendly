@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { lanzarLlamada } from "@/lib/calls/launch";
+import { getEmpresaActual } from "@/lib/empresa";
 import { elevenLabsEnv, isConfigured } from "@/lib/env";
 import { log } from "@/lib/log";
 
@@ -17,7 +18,8 @@ export async function llamarContacto(contactoId: string): Promise<LlamarState> {
   }
 
   try {
-    const r = await lanzarLlamada({ contactoId, lanzadaPor: user.id });
+    const empresa = await getEmpresaActual();
+    const r = await lanzarLlamada({ empresaId: empresa.id, contactoId, lanzadaPor: user.id });
     refresh();
     return r.ok ? { ok: true, llamadaId: r.llamadaId } : { error: r.mensaje, llamadaId: r.llamadaId };
   } catch (e) {

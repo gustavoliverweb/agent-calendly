@@ -17,6 +17,7 @@ import {
   ultimoDespacho,
   type Kpis,
 } from "@/lib/dashboard/queries";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import {
   appEnv,
@@ -213,10 +214,15 @@ async function Seguimientos() {
 }
 
 async function Totales() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const [contactos, lotes] = await Promise.all([
-    supabase.from("contactos").select("id", { count: "exact", head: true }),
-    supabase.from("lotes").select("id", { count: "exact", head: true }).eq("estado", "activo"),
+    supabase.from("contactos").select("id", { count: "exact", head: true }).eq("empresa_id", empresa.id),
+    supabase
+      .from("lotes")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
+      .eq("estado", "activo"),
   ]);
 
   return (

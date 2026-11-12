@@ -1,4 +1,5 @@
 import "server-only";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { isContactoEstado, type ContactoEstado } from "./estados";
 
@@ -31,6 +32,7 @@ function escaparBusqueda(q: string) {
 }
 
 export async function listarContactos(f: FiltrosContactos) {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   let query = supabase
     .from("contactos")
@@ -38,6 +40,7 @@ export async function listarContactos(f: FiltrosContactos) {
       "id, nombre, telefono, email, estado, consentimiento, intentos, ultimo_intento_en, requiere_seguimiento, creado_en",
       { count: "exact" },
     )
+    .eq("empresa_id", empresa.id)
     .order("creado_en", { ascending: false })
     .order("id")
     .range((f.pagina - 1) * POR_PAGINA, f.pagina * POR_PAGINA - 1);
@@ -61,8 +64,9 @@ export async function listarContactos(f: FiltrosContactos) {
 export type ContactoFila = Awaited<ReturnType<typeof listarContactos>>["contactos"][number];
 
 export async function contarPorEstado() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("contactos_por_estado");
+  const { data, error } = await supabase.rpc("contactos_por_estado", { p_empresa_id: empresa.id });
   if (error) throw new Error(`No se pudieron contar los contactos: ${error.message}`);
   const totales = Object.fromEntries(data.map((r) => [r.estado, Number(r.total)])) as Partial<
     Record<ContactoEstado, number>
@@ -71,25 +75,29 @@ export async function contarPorEstado() {
 }
 
 export async function obtenerContacto(id: string) {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const [contacto, llamadas, citas, auditoria] = await Promise.all([
-    supabase.from("contactos").select("*").eq("id", id).maybeSingle(),
+    supabase.from("contactos").select("*").eq("id", id).eq("empresa_id", empresa.id).maybeSingle(),
     supabase
       .from("llamadas")
       .select("id, estado, clasificacion, duracion_seg, cita_agendada, fecha_cita, creado_en")
       .eq("contacto_id", id)
+      .eq("empresa_id", empresa.id)
       .order("creado_en", { ascending: false })
       .limit(50),
     supabase
       .from("citas")
       .select("id, inicio, estado, creado_en")
       .eq("contacto_id", id)
+      .eq("empresa_id", empresa.id)
       .order("inicio", { ascending: false }),
     supabase
       .from("auditoria")
       .select("id, accion, detalle, creado_en")
       .eq("entidad", "contacto")
       .eq("entidad_id", id)
+      .eq("empresa_id", empresa.id)
       .order("creado_en", { ascending: false })
       .limit(20),
   ]);

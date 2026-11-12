@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { normalizePhone } from "@/lib/contacts/phone";
+import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { invalidarDisponibilidad } from "./availability";
@@ -83,7 +84,7 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
     const { data: antigua } = comprobar(
       await supabase
         .from("citas")
-        .select("id, contacto_id, llamada_id")
+        .select("id, contacto_id, llamada_id, empresa_id")
         .eq("calendly_invitee_uri", p.old_invitee)
         .maybeSingle(),
       "buscar cita antigua",
@@ -92,6 +93,7 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
       comprobar(
         await supabase.from("citas").upsert(
           {
+            empresa_id: antigua.empresa_id,
             contacto_id: antigua.contacto_id,
             llamada_id: antigua.llamada_id,
             calendly_event_uri: p.scheduled_event.uri,
@@ -131,12 +133,16 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
 
   // Reserva hecha fuera del agente (o antes de que el agente guardara la
   // suya): se asocia al contacto si se reconoce. No se crean contactos.
-  const contactoId = await buscarContacto(supabase, p.email, p.text_reminder_number);
+  // El Calendly de las variables de entorno es de la empresa principal
+  // (hasta que cada empresa conecte el suyo, fase S4).
+  const empresaId = await empresaPrincipalId();
+  const contactoId = await buscarContacto(supabase, empresaId, p.email, p.text_reminder_number);
   if (!contactoId) return "sin_contacto";
 
   comprobar(
     await supabase.from("citas").upsert(
       {
+        empresa_id: empresaId,
         contacto_id: contactoId,
         calendly_event_uri: p.scheduled_event.uri,
         calendly_invitee_uri: p.uri,
@@ -228,20 +234,26 @@ async function ponerCitaAgendada(supabase: Supabase, contactoId: string) {
 
 async function buscarContacto(
   supabase: Supabase,
+  empresaId: string,
   email: string | null | undefined,
   telefono: string | null | undefined,
 ): Promise<string | null> {
   const tel = telefono ? normalizePhone(telefono) : null;
   if (tel?.ok) {
     const { data } = comprobar(
-      await supabase.from("contactos").select("id").eq("telefono", tel.e164).maybeSingle(),
+      await supabase.from("contactos").select("id").eq("empresa_id", empresaId).eq("telefono", tel.e164).maybeSingle(),
       "buscar por teléfono",
     );
     if (data) return data.id;
   }
   if (email) {
     const { data } = comprobar(
-      await supabase.from("contactos").select("id").ilike("email", email.replace(/[\\%_]/g, "\\$&")).limit(2),
+      await supabase
+        .from("contactos")
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .ilike("email", email.replace(/[\\%_]/g, "\\$&"))
+        .limit(2),
       "buscar por email",
     );
     // Varios contactos con el mismo email: ambiguo, mejor no adivinar.

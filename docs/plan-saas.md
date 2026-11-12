@@ -1,6 +1,6 @@
 # Plan: de un negocio a SaaS multi-cliente
 
-Estado: **propuesta para revisar** (12/11/2026; actualizada con llamadas B2B y marca blanca). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
+Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
 
 ## 1. Decisiones tomadas
 

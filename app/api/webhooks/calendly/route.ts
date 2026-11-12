@@ -1,5 +1,6 @@
 import { procesarWebhookCalendly, webhookCalendlySchema } from "@/lib/calendly/webhook";
 import { calendlyEnv, calendlyWebhookEnv } from "@/lib/env";
+import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { verificarFirma } from "@/lib/security/hmac";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,7 +45,14 @@ export async function POST(req: Request) {
   const idExterno = `${evento.event}:${evento.payload.uri}`;
   const insertado = await supabase
     .from("eventos_webhook")
-    .insert({ origen: "calendly", id_externo: idExterno, tipo: evento.event, payload: json as Json })
+    .insert({
+      origen: "calendly",
+      id_externo: idExterno,
+      tipo: evento.event,
+      payload: json as Json,
+      // El Calendly de las variables de entorno es de la empresa principal (hasta la fase S4).
+      empresa_id: await empresaPrincipalId(),
+    })
     .select("id")
     .single();
 

@@ -12,6 +12,7 @@ import { describirFranjas, estaEnFranja } from "./window";
 
 export type MotivoRechazo =
   | "pausa_global"
+  | "empresa_suspendida"
   | "no_encontrado"
   | "no_llamar"
   | "sin_consentimiento"
@@ -36,11 +37,14 @@ export function ahoraEnTexto(fecha: Date): string {
 }
 
 /**
- * Lanza una llamada a un contacto, aplicando en orden las reglas del plan
- * (§8.1): pausa, exclusión, consentimiento, franja, concurrencia y llamada
- * duplicada. Las dos últimas se comprueban en BD de forma atómica.
+ * Lanza una llamada a un contacto de la empresa, aplicando en orden las
+ * reglas del plan (§8.1): pausa, exclusión, consentimiento, franja,
+ * concurrencia y llamada duplicada. Las dos últimas se comprueban en BD de
+ * forma atómica. Va con service role: un contacto de otra empresa se trata
+ * como inexistente.
  */
 export async function lanzarLlamada(opciones: {
+  empresaId: string;
   contactoId: string;
   lanzadaPor?: string;
   loteId?: string;
@@ -48,7 +52,7 @@ export async function lanzarLlamada(opciones: {
 }): Promise<ResultadoLanzamiento> {
   const ahora = opciones.ahora ?? new Date();
   const supabase = createAdminClient();
-  const config = await leerConfiguracion(supabase);
+  const config = await leerConfiguracion(supabase, opciones.empresaId);
 
   if (config.pausa_global) {
     return { ok: false, motivo: "pausa_global", mensaje: "Las llamadas están en pausa global." };
@@ -58,6 +62,7 @@ export async function lanzarLlamada(opciones: {
     .from("contactos")
     .select("id, nombre, telefono, email, estado, consentimiento")
     .eq("id", opciones.contactoId)
+    .eq("empresa_id", opciones.empresaId)
     .maybeSingle();
   if (!contacto) return { ok: false, motivo: "no_encontrado", mensaje: "El contacto no existe." };
   if (contacto.estado === "no_llamar") {
@@ -97,6 +102,9 @@ export async function lanzarLlamada(opciones: {
     }
     if (motivo === "llamada_activa") return { ok: false, motivo, mensaje: "Este contacto ya tiene una llamada en curso." };
     if (motivo === "pausa_global") return { ok: false, motivo, mensaje: "Las llamadas están en pausa global." };
+    if (motivo === "empresa_suspendida") {
+      return { ok: false, motivo, mensaje: "La cuenta de tu empresa está suspendida: no se pueden hacer llamadas." };
+    }
     if (motivo === "no_llamar") return { ok: false, motivo, mensaje: "El contacto ha pedido no ser llamado." };
     log.error("crear_llamada falló", { code: error?.code, message: error?.message });
     return { ok: false, motivo: "error", mensaje: "No se ha podido registrar la llamada." };

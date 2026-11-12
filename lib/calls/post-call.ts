@@ -55,10 +55,11 @@ export const webhookElevenLabsSchema = z.object({
 export type WebhookElevenLabs = z.infer<typeof webhookElevenLabsSchema>;
 
 export type ResultadoPostLlamada =
-  | { resultado: "procesado"; loteId: string | null }
+  | { resultado: "procesado"; loteId: string | null; empresaId: string }
   | { resultado: "llamada_desconocida" | "ignorado" };
 
-const COLUMNAS_LLAMADA = "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id, lote_id";
+const COLUMNAS_LLAMADA =
+  "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id, lote_id, empresa_id";
 
 export type LlamadaAbierta = {
   id: string;
@@ -102,7 +103,7 @@ export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<R
   }
   if (!llamada) return { resultado: "llamada_desconocida" };
   await aplicarEvento(llamada, w);
-  return { resultado: "procesado", loteId: llamada.lote_id };
+  return { resultado: "procesado", loteId: llamada.lote_id, empresaId: llamada.empresa_id };
 }
 
 /**
@@ -116,11 +117,11 @@ export async function aplicarEvento(llamada: LlamadaAbierta, w: WebhookElevenLab
 
   const { data: contacto, error: errContacto } = await supabase
     .from("contactos")
-    .select("estado, intentos")
+    .select("estado, intentos, empresa_id")
     .eq("id", llamada.contacto_id)
     .single();
   if (errContacto || !contacto) throw new Error(`contacto: ${errContacto?.message}`);
-  const config = await leerConfiguracion(supabase);
+  const config = await leerConfiguracion(supabase, contacto.empresa_id);
 
   const turnos = d.transcript ?? [];
   const evento: EventoLlamada =
@@ -228,7 +229,14 @@ export async function procesarEventosPendientes(conversationId: string) {
     try {
       const r = await procesarWebhookElevenLabs(parsed.data);
       if (r.resultado !== "llamada_desconocida") {
-        await supabase.from("eventos_webhook").update({ procesado_en: new Date().toISOString(), error: null }).eq("id", ev.id);
+        await supabase
+          .from("eventos_webhook")
+          .update({
+            procesado_en: new Date().toISOString(),
+            error: null,
+            ...(r.resultado === "procesado" && { empresa_id: r.empresaId }),
+          })
+          .eq("id", ev.id);
       }
     } catch (e) {
       log.error("reproceso de webhook pendiente falló", { conversation_id: conversationId, error: String(e) });

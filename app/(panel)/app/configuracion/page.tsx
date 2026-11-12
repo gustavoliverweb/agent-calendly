@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/panel/page-header";
 import { FormularioConfiguracion } from "@/components/configuracion/formulario";
 import { leerConfiguracion } from "@/lib/calls/config";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -24,8 +25,9 @@ export default function ConfiguracionPage() {
 }
 
 async function Formulario() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const config = await leerConfiguracion(supabase);
+  const config = await leerConfiguracion(supabase, empresa.id);
   const inicial = {
     max_concurrencia: config.max_concurrencia,
     franjas: config.franjas,

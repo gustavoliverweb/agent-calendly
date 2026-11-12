@@ -15,6 +15,7 @@
     "db:dry-run": "scripts/db.sh dry-run",
     "db:push": "scripts/db.sh push",
     "db:types": "scripts/db.sh types",
+    "db:test": "scripts/db.sh test",
     "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts",
     "crear-usuario": "node --env-file=.env.local scripts/crear-usuario.ts",
     "calendly": "node --env-file=.env.local scripts/calendly.ts",

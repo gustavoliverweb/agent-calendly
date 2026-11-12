@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { getEmpresaActual } from "@/lib/empresa";
 import { contactoFormSchema } from "@/lib/contacts/schema";
 import { createClient } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
@@ -21,10 +22,11 @@ export async function crearContacto(_prev: FormState, formData: FormData): Promi
   const parsed = contactoFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("contactos")
-    .insert(parsed.data)
+    .insert({ ...parsed.data, empresa_id: empresa.id })
     .select("id")
     .single();
   if (error) {
@@ -35,6 +37,7 @@ export async function crearContacto(_prev: FormState, formData: FormData): Promi
 
   await registrarAuditoria(supabase, {
     usuario: user.id,
+    empresa_id: empresa.id,
     accion: "crear_contacto",
     entidad: "contacto",
     entidad_id: data.id,
@@ -53,8 +56,13 @@ export async function actualizarContacto(
   const parsed = contactoFormSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const { error } = await supabase.from("contactos").update(parsed.data).eq("id", id);
+  const { error } = await supabase
+    .from("contactos")
+    .update(parsed.data)
+    .eq("id", id)
+    .eq("empresa_id", empresa.id);
   if (error) {
     if (error.code === UNIQUE_VIOLATION)
       return { error: "Ya existe otro contacto con ese teléfono" };
@@ -64,6 +72,7 @@ export async function actualizarContacto(
 
   await registrarAuditoria(supabase, {
     usuario: user.id,
+    empresa_id: empresa.id,
     accion: "editar_contacto",
     entidad: "contacto",
     entidad_id: id,
@@ -104,11 +113,13 @@ export async function borrarContacto(id: string): Promise<FormState> {
   const user = await getCurrentUser();
   if (!uuid.safeParse(id).success) return { error: "Contacto no válido" };
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data: llamadas } = await supabase
     .from("llamadas")
     .select("conversation_id")
-    .eq("contacto_id", id);
+    .eq("contacto_id", id)
+    .eq("empresa_id", empresa.id);
   const conversaciones = (llamadas ?? [])
     .map((l) => l.conversation_id)
     .filter((c): c is string => Boolean(c));
@@ -132,6 +143,7 @@ export async function borrarContacto(id: string): Promise<FormState> {
   if (conversaciones.length)
     await registrarAuditoria(supabase, {
       usuario: user.id,
+      empresa_id: empresa.id,
       accion: "borrar_conversaciones_elevenlabs",
       entidad: "contacto",
       entidad_id: id,

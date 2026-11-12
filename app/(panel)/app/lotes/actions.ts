@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { despachar } from "@/lib/calls/dispatcher";
+import { getEmpresaActual } from "@/lib/empresa";
 import { elevenLabsEnv, isConfigured } from "@/lib/env";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -29,8 +30,10 @@ export async function crearLote(ids: string[], nombre?: string): Promise<CrearLo
     return { error: "El agente de voz todavía no está configurado (faltan las claves de ElevenLabs)." };
   }
 
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data: loteId, error } = await supabase.rpc("crear_lote", {
+    p_empresa_id: empresa.id,
     p_contacto_ids: parsed.data.ids,
     p_nombre: parsed.data.nombre,
     p_creado_por: user.id,
@@ -67,7 +70,9 @@ export async function cambiarEstadoLote(loteId: string, accion: "pausar" | "rean
   const parsed = accionSchema.safeParse({ loteId, accion });
   if (!parsed.success) return { error: "Acción no válida" };
 
-  // RLS solo deja leer lotes: el cambio va con service role tras validar la sesión.
+  // RLS solo deja leer lotes: el cambio va con service role tras validar la
+  // sesión, y solo sobre lotes de la empresa del usuario.
+  const empresa = await getEmpresaActual();
   const admin = createAdminClient();
   const [desde, hacia] =
     accion === "pausar"
@@ -79,6 +84,7 @@ export async function cambiarEstadoLote(loteId: string, accion: "pausar" | "rean
     .from("lotes")
     .update({ estado: hacia as "activo" | "pausado" | "cancelado" })
     .eq("id", loteId)
+    .eq("empresa_id", empresa.id)
     .in("estado", desde as ("activo" | "pausado")[])
     .select("id");
   if (error) {
@@ -92,12 +98,19 @@ export async function cambiarEstadoLote(loteId: string, accion: "pausar" | "rean
       .from("lote_items")
       .update({ estado: "omitido", motivo_omision: "lote_cancelado", proximo_intento_en: null })
       .eq("lote_id", loteId)
+      .eq("empresa_id", empresa.id)
       .in("estado", ["en_cola", "esperando_reintento"]);
     if (errItems) log.error("cancelar items de lote", { code: errItems.code, message: errItems.message });
   }
 
   const supabase = await createClient();
-  await registrarAuditoria(supabase, { usuario: user.id, accion: `${accion}_lote`, entidad: "lote", entidad_id: loteId });
+  await registrarAuditoria(supabase, {
+    usuario: user.id,
+    empresa_id: empresa.id,
+    accion: `${accion}_lote`,
+    entidad: "lote",
+    entidad_id: loteId,
+  });
   if (accion === "reanudar") after(() => despachar());
   refresh();
   return { ok: true };

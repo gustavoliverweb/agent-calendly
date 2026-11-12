@@ -2,14 +2,17 @@ import "server-only";
 import { leerConfiguracion } from "@/lib/calls/config";
 import { estaEnFranja, siguienteInicioFranja } from "@/lib/calls/window";
 import { formatearHueco } from "@/lib/calendly/format-es";
+import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { contarItems } from "./estados";
 
 export async function listarLotes() {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lotes")
     .select("id, nombre, estado, creado_en, lote_items (estado, proximo_intento_en), llamadas (cita_agendada)")
+    .eq("empresa_id", empresa.id)
     .order("creado_en", { ascending: false })
     .limit(100);
   if (error) throw new Error(`No se pudieron cargar los lotes: ${error.message}`);
@@ -28,6 +31,7 @@ export async function listarLotes() {
 export type LoteFila = Awaited<ReturnType<typeof listarLotes>>[number];
 
 export async function obtenerLote(id: string) {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lotes")
@@ -35,6 +39,7 @@ export async function obtenerLote(id: string) {
       "id, nombre, estado, creado_en, lote_items (id, estado, intentos, proximo_intento_en, motivo_omision, actualizado_en, contactos (id, nombre, telefono, estado), llamadas (id, estado, clasificacion, cita_agendada)), llamadas (cita_agendada)",
     )
     .eq("id", id)
+    .eq("empresa_id", empresa.id)
     .order("creado_en", { referencedTable: "lote_items" })
     .maybeSingle();
   if (error) throw new Error(`No se pudo cargar el lote: ${error.message}`);
@@ -46,8 +51,9 @@ export async function obtenerLote(id: string) {
  * "Fuera de franja: se reanudará el lunes 2 de noviembre a las 10:00".
  */
 export async function avisoDespacho(): Promise<string | null> {
+  const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const config = await leerConfiguracion(supabase);
+  const config = await leerConfiguracion(supabase, empresa.id);
   const ahora = new Date();
   if (config.pausa_global) return "Pausa global activada: no se lanza ninguna llamada hasta reanudarla.";
   if (estaEnFranja(ahora, config)) return null;

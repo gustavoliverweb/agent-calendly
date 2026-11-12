@@ -19,6 +19,7 @@ export type Database = {
           accion: string
           creado_en: string
           detalle: Json | null
+          empresa_id: string | null
           entidad: string
           entidad_id: string | null
           id: number
@@ -28,6 +29,7 @@ export type Database = {
           accion: string
           creado_en?: string
           detalle?: Json | null
+          empresa_id?: string | null
           entidad: string
           entidad_id?: string | null
           id?: never
@@ -37,12 +39,21 @@ export type Database = {
           accion?: string
           creado_en?: string
           detalle?: Json | null
+          empresa_id?: string | null
           entidad?: string
           entidad_id?: string | null
           id?: never
           usuario?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       citas: {
         Row: {
@@ -52,6 +63,7 @@ export type Database = {
           cancelada_en: string | null
           contacto_id: string
           creado_en: string
+          empresa_id: string
           estado: Database["public"]["Enums"]["cita_estado"]
           id: string
           inicio: string
@@ -66,6 +78,7 @@ export type Database = {
           cancelada_en?: string | null
           contacto_id: string
           creado_en?: string
+          empresa_id: string
           estado?: Database["public"]["Enums"]["cita_estado"]
           id?: string
           inicio: string
@@ -80,6 +93,7 @@ export type Database = {
           cancelada_en?: string | null
           contacto_id?: string
           creado_en?: string
+          empresa_id?: string
           estado?: Database["public"]["Enums"]["cita_estado"]
           id?: string
           inicio?: string
@@ -89,18 +103,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "citas_contacto_id_fkey"
-            columns: ["contacto_id"]
+            foreignKeyName: "citas_contacto_empresa_fkey"
+            columns: ["empresa_id", "contacto_id"]
             isOneToOne: false
             referencedRelation: "contactos"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "citas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "citas_llamada_id_fkey"
-            columns: ["llamada_id"]
+            foreignKeyName: "citas_llamada_empresa_fkey"
+            columns: ["empresa_id", "llamada_id"]
             isOneToOne: false
             referencedRelation: "llamadas"
-            referencedColumns: ["id"]
+            referencedColumns: ["empresa_id", "id"]
           },
           {
             foreignKeyName: "citas_reprogramada_desde_fkey"
@@ -115,10 +136,10 @@ export type Database = {
         Row: {
           actualizado_en: string
           actualizado_por: string | null
+          empresa_id: string
           festivos: Json
           franjas: Json
           horas_entre_reintentos: number
-          id: number
           max_concurrencia: number
           max_reintentos: number
           pausa_global: boolean
@@ -130,10 +151,10 @@ export type Database = {
         Insert: {
           actualizado_en?: string
           actualizado_por?: string | null
+          empresa_id: string
           festivos?: Json
           franjas?: Json
           horas_entre_reintentos?: number
-          id?: number
           max_concurrencia?: number
           max_reintentos?: number
           pausa_global?: boolean
@@ -145,10 +166,10 @@ export type Database = {
         Update: {
           actualizado_en?: string
           actualizado_por?: string | null
+          empresa_id?: string
           festivos?: Json
           franjas?: Json
           horas_entre_reintentos?: number
-          id?: number
           max_concurrencia?: number
           max_reintentos?: number
           pausa_global?: boolean
@@ -157,7 +178,15 @@ export type Database = {
           timeout_llamada_min?: number
           tipo_campana?: Database["public"]["Enums"]["tipo_campana"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "configuracion_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contactos: {
         Row: {
@@ -167,6 +196,7 @@ export type Database = {
           consentimiento_origen: string | null
           creado_en: string
           email: string | null
+          empresa_id: string
           estado: Database["public"]["Enums"]["contacto_estado"]
           id: string
           intentos: number
@@ -185,6 +215,7 @@ export type Database = {
           consentimiento_origen?: string | null
           creado_en?: string
           email?: string | null
+          empresa_id: string
           estado?: Database["public"]["Enums"]["contacto_estado"]
           id?: string
           intentos?: number
@@ -203,6 +234,7 @@ export type Database = {
           consentimiento_origen?: string | null
           creado_en?: string
           email?: string | null
+          empresa_id?: string
           estado?: Database["public"]["Enums"]["contacto_estado"]
           id?: string
           intentos?: number
@@ -214,10 +246,49 @@ export type Database = {
           telefono?: string
           ultimo_intento_en?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          estado: string
+          id: string
+          nombre: string
+          slug: string
+          zona_horaria: string
+        }
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          estado?: string
+          id?: string
+          nombre: string
+          slug: string
+          zona_horaria?: string
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          slug?: string
+          zona_horaria?: string
+        }
         Relationships: []
       }
       eventos_webhook: {
         Row: {
+          empresa_id: string | null
           error: string | null
           id: string
           id_externo: string
@@ -228,6 +299,7 @@ export type Database = {
           tipo: string
         }
         Insert: {
+          empresa_id?: string | null
           error?: string | null
           id?: string
           id_externo: string
@@ -238,6 +310,7 @@ export type Database = {
           tipo: string
         }
         Update: {
+          empresa_id?: string | null
           error?: string | null
           id?: string
           id_externo?: string
@@ -247,7 +320,15 @@ export type Database = {
           recibido_en?: string
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventos_webhook_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       latidos: {
         Row: {
@@ -278,6 +359,7 @@ export type Database = {
           conversation_id: string | null
           creado_en: string
           duracion_seg: number | null
+          empresa_id: string
           estado: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita: string | null
           finalizada_en: string | null
@@ -303,6 +385,7 @@ export type Database = {
           conversation_id?: string | null
           creado_en?: string
           duracion_seg?: number | null
+          empresa_id: string
           estado?: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita?: string | null
           finalizada_en?: string | null
@@ -328,6 +411,7 @@ export type Database = {
           conversation_id?: string | null
           creado_en?: string
           duracion_seg?: number | null
+          empresa_id?: string
           estado?: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita?: string | null
           finalizada_en?: string | null
@@ -342,18 +426,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "llamadas_contacto_id_fkey"
-            columns: ["contacto_id"]
+            foreignKeyName: "llamadas_contacto_empresa_fkey"
+            columns: ["empresa_id", "contacto_id"]
             isOneToOne: false
             referencedRelation: "contactos"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "llamadas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "llamadas_lote_id_fkey"
-            columns: ["lote_id"]
+            foreignKeyName: "llamadas_lote_empresa_fkey"
+            columns: ["empresa_id", "lote_id"]
             isOneToOne: false
             referencedRelation: "lotes"
-            referencedColumns: ["id"]
+            referencedColumns: ["empresa_id", "id"]
           },
         ]
       }
@@ -362,6 +453,7 @@ export type Database = {
           actualizado_en: string
           contacto_id: string
           creado_en: string
+          empresa_id: string
           estado: Database["public"]["Enums"]["lote_item_estado"]
           id: string
           intentos: number
@@ -374,6 +466,7 @@ export type Database = {
           actualizado_en?: string
           contacto_id: string
           creado_en?: string
+          empresa_id: string
           estado?: Database["public"]["Enums"]["lote_item_estado"]
           id?: string
           intentos?: number
@@ -386,6 +479,7 @@ export type Database = {
           actualizado_en?: string
           contacto_id?: string
           creado_en?: string
+          empresa_id?: string
           estado?: Database["public"]["Enums"]["lote_item_estado"]
           id?: string
           intentos?: number
@@ -396,25 +490,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "lote_items_contacto_id_fkey"
-            columns: ["contacto_id"]
+            foreignKeyName: "lote_items_contacto_empresa_fkey"
+            columns: ["empresa_id", "contacto_id"]
             isOneToOne: false
             referencedRelation: "contactos"
-            referencedColumns: ["id"]
+            referencedColumns: ["empresa_id", "id"]
           },
           {
-            foreignKeyName: "lote_items_lote_id_fkey"
-            columns: ["lote_id"]
+            foreignKeyName: "lote_items_empresa_id_fkey"
+            columns: ["empresa_id"]
             isOneToOne: false
-            referencedRelation: "lotes"
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lote_items_ultima_llamada_id_fkey"
-            columns: ["ultima_llamada_id"]
+            foreignKeyName: "lote_items_llamada_empresa_fkey"
+            columns: ["empresa_id", "ultima_llamada_id"]
             isOneToOne: false
             referencedRelation: "llamadas"
-            referencedColumns: ["id"]
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "lote_items_lote_empresa_fkey"
+            columns: ["empresa_id", "lote_id"]
+            isOneToOne: false
+            referencedRelation: "lotes"
+            referencedColumns: ["empresa_id", "id"]
           },
         ]
       }
@@ -423,6 +524,7 @@ export type Database = {
           actualizado_en: string
           creado_en: string
           creado_por: string | null
+          empresa_id: string
           estado: Database["public"]["Enums"]["lote_estado"]
           id: string
           nombre: string | null
@@ -431,6 +533,7 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           creado_por?: string | null
+          empresa_id: string
           estado?: Database["public"]["Enums"]["lote_estado"]
           id?: string
           nombre?: string | null
@@ -439,11 +542,49 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           creado_por?: string | null
+          empresa_id?: string
           estado?: Database["public"]["Enums"]["lote_estado"]
           id?: string
           nombre?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lotes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      miembros: {
+        Row: {
+          creado_en: string
+          empresa_id: string
+          rol: Database["public"]["Enums"]["miembro_rol"]
+          usuario_id: string
+        }
+        Insert: {
+          creado_en?: string
+          empresa_id: string
+          rol?: Database["public"]["Enums"]["miembro_rol"]
+          usuario_id: string
+        }
+        Update: {
+          creado_en?: string
+          empresa_id?: string
+          rol?: Database["public"]["Enums"]["miembro_rol"]
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "miembros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -455,8 +596,12 @@ export type Database = {
         Returns: undefined
       }
       cerrar_lotes_terminados: { Args: never; Returns: number }
+      comprobar_acceso_empresa: {
+        Args: { p_empresa_id: string }
+        Returns: undefined
+      }
       contactos_por_estado: {
-        Args: never
+        Args: { p_empresa_id: string }
         Returns: {
           estado: Database["public"]["Enums"]["contacto_estado"]
           total: number
@@ -474,12 +619,14 @@ export type Database = {
         Args: {
           p_contacto_ids: string[]
           p_creado_por?: string
+          p_empresa_id: string
           p_nombre?: string
         }
         Returns: string
       }
+      es_miembro: { Args: { p_empresa_id: string }; Returns: boolean }
       kpis_llamadas: {
-        Args: { p_desde: string }
+        Args: { p_desde: string; p_empresa_id: string }
         Returns: {
           citas: number
           contestadas: number
@@ -487,14 +634,14 @@ export type Database = {
           segundos: number
         }[]
       }
-      llamadas_activas: { Args: never; Returns: number }
+      llamadas_activas: { Args: { p_empresa_id: string }; Returns: number }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }
         Returns: undefined
       }
       purgar_datos_antiguos: { Args: never; Returns: Json }
       reservar_llamadas_lote: {
-        Args: never
+        Args: { p_empresa_id: string }
         Returns: {
           contacto_id: string
           email: string
@@ -529,6 +676,7 @@ export type Database = {
         | "completado"
         | "omitido"
         | "fallido"
+      miembro_rol: "propietario" | "operador"
       tipo_campana: "comercial" | "no_comercial"
     }
     CompositeTypes: {
@@ -682,6 +830,7 @@ export const Constants = {
         "omitido",
         "fallido",
       ],
+      miembro_rol: ["propietario", "operador"],
       tipo_campana: ["comercial", "no_comercial"],
     },
   },
