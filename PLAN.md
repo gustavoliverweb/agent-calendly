@@ -4,6 +4,8 @@
 > Este documento es el plan de ejecución: arquitectura, modelo de datos, contratos de API, fases, pruebas, riesgos y checklist de entrega.
 >
 > **Cambio del 29/10/2026:** por coste, la app se despliega en **Render** (servicio web Starter en Fráncfort, cuenta Pro del cliente) en lugar de Vercel. Donde este plan dice Vercel o `fra1`, léase Render en Fráncfort; el cron sigue siendo pg_cron. Guía: [`docs/despliegue-render.md`](docs/despliegue-render.md).
+>
+> **Cambio del 12/11/2026:** el producto pasa a ser un **SaaS multi-cliente** (B2B: cada negocio con su guion, su Calendly, su línea y sus contactos). Plan de la conversión: [`docs/plan-saas.md`](docs/plan-saas.md).
 
 ---
 
