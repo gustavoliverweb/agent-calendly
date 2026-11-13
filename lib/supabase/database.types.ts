@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins_plataforma: {
+        Row: {
+          creado_en: string
+          usuario_id: string
+        }
+        Insert: {
+          creado_en?: string
+          usuario_id: string
+        }
+        Update: {
+          creado_en?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       auditoria: {
         Row: {
           accion: string
@@ -624,6 +639,17 @@ export type Database = {
         }
         Returns: string
       }
+      equipo_empresa: {
+        Args: { p_empresa_id: string }
+        Returns: {
+          creado_en: string
+          email: string
+          pendiente: boolean
+          rol: Database["public"]["Enums"]["miembro_rol"]
+          ultimo_acceso: string
+          usuario_id: string
+        }[]
+      }
       es_miembro: { Args: { p_empresa_id: string }; Returns: boolean }
       kpis_llamadas: {
         Args: { p_desde: string; p_empresa_id: string }
@@ -640,6 +666,20 @@ export type Database = {
         Returns: undefined
       }
       purgar_datos_antiguos: { Args: never; Returns: Json }
+      resumen_empresas: {
+        Args: never
+        Returns: {
+          contactos: number
+          creado_en: string
+          estado: string
+          id: string
+          llamadas_30d: number
+          miembros: number
+          nombre: string
+          segundos_30d: number
+          slug: string
+        }[]
+      }
       reservar_llamadas_lote: {
         Args: { p_empresa_id: string }
         Returns: {
@@ -652,6 +692,7 @@ export type Database = {
           telefono: string
         }[]
       }
+      usuario_por_email: { Args: { p_email: string }; Returns: string }
     }
     Enums: {
       cita_estado: "activa" | "cancelada" | "reprogramada"

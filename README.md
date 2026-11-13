@@ -32,9 +32,16 @@ pnpm dev
    - Redirect URLs: `http://localhost:3000/**` y `https://<dominio>/**`.
 3. **Authentication → Emails → Templates:** sustituir las plantillas **Invite user** y **Reset password** por el contenido de `supabase/templates/invite.html` y `supabase/templates/recovery.html`. Llevan al usuario a `/auth/confirm`, que inicia la sesión y le pide elegir contraseña.
 
-### Invitar usuarios
+### Empresas y usuarios
 
 Cada usuario pertenece a una o varias **empresas** y solo ve los datos de ellas. Los datos que había antes del paso a multi-empresa están en la empresa `principal`.
+
+- **Administración de la plataforma** (`/admin`, solo el proveedor): crear empresas e invitar a su propietario, suspender o reactivar, gestionar el equipo de cualquier empresa y ver el uso de los últimos 30 días. Se da acceso con `pnpm admin-plataforma <email>` a un usuario que ya existe.
+- **Equipo** (`/app/equipo`, en cada empresa): el propietario invita, cambia el rol (propietario u operador) y quita miembros. Una empresa siempre conserva al menos un propietario.
+
+**Invitaciones sin email propio:** mientras Supabase Auth no tenga SMTP propio (su correo por defecto solo llega a los miembros del proyecto de Supabase), las invitaciones generan un **enlace de acceso** que el panel muestra para enviarlo a mano. Cuando haya SMTP, `INVITACIONES_POR_EMAIL=true` (en Render y en `.env.local`) hace que se envíen por correo. Conviene subir la caducidad de esos enlaces en **Authentication → Providers → Email → Email OTP Expiration** (máximo 86400 s = 24 h); si caduca, el equipo tiene la opción «Nuevo enlace de acceso».
+
+Desde la terminal:
 
 ```bash
 pnpm invitar persona@empresa.com [slug-empresa]
@@ -63,6 +70,7 @@ Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entr
 | `pnpm db:types` | Regenera los tipos de la base de datos |
 | `pnpm db:test [migración.sql…]` | Pruebas de aislamiento entre empresas contra la base real, dentro de una transacción que se deshace. Con migraciones, las aplica antes en la misma transacción (para probarlas sin aplicarlas) |
 | `pnpm invitar <email> [empresa]` · `pnpm crear-usuario <email> [empresa]` | Alta de un usuario del panel en una empresa |
+| `pnpm admin-plataforma <email> [--quitar]` | Da o quita acceso a `/admin` |
 | `pnpm calendly tipos` | Tipos de evento de Calendly (para `CALENDLY_EVENT_TYPE_URI`) |
 | `pnpm calendly webhooks` · `crear-webhook <url>` · `borrar-webhook <uri>` | Suscripción del webhook de Calendly |
 | `pnpm llamada-prueba <email\|teléfono\|id>` · `cerrar <id>` | Llamada de prueba para el tester web de ElevenLabs (no marca ningún teléfono) |

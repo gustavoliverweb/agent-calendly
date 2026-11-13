@@ -3,11 +3,11 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 
 /**
- * Rutas que exigen sesión: el panel y la cuenta. Todo lo demás (landing,
+ * Rutas que exigen sesión: el panel, la cuenta y la administración. Todo lo demás (landing,
  * login, enlaces de los correos) es público; los datos siguen protegidos por
  * RLS aunque una página se publicara por error.
  */
-const PRIVATE_PATHS = ["/app", "/cuenta"];
+const PRIVATE_PATHS = ["/app", "/cuenta", "/admin"];
 
 function isPrivate(pathname: string) {
   return PRIVATE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

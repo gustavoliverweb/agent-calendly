@@ -5,6 +5,7 @@ import { Logo } from "@/components/marca/logo";
 import { NavLinks, PanelNav } from "@/components/panel/nav";
 import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,9 +34,27 @@ export default function PanelLayout({ children }: LayoutProps<"/app">) {
             <PanelNav />
           </Suspense>
         </aside>
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-8">
+          <Suspense fallback={null}>
+            <AvisoSuspendida />
+          </Suspense>
+          {children}
+        </main>
       </div>
     </div>
+  );
+}
+
+async function AvisoSuspendida() {
+  const empresa = await getEmpresaActual();
+  if (empresa.estado !== "suspendida") return null;
+  return (
+    <Alert variant="destructive" className="mb-6">
+      <AlertDescription>
+        La cuenta de {empresa.nombre} está suspendida: no se puede hacer ninguna llamada. Puedes seguir consultando tus
+        datos. Para reactivarla, contacta con nosotros.
+      </AlertDescription>
+    </Alert>
   );
 }
 

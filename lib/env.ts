@@ -55,6 +55,9 @@ const appSchema = z.object({
   CRON_SECRET: secret(32),
   NEGOCIO_NOMBRE: z.string().trim().default(""),
   COSTE_MINUTO_ESTIMADO: z.coerce.number().nonnegative().default(0.12),
+  // Con SMTP propio configurado en Supabase Auth, las invitaciones se envían
+  // por email; sin él, el panel muestra el enlace para enviarlo a mano.
+  INVITACIONES_POR_EMAIL: z.stringbool().default(false),
 });
 
 function loader<T extends z.ZodType>(name: string, schema: T) {

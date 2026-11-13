@@ -51,3 +51,6 @@ services:
         sync: false
       - key: COSTE_MINUTO_ESTIMADO
         value: "0.12"
+      # true cuando Supabase Auth tenga SMTP propio; si no, el panel muestra el enlace de invitación.
+      - key: INVITACIONES_POR_EMAIL
+        value: "false"

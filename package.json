@@ -18,6 +18,7 @@
     "db:test": "scripts/db.sh test",
     "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts",
     "crear-usuario": "node --env-file=.env.local scripts/crear-usuario.ts",
+    "admin-plataforma": "node --env-file=.env.local scripts/admin-plataforma.ts",
     "calendly": "node --env-file=.env.local scripts/calendly.ts",
     "llamada-prueba": "node --env-file=.env.local scripts/llamada-prueba.ts"
   },

@@ -8,6 +8,7 @@ import {
   PhoneIcon,
   ListOrderedIcon,
   SettingsIcon,
+  UserCogIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const ITEMS = [
   { href: "/app/contactos", label: "Contactos", icon: UsersIcon },
   { href: "/app/llamadas", label: "Llamadas", icon: PhoneIcon },
   { href: "/app/lotes", label: "Lotes", icon: ListOrderedIcon },
+  { href: "/app/equipo", label: "Equipo", icon: UserCogIcon },
   { href: "/app/configuracion", label: "Configuración", icon: SettingsIcon },
 ] as const;
 

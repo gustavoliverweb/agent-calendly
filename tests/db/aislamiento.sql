@@ -192,3 +192,59 @@ begin
   raise notice 'ok: los datos de B siguen intactos';
   raise notice 'AISLAMIENTO OK';
 end $$;
+
+-- Equipo y último propietario (S2) -------------------------------------------
+
+do $$
+begin
+  delete from public.miembros
+   where empresa_id = current_setting('t.ea')::uuid and usuario_id = current_setting('t.ua')::uuid;
+  raise exception 'FALLO: se borró al único propietario de A';
+exception when raise_exception then
+  if sqlerrm <> 'ultimo_propietario' then raise; end if;
+  raise notice 'ok: una empresa no se queda sin propietario';
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  if exists (select 1 from public.equipo_empresa(current_setting('t.eb')::uuid)) then
+    raise exception 'FALLO: A ve el equipo de B';
+  end if;
+  if (select count(*) from public.equipo_empresa(current_setting('t.ea')::uuid)) <> 1 then
+    raise exception 'FALLO: A no ve su propio equipo';
+  end if;
+  raise notice 'ok: cada empresa ve solo su equipo';
+end $$;
+
+do $$
+begin
+  perform public.usuario_por_email('b@aislamiento.test');
+  raise exception 'FALLO: un usuario busca cuentas por email';
+exception when insufficient_privilege then
+  raise notice 'ok: buscar usuarios por email es solo del servidor';
+end $$;
+
+do $$
+begin
+  perform * from public.resumen_empresas();
+  raise exception 'FALLO: un usuario lee el resumen de todas las empresas';
+exception when insufficient_privilege then
+  raise notice 'ok: el resumen de empresas es solo del servidor';
+end $$;
+
+reset role;
+
+do $$
+begin
+  delete from public.empresas where id = current_setting('t.eb')::uuid;
+  if exists (select 1 from public.miembros where empresa_id = current_setting('t.eb')::uuid) then
+    raise exception 'FALLO: borrar una empresa no borró sus miembros';
+  end if;
+  raise notice 'ok: borrar una empresa entera sí elimina a su propietario';
+end $$;
+
+do $$ begin raise notice 'EQUIPO OK'; end $$;

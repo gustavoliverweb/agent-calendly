@@ -1,6 +1,6 @@
 # Plan: de un negocio a SaaS multi-cliente
 
-Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
+Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`) y **S2** sin el envío de emails (migración `20261113000000_admin_equipo.sql`; las invitaciones generan un enlace hasta que haya SMTP propio, `INVITACIONES_POR_EMAIL`). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
 
 ## 1. Decisiones tomadas
 
