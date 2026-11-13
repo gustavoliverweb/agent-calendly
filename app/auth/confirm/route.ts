@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { rutaInterna } from "@/lib/security/redirect";
+import { log } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 
 const OTP_TYPES: EmailOtpType[] = ["invite", "recovery", "magiclink", "email", "email_change", "signup"];
@@ -19,24 +20,19 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
 
   const supabase = await createClient();
-  let ok = false;
+  let error: { message: string } | null = null;
 
   if (tokenHash && type && OTP_TYPES.includes(type)) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-    ok = !error;
+    ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
   } else if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    ok = !error;
-  }
-
-  const url = request.nextUrl.clone();
-  url.search = "";
-  if (ok) {
-    url.pathname = next.pathname;
-    url.search = next.search;
+    ({ error } = await supabase.auth.exchangeCodeForSession(code));
   } else {
-    url.pathname = "/login";
-    url.searchParams.set("error", "enlace_invalido");
+    error = { message: "enlace sin token" };
   }
-  return NextResponse.redirect(url);
+  if (error) log.warn("enlace de acceso no válido", { tipo: type ?? (code ? "code" : null), motivo: error.message });
+
+  // Relativa: detrás del proxy de Render, la URL de la petición lleva el host
+  // interno (localhost:10000), no el público.
+  const destino = error ? "/login?error=enlace_invalido" : `${next.pathname}${next.search}`;
+  return new NextResponse(null, { status: 307, headers: { Location: destino } });
 }

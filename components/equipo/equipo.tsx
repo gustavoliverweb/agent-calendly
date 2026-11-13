@@ -148,7 +148,8 @@ export function Equipo({
                         ) : (
                           <DropdownMenuItem onClick={() => cambiarRol(m, "operador")}>Hacer operador</DropdownMenuItem>
                         )}
-                        {m.pendiente && (
+                        {/* También para quien ya entró: sin correo propio es la forma de restablecer su contraseña. */}
+                        {m.usuario_id !== yo && (
                           <DropdownMenuItem onClick={() => nuevoAcceso(m)}>Nuevo enlace de acceso</DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />

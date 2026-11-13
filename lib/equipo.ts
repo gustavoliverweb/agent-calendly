@@ -90,8 +90,9 @@ export async function invitarAEmpresa(empresaId: string, email: string, rol: Rol
 }
 
 /**
- * Nuevo acceso para un miembro que aún no ha entrado (la invitación caducó o
- * se perdió): un enlace para elegir contraseña.
+ * Enlace para que un miembro elija (o restablezca) su contraseña: la
+ * invitación caducó o se perdió, o la olvidó y no hay correo propio para
+ * "recuperar contraseña".
  */
 export async function nuevoAcceso(empresaId: string, usuarioId: string): Promise<ResultadoEnlace> {
   const admin = createAdminClient();
