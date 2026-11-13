@@ -392,7 +392,7 @@ export type Database = {
           preguntas?: string
           primer_mensaje: string
           texto: string
-          version?: number
+          version: number
           voz_id?: string | null
         }
         Update: {
@@ -762,6 +762,18 @@ export type Database = {
         Returns: undefined
       }
       purgar_datos_antiguos: { Args: never; Returns: Json }
+      reservar_llamadas_lote: {
+        Args: { p_empresa_id: string }
+        Returns: {
+          contacto_id: string
+          email: string
+          item_id: string
+          llamada_id: string
+          lote_id: string
+          nombre: string
+          telefono: string
+        }[]
+      }
       resumen_empresas: {
         Args: never
         Returns: {
@@ -774,18 +786,6 @@ export type Database = {
           nombre: string
           segundos_30d: number
           slug: string
-        }[]
-      }
-      reservar_llamadas_lote: {
-        Args: { p_empresa_id: string }
-        Returns: {
-          contacto_id: string
-          email: string
-          item_id: string
-          llamada_id: string
-          lote_id: string
-          nombre: string
-          telefono: string
         }[]
       }
       usuario_por_email: { Args: { p_email: string }; Returns: string }
