@@ -1,6 +1,6 @@
 # Configuración de ElevenLabs
 
-Lo que la app espera del agente de ElevenLabs. El guion (system prompt) lo aporta el negocio; este documento recoge solo la parte técnica que debe coincidir con el código. Hay un guion de ejemplo, listo para el tester web, en [system-prompt.md](system-prompt.md).
+Lo que la app espera del agente de ElevenLabs. Hay **un solo agente para todas las empresas**: su system prompt tiene la parte técnica y legal, que es fija, y el guion de cada empresa le llega en cada conversación como variable dinámica (`{{guion_negocio}}`). Cada empresa edita su guion en el panel (sección **Guion**). El prompt fijo, listo para copiar, está en [system-prompt.md](system-prompt.md).
 
 ## Variables de entorno
 
@@ -8,8 +8,13 @@ Lo que la app espera del agente de ElevenLabs. El guion (system prompt) lo aport
 |---|---|
 | `ELEVENLABS_API_KEY` | Perfil → API keys (permiso de Conversational AI) |
 | `ELEVENLABS_AGENT_ID` | URL o ajustes del agente |
-| `ELEVENLABS_PHONE_NUMBER_ID` | Phone numbers → número SIP importado |
+| `ELEVENLABS_PHONE_NUMBER_ID` | Phone numbers → número SIP importado (solo para llamadas por teléfono; la prueba en el navegador no lo necesita) |
 | `ELEVENLABS_WEBHOOK_SECRET` | Se muestra al crear el webhook post-llamada |
+
+## Primer mensaje y voz
+
+- **First message** del agente: exactamente `{{primer_mensaje}}`. La app lo envía ya montado, con el nombre del contacto, el del negocio y el del agente. Así no hace falta activar la override del primer mensaje.
+- **Voz:** la configurada en el agente. Cuando haya varias voces para elegir (lista `VOCES` de `lib/guion/guion.ts`), la app enviará la voz como override: antes hay que activar **Security → Overrides → Voice** en el agente; si no, ElevenLabs rechaza la conversación.
 
 ## Variables dinámicas que envía la app en cada llamada
 
@@ -21,10 +26,13 @@ Lo que la app espera del agente de ElevenLabs. El guion (system prompt) lo aport
 | `telefono` | `+34600112233` | Referencia |
 | `email` | `maria@example.com` o vacío | Confirmar el correo antes de reservar |
 | `tiene_email` | `true` / `false` | Si es `false`, pedir y deletrear el correo |
-| `negocio` | `NEGOCIO_NOMBRE` | Presentación |
+| `negocio` | `Clínica Sonrisa` | Nombre del negocio (del guion de la empresa) |
+| `nombre_agente` | `Clara` | Cómo se llama el agente (del guion) |
+| `primer_mensaje` | `Hola, ¿hablo con María?…` | First message, ya montado |
+| `guion_negocio` | texto de varios apartados | Datos del negocio: a qué se dedica, motivo, oferta, cita, preguntas, objeciones y límites |
 | `ahora_madrid` | `viernes 23 de octubre de 2026, 11:15` | Interpretar "mañana", "el jueves"… |
 
-En el tester web de ElevenLabs hay que dar valores de prueba a todas.
+Las mismas para las llamadas por teléfono y para **Probar en el navegador** (sección Guion del panel). En el tester web de ElevenLabs hay que dar valores de prueba a todas: `pnpm llamada-prueba` las imprime.
 
 ## Tools (webhook, método POST)
 

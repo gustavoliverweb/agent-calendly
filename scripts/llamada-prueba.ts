@@ -7,12 +7,14 @@
  *   pnpm llamada-prueba <email | teléfono | id del contacto>
  *   pnpm llamada-prueba cerrar <id de la llamada>
  *
- * Respeta la pausa global, la lista de exclusión y la concurrencia (usa
- * crear_llamada), pero no la franja horaria ni el consentimiento: no se
- * llama a nadie. Si no llega el webhook, `cerrar` la da por fallida para
+ * Respeta la pausa global, la lista de exclusión, la concurrencia y el guion
+ * activo de la empresa (usa crear_llamada), pero no la franja horaria ni el
+ * consentimiento: no se llama a nadie. Desde el panel es más cómodo el botón
+ * "Probar en el navegador" de la sección Guion. Si no llega el webhook, `cerrar` la da por fallida para
  * liberar la concurrencia.
  */
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../lib/supabase/database.types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,7 +24,7 @@ if (!url || !key) {
   console.error("Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local");
   process.exit(1);
 }
-const supabase = createClient(url, key, { auth: { persistSession: false } });
+const supabase = createClient<Database>(url, key, { auth: { persistSession: false } });
 
 const [arg1, arg2] = process.argv.slice(2);
 if (arg1 === "cerrar") await cerrar(arg2);
@@ -51,15 +53,37 @@ async function crear(busqueda: string) {
         .maybeSingle();
       console.error(`El contacto ya tiene una llamada abierta${abierta ? ` (${abierta.id})` : ""}.`);
       if (abierta) console.error(`Ciérrala con: pnpm llamada-prueba cerrar ${abierta.id}`);
+    } else if (error?.message === "sin_guion") {
+      console.error("La empresa del contacto no tiene guion activo: créalo en el panel (sección Guion).");
     } else {
       console.error(`No se pudo crear la llamada: ${error?.message ?? "sin id"}`);
     }
     process.exit(1);
   }
 
+  const { data: llamada } = await supabase
+    .from("llamadas")
+    .select("guiones (negocio_nombre, nombre_agente, primer_mensaje, texto, version)")
+    .eq("id", llamadaId)
+    .single();
+  const guion = llamada?.guiones;
+  if (!guion) {
+    console.error("La llamada se creó sin guion: revisa el guion activo de la empresa.");
+    process.exit(1);
+  }
+  // Igual que renderPrimerMensaje() de lib/guion/guion.ts.
+  const valores = { nombre: contacto.nombre, negocio: guion.negocio_nombre, agente: guion.nombre_agente };
+  const primerMensaje = guion.primer_mensaje.replace(
+    /\{\s*(nombre|negocio|agente)\s*\}/g,
+    (_: string, k: keyof typeof valores) => valores[k].trim(),
+  );
+
   const variables: [string, string][] = [
     ["nombre", contacto.nombre],
-    ["negocio", process.env.NEGOCIO_NOMBRE?.trim() || "(vacío: define NEGOCIO_NOMBRE)"],
+    ["negocio", guion.negocio_nombre],
+    ["nombre_agente", guion.nombre_agente],
+    ["primer_mensaje", primerMensaje],
+    ["guion_negocio", "(texto largo: se imprime al final)"],
     ["email", contacto.email ?? ""],
     ["tiene_email", String(Boolean(contacto.email))],
     ["ahora_madrid", ahoraMadrid()],
@@ -72,7 +96,8 @@ async function crear(busqueda: string) {
   console.log(`Llamada de prueba creada para ${contacto.nombre}: ${llamadaId}\n`);
   console.log("Variables dinámicas para el tester web de ElevenLabs:\n");
   for (const [k, v] of variables) console.log(`  ${k.padEnd(ancho)}  ${v}`);
-  console.log("\nActualiza ahora_madrid si la prueba no es inmediata.");
+  console.log(`\nguion_negocio (versión ${guion.version}):\n\n${guion.texto}\n`);
+  console.log("Actualiza ahora_madrid si la prueba no es inmediata.");
   console.log(`Si no llega el webhook post-llamada: pnpm llamada-prueba cerrar ${llamadaId}`);
 }
 

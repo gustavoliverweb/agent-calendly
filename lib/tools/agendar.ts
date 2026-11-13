@@ -7,7 +7,7 @@ import { formatearHueco } from "@/lib/calendly/format-es";
 import { isValidEmail } from "@/lib/contacts/parse";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { marcarSeguimiento } from "./llamada";
+import { llamadaConCalendly, marcarSeguimiento } from "./llamada";
 
 const texto = z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string());
 
@@ -126,6 +126,11 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
       error: "no_permitido",
       mensaje: "Este contacto ha pedido no ser llamado. No reserves; despídete amablemente.",
     };
+  }
+
+  if (!(await llamadaConCalendly(llamada.id))) {
+    log.warn("agendar: la empresa aún no tiene Calendly conectado", { llamada_id: llamada.id });
+    return CALENDARIO_NO_DISPONIBLE;
   }
 
   let reserva;

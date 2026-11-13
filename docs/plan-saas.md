@@ -1,6 +1,6 @@
 # Plan: de un negocio a SaaS multi-cliente
 
-Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`) y **S2** sin el envío de emails (migración `20261113000000_admin_equipo.sql`; las invitaciones generan un enlace hasta que haya SMTP propio, `INVITACIONES_POR_EMAIL`). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
+Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`) **S2** sin el envío de emails (migración `20261113000000_admin_equipo.sql`; las invitaciones generan un enlace hasta que haya SMTP propio, `INVITACIONES_POR_EMAIL`) y **S3** (migración `20261114000000_guiones.sql`; la voz queda fija hasta que el cliente elija voces). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
 
 ## 1. Decisiones tomadas
 
@@ -25,10 +25,11 @@ app.<marca-saas>.com ───┘  (la empresa se deduce   ├─ ElevenLabs: UN
 
 ### 2.1 ElevenLabs: un agente base para todas las empresas
 - **Un solo agente** en la cuenta del proveedor, con las tools, el análisis (data collection) y el webhook post-llamada actuales. No se crea un agente por empresa: evita sincronizar N agentes y sus tools.
-- **El guion de cada empresa viaja en cada llamada.** El system prompt del agente queda fijo con la parte técnica (tools, errores, fechas, reglas legales) y la parte del negocio entra como **variable dinámica** (`{{guion_negocio}}`, más `{{negocio}}`, `{{nombre_agente}}`), que es lo que ElevenLabs recomienda. Las **overrides** por llamada (`conversation_config_override`) se reservan para lo que no cabe en variables: **primer mensaje** y **voz**; hay que activarlas en la pestaña Security del agente (están desactivadas por defecto y, si no, la llamada da error).
+- **El guion de cada empresa viaja en cada llamada.** El system prompt del agente queda fijo con la parte técnica (tools, errores, fechas, reglas legales) y la parte del negocio entra como **variable dinámica** (`{{guion_negocio}}`, más `{{negocio}}`, `{{nombre_agente}}`), que es lo que ElevenLabs recomienda. El **primer mensaje** también va como variable (`{{primer_mensaje}}`, ya montado por la app), así que no necesita override. Solo la **voz** irá como override por llamada (`conversation_config_override`), cuando haya varias para elegir; hay que activarla en la pestaña Security del agente (desactivada por defecto; si no, la llamada da error).
+- **Probar en el navegador** (hecho en S3): el servidor pide a ElevenLabs una URL firmada y el navegador abre la conversación por WebSocket con `@elevenlabs/client`, con las mismas variables que una llamada real. La llamada se crea con `crear_llamada(..., p_prueba => true)`, así que las tools y el webhook post-llamada funcionan igual. Las variables las envía el navegador: un miembro podría cambiarlas, pero solo en su propia prueba (el `llamada_id` es un uuid de su empresa que no puede adivinar en otra).
 - **Cada empresa tiene su número**: su troncal SIP se importa en ElevenLabs (lo hace el proveedor desde su cuenta) y el `phone_number_id` resultante se guarda en la empresa. El dispatcher llama con el número de la empresa del contacto.
 - **Tools y webhook siguen siendo comunes**: la empresa se deduce del `llamada_id` (variable dinámica que ya se envía), nunca de lo que diga el LLM.
-- Verificar en la Fase 3: tamaño máximo de una variable dinámica (no documentado) y latencia con un guion largo.
+- Pendiente de medir con la prueba en el navegador: tamaño máximo de una variable dinámica (no documentado; el panel limita el guion a 8.000 caracteres) y latencia con un guion largo.
 
 ### 2.2 Calendly: OAuth por empresa
 - Una **app OAuth** del proveedor en Calendly (Developer tools → OAuth apps): client ID, client secret y clave de firma de webhooks. PKCE obligatorio; una sola redirect URI (`https://<dominio>/api/calendly/oauth/callback`).

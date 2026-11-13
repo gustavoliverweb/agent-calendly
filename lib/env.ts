@@ -17,12 +17,17 @@ const supabaseSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: secret(),
 });
 
-const elevenLabsSchema = z.object({
+// El agente basta para las pruebas en el navegador; las llamadas por
+// teléfono necesitan además la línea SIP.
+const elevenLabsAgenteSchema = z.object({
   ELEVENLABS_API_KEY: secret(),
   ELEVENLABS_AGENT_ID: secret(1),
-  ELEVENLABS_PHONE_NUMBER_ID: secret(1),
   // Solo para apuntar a un servidor simulado en pruebas.
   ELEVENLABS_API_BASE: z.url().default("https://api.elevenlabs.io"),
+});
+
+const elevenLabsSchema = elevenLabsAgenteSchema.extend({
+  ELEVENLABS_PHONE_NUMBER_ID: secret(1),
 });
 
 const elevenLabsWebhookSchema = z.object({
@@ -53,7 +58,6 @@ const appSchema = z.object({
   APP_URL: z.url(),
   TOOLS_SECRET: secret(32),
   CRON_SECRET: secret(32),
-  NEGOCIO_NOMBRE: z.string().trim().default(""),
   COSTE_MINUTO_ESTIMADO: z.coerce.number().nonnegative().default(0.12),
   // Con SMTP propio configurado en Supabase Auth, las invitaciones se envían
   // por email; sin él, el panel muestra el enlace para enviarlo a mano.
@@ -75,6 +79,7 @@ function loader<T extends z.ZodType>(name: string, schema: T) {
 }
 
 export const supabaseEnv = loader("Supabase", supabaseSchema);
+export const elevenLabsAgenteEnv = loader("ElevenLabs (agente)", elevenLabsAgenteSchema);
 export const elevenLabsEnv = loader("ElevenLabs", elevenLabsSchema);
 export const elevenLabsWebhookEnv = loader("ElevenLabs webhook", elevenLabsWebhookSchema);
 export const calendlyEnv = loader("Calendly", calendlySchema);

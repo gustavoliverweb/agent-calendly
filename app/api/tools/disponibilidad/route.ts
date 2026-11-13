@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { consultarDisponibilidad, disponibilidadSchema } from "@/lib/tools/disponibilidad";
 import { leerPeticionTool, respuestaTool } from "@/lib/tools/http";
-import { marcarEnCurso, marcarSeguimiento } from "@/lib/tools/llamada";
+import { llamadaConCalendly, marcarEnCurso, marcarSeguimiento } from "@/lib/tools/llamada";
 
 /** Tool del agente: hasta 3 huecos libres en Calendly, con texto listo para leer. */
 export async function POST(req: Request) {
@@ -17,7 +17,14 @@ export async function POST(req: Request) {
   }
 
   const { llamada_id, ...rango } = peticion.datos;
-  const respuesta = await consultarDisponibilidad(rango);
+  const respuesta =
+    llamada_id && !(await llamadaConCalendly(llamada_id))
+      ? {
+          huecos: [],
+          error: "calendario_no_disponible" as const,
+          mensaje: "Ahora mismo no puedo consultar la agenda. Ofrece que le llamemos más tarde.",
+        }
+      : await consultarDisponibilidad(rango);
 
   // Fuera del camino crítico: no retrasan la respuesta al agente.
   if (llamada_id) {

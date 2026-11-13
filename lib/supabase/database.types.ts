@@ -276,6 +276,7 @@ export type Database = {
           actualizado_en: string
           creado_en: string
           estado: string
+          guion_activo_id: string | null
           id: string
           nombre: string
           slug: string
@@ -285,6 +286,7 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           estado?: string
+          guion_activo_id?: string | null
           id?: string
           nombre: string
           slug: string
@@ -294,12 +296,21 @@ export type Database = {
           actualizado_en?: string
           creado_en?: string
           estado?: string
+          guion_activo_id?: string | null
           id?: string
           nombre?: string
           slug?: string
           zona_horaria?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_guion_activo_fkey"
+            columns: ["id", "guion_activo_id"]
+            isOneToOne: false
+            referencedRelation: "guiones"
+            referencedColumns: ["empresa_id", "id"]
+          },
+        ]
       }
       eventos_webhook: {
         Row: {
@@ -345,6 +356,74 @@ export type Database = {
           },
         ]
       }
+      guiones: {
+        Row: {
+          cita: string
+          creado_en: string
+          creado_por: string | null
+          empresa_id: string
+          id: string
+          limites: string
+          motivo: string
+          negocio: string
+          negocio_nombre: string
+          nombre_agente: string
+          objeciones: string
+          oferta: string
+          preguntas: string
+          primer_mensaje: string
+          texto: string
+          version: number
+          voz_id: string | null
+        }
+        Insert: {
+          cita: string
+          creado_en?: string
+          creado_por?: string | null
+          empresa_id: string
+          id?: string
+          limites?: string
+          motivo: string
+          negocio: string
+          negocio_nombre: string
+          nombre_agente: string
+          objeciones?: string
+          oferta: string
+          preguntas?: string
+          primer_mensaje: string
+          texto: string
+          version?: number
+          voz_id?: string | null
+        }
+        Update: {
+          cita?: string
+          creado_en?: string
+          creado_por?: string | null
+          empresa_id?: string
+          id?: string
+          limites?: string
+          motivo?: string
+          negocio?: string
+          negocio_nombre?: string
+          nombre_agente?: string
+          objeciones?: string
+          oferta?: string
+          preguntas?: string
+          primer_mensaje?: string
+          texto?: string
+          version?: number
+          voz_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guiones_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       latidos: {
         Row: {
           en: string
@@ -375,9 +454,11 @@ export type Database = {
           creado_en: string
           duracion_seg: number | null
           empresa_id: string
+          es_prueba: boolean
           estado: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita: string | null
           finalizada_en: string | null
+          guion_id: string | null
           id: string
           lanzada_por: string | null
           lote_id: string | null
@@ -401,9 +482,11 @@ export type Database = {
           creado_en?: string
           duracion_seg?: number | null
           empresa_id: string
+          es_prueba?: boolean
           estado?: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita?: string | null
           finalizada_en?: string | null
+          guion_id?: string | null
           id?: string
           lanzada_por?: string | null
           lote_id?: string | null
@@ -427,9 +510,11 @@ export type Database = {
           creado_en?: string
           duracion_seg?: number | null
           empresa_id?: string
+          es_prueba?: boolean
           estado?: Database["public"]["Enums"]["llamada_estado"]
           fecha_cita?: string | null
           finalizada_en?: string | null
+          guion_id?: string | null
           id?: string
           lanzada_por?: string | null
           lote_id?: string | null
@@ -453,6 +538,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "empresas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "llamadas_guion_empresa_fkey"
+            columns: ["empresa_id", "guion_id"]
+            isOneToOne: false
+            referencedRelation: "guiones"
+            referencedColumns: ["empresa_id", "id"]
           },
           {
             foreignKeyName: "llamadas_lote_empresa_fkey"
@@ -606,6 +698,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activar_guion: { Args: { p_guion_id: string }; Returns: undefined }
       borrar_contacto_rgpd: {
         Args: { p_contacto_id: string }
         Returns: undefined
@@ -625,8 +718,10 @@ export type Database = {
       crear_llamada: {
         Args: {
           p_contacto_id: string
+          p_guion_id?: string
           p_lanzada_por?: string
           p_lote_id?: string
+          p_prueba?: boolean
         }
         Returns: string
       }
@@ -651,6 +746,7 @@ export type Database = {
         }[]
       }
       es_miembro: { Args: { p_empresa_id: string }; Returns: boolean }
+      es_propietario: { Args: { p_empresa_id: string }; Returns: boolean }
       kpis_llamadas: {
         Args: { p_desde: string; p_empresa_id: string }
         Returns: {

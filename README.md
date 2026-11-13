@@ -38,6 +38,7 @@ Cada usuario pertenece a una o varias **empresas** y solo ve los datos de ellas.
 
 - **Administración de la plataforma** (`/admin`, solo el proveedor): crear empresas e invitar a su propietario, suspender o reactivar, gestionar el equipo de cualquier empresa y ver el uso de los últimos 30 días. Se da acceso con `pnpm admin-plataforma <email>` a un usuario que ya existe.
 - **Equipo** (`/app/equipo`, en cada empresa): el propietario invita, cambia el rol (propietario u operador) y quita miembros. Una empresa siempre conserva al menos un propietario.
+- **Guion** (`/app/guion`, en cada empresa): el propietario redacta por apartados lo que el agente cuenta del negocio, más el nombre del agente y el primer mensaje (que debe identificarlo como IA y avisar de la transcripción). Cada vez que se guarda se crea una versión; la activa es la que usan las llamadas, y cada llamada guarda la suya. Sin guion activo no sale ninguna llamada. **Probar en el navegador** abre una conversación con el micrófono, con una versión y un contacto de la empresa, sin marcar ningún teléfono (la llamada queda en el panel como «Prueba»). Hasta la fase S4, solo la empresa principal tiene Calendly: en las demás, el agente responde que no puede consultar la agenda.
 
 **Invitaciones sin email propio:** mientras Supabase Auth no tenga SMTP propio (su correo por defecto solo llega a los miembros del proyecto de Supabase), las invitaciones generan un **enlace de acceso** que el panel muestra para enviarlo a mano. Cuando haya SMTP, `INVITACIONES_POR_EMAIL=true` (en Render y en `.env.local`) hace que se envíen por correo. Conviene subir la caducidad de esos enlaces en **Authentication → Providers → Email → Email OTP Expiration** (máximo 86400 s = 24 h); si caduca, el equipo tiene la opción «Nuevo enlace de acceso».
 
@@ -73,7 +74,7 @@ Muestra la contraseña una sola vez. Se cambia en `/cuenta/contrasena` tras entr
 | `pnpm admin-plataforma <email> [--quitar]` | Da o quita acceso a `/admin` |
 | `pnpm calendly tipos` | Tipos de evento de Calendly (para `CALENDLY_EVENT_TYPE_URI`) |
 | `pnpm calendly webhooks` · `crear-webhook <url>` · `borrar-webhook <uri>` | Suscripción del webhook de Calendly |
-| `pnpm llamada-prueba <email\|teléfono\|id>` · `cerrar <id>` | Llamada de prueba para el tester web de ElevenLabs (no marca ningún teléfono) |
+| `pnpm llamada-prueba <email\|teléfono\|id>` · `cerrar <id>` | Llamada de prueba para el tester web de ElevenLabs, con el guion activo de la empresa del contacto (no marca ningún teléfono). Desde el panel: Guion → Probar en el navegador |
 
 `scripts/db.sh` conecta por el pooler en modo transacción (puerto **6543**), porque desde algunas redes o VPN el 5432 no responde. Nunca imprime la contraseña.
 
@@ -95,6 +96,8 @@ app/api/webhooks/elevenlabs Fin de llamada (transcripción, análisis) y fallos 
 app/(panel)/app/llamadas    Listado con filtros y detalle con transcripción (se actualiza solo)
 app/(panel)/app/lotes       Lotes con progreso; pausar, reanudar y cancelar
 app/(panel)/app/configuracion Franjas, festivos, concurrencia, reintentos y tipo de campaña (+ pausa global en la cabecera)
+app/(panel)/app/guion       Guion por empresa: formulario, versiones y prueba en el navegador (components/guion)
+lib/guion/                  Montaje y validación del guion (con tests) y guion de cada llamada
 app/api/cron/despachar      Pasada del motor de lotes cada minuto (Bearer CRON_SECRET)
 lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados,
                             dispatcher de lotes y reconciliación de llamadas sin webhook

@@ -1,8 +1,10 @@
 import "server-only";
 import { after } from "next/server";
 import { calcularRango, obtenerDisponibilidad } from "@/lib/calendly/availability";
-import { appEnv, calendlyEnv, isConfigured } from "@/lib/env";
-import { llamadaSaliente } from "@/lib/elevenlabs/client";
+import { calendlyEnv, isConfigured } from "@/lib/env";
+import { llamadaSaliente, type VariablesDinamicas } from "@/lib/elevenlabs/client";
+import { variablesGuion, type GuionLlamada } from "@/lib/guion/guion";
+import { guionDeLlamada } from "@/lib/guion/queries";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fechaMadrid, partesMadrid } from "@/lib/time/madrid";
@@ -13,6 +15,7 @@ import { describirFranjas, estaEnFranja } from "./window";
 export type MotivoRechazo =
   | "pausa_global"
   | "empresa_suspendida"
+  | "sin_guion"
   | "no_encontrado"
   | "no_llamar"
   | "sin_consentimiento"
@@ -106,6 +109,9 @@ export async function lanzarLlamada(opciones: {
       return { ok: false, motivo, mensaje: "La cuenta de tu empresa está suspendida: no se pueden hacer llamadas." };
     }
     if (motivo === "no_llamar") return { ok: false, motivo, mensaje: "El contacto ha pedido no ser llamado." };
+    if (motivo === "sin_guion") {
+      return { ok: false, motivo, mensaje: "Tu empresa aún no tiene un guion activo: créalo en la sección Guion." };
+    }
     log.error("crear_llamada falló", { code: error?.code, message: error?.message });
     return { ok: false, motivo: "error", mensaje: "No se ha podido registrar la llamada." };
   }
@@ -125,6 +131,30 @@ export async function lanzarLlamada(opciones: {
 type ContactoLlamada = { id: string; nombre: string; telefono: string; email: string | null };
 
 /**
+ * Variables dinámicas de una conversación: las del contacto y la llamada
+ * (que usan las tools) más las del guion de la empresa. Las mismas para una
+ * llamada por teléfono y para una prueba en el navegador.
+ */
+export function variablesLlamada(opciones: {
+  llamadaId: string;
+  contacto: ContactoLlamada;
+  guion: GuionLlamada;
+  ahora: Date;
+}): VariablesDinamicas {
+  const { llamadaId, contacto, guion, ahora } = opciones;
+  return {
+    nombre: contacto.nombre,
+    llamada_id: llamadaId,
+    contacto_id: contacto.id,
+    telefono: contacto.telefono,
+    email: contacto.email ?? "",
+    tiene_email: Boolean(contacto.email),
+    ahora_madrid: ahoraEnTexto(ahora),
+    ...variablesGuion(guion, contacto.nombre),
+  };
+}
+
+/**
  * Pide a ElevenLabs la llamada de una fila de `llamadas` ya creada (por
  * crear_llamada o por el dispatcher). Si falla, la deja como fallida.
  */
@@ -139,16 +169,14 @@ export async function iniciarConversacion(opciones: {
 
   let conversacion;
   try {
-    conversacion = await llamadaSaliente(contacto.telefono, {
-      nombre: contacto.nombre,
-      llamada_id: llamadaId,
-      contacto_id: contacto.id,
-      telefono: contacto.telefono,
-      email: contacto.email ?? "",
-      tiene_email: Boolean(contacto.email),
-      negocio: appEnv().NEGOCIO_NOMBRE,
-      ahora_madrid: ahoraEnTexto(ahora),
-    });
+    const guion = await guionDeLlamada(supabase, llamadaId);
+    // crear_llamada y el motor de lotes no crean llamadas sin guion.
+    if (!guion) throw new Error("la llamada no tiene guion");
+    conversacion = await llamadaSaliente(
+      contacto.telefono,
+      variablesLlamada({ llamadaId, contacto, guion, ahora }),
+      { vozId: guion.voz_id },
+    );
   } catch (e) {
     const detalle = e instanceof Error ? e.message : String(e);
     await supabase

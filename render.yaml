@@ -47,8 +47,6 @@ services:
         sync: false
       - key: CRON_SECRET
         sync: false
-      - key: NEGOCIO_NOMBRE
-        sync: false
       - key: COSTE_MINUTO_ESTIMADO
         value: "0.12"
       # true cuando Supabase Auth tenga SMTP propio; si no, el panel muestra el enlace de invitación.

@@ -25,7 +25,7 @@ export async function listarLlamadas(f: FiltrosLlamadas) {
   let query = supabase
     .from("llamadas")
     .select(
-      "id, estado, clasificacion, duracion_seg, cita_agendada, fecha_cita, motivo_fallo, creado_en, lote_id, contactos (id, nombre, telefono)",
+      "id, estado, clasificacion, duracion_seg, cita_agendada, fecha_cita, motivo_fallo, creado_en, lote_id, es_prueba, contactos (id, nombre, telefono)",
       { count: "exact" },
     )
     .eq("empresa_id", empresa.id)
@@ -47,7 +47,7 @@ export async function obtenerLlamada(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("llamadas")
-    .select("*, contactos (id, nombre, telefono, email, estado)")
+    .select("*, contactos (id, nombre, telefono, email, estado), guiones (version)")
     .eq("id", id)
     .eq("empresa_id", empresa.id)
     .maybeSingle();

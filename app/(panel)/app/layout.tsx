@@ -38,6 +38,9 @@ export default function PanelLayout({ children }: LayoutProps<"/app">) {
           <Suspense fallback={null}>
             <AvisoSuspendida />
           </Suspense>
+          <Suspense fallback={null}>
+            <AvisoSinGuion />
+          </Suspense>
           {children}
         </main>
       </div>
@@ -53,6 +56,24 @@ async function AvisoSuspendida() {
       <AlertDescription>
         La cuenta de {empresa.nombre} está suspendida: no se puede hacer ninguna llamada. Puedes seguir consultando tus
         datos. Para reactivarla, contacta con nosotros.
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+async function AvisoSinGuion() {
+  const empresa = await getEmpresaActual();
+  const supabase = await createClient();
+  const { data } = await supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).maybeSingle();
+  if (!data || data.guion_activo_id) return null;
+  return (
+    <Alert className="mb-6">
+      <AlertDescription>
+        Tu empresa aún no tiene un guion activo, así que no sale ninguna llamada.{" "}
+        <Link href="/app/guion" className="font-medium underline">
+          {empresa.rol === "propietario" ? "Créalo en la sección Guion" : "Pide al propietario que lo cree en la sección Guion"}
+        </Link>
+        .
       </AlertDescription>
     </Alert>
   );

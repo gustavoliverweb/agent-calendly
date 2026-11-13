@@ -65,6 +65,8 @@ async function Detalle({ params }: Pick<PageProps<"/app/llamadas/[id]">, "params
     ["Resultado", etiquetaClasificacion(llamada.clasificacion) ?? (abierta ? "En curso" : "—")],
   ];
   if (llamada.motivo_fallo) filas.push(["Motivo del fallo", MOTIVO_FALLO[llamada.motivo_fallo] ?? llamada.motivo_fallo]);
+  if (llamada.es_prueba) filas.push(["Tipo", "Prueba desde el navegador"]);
+  if (llamada.guiones) filas.push(["Guion", <Link key="g" href="/app/guion" className="underline">Versión {llamada.guiones.version}</Link>]);
   if (llamada.lote_id) filas.push(["Lote", <Link key="l" href={`/app/lotes`} className="underline">Ver lotes</Link>]);
 
   return (

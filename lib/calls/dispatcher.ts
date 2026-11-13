@@ -8,7 +8,7 @@ import { iniciarConversacion } from "./launch";
 import { aplicarEvento, webhookElevenLabsSchema, type LlamadaAbierta, type WebhookElevenLabs } from "./post-call";
 import { siguienteInicioFranja, estaEnFranja } from "./window";
 
-type MotivoParada = "pausa_global" | "fuera_de_franja" | "sin_configurar";
+type MotivoParada = "pausa_global" | "fuera_de_franja" | "sin_configurar" | "sin_guion";
 
 export type ResumenDespacho = {
   lanzadas: number;
@@ -41,13 +41,16 @@ export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
   const resumen: ResumenDespacho = { lanzadas: 0, fallidas: 0, reconciliadas: 0, lotesCerrados: 0 };
   const supabase = createAdminClient();
   try {
-    const { data: empresas, error } = await supabase.from("empresas").select("id").eq("estado", "activa");
+    const { data: empresas, error } = await supabase
+      .from("empresas")
+      .select("id, guion_activo_id")
+      .eq("estado", "activa");
     if (error) throw new Error(`empresas: ${error.message}`);
     const configurado = isConfigured(elevenLabsEnv);
 
-    for (const { id } of empresas) {
+    for (const { id, guion_activo_id } of empresas) {
       try {
-        const parada = await despacharEmpresa(id, ahora, configurado, resumen);
+        const parada = await despacharEmpresa(id, ahora, configurado, Boolean(guion_activo_id), resumen);
         if (parada) resumen.paradas = { ...resumen.paradas, [id]: parada };
       } catch (e) {
         log.error("despacho de empresa falló", { empresa_id: id, error: e instanceof Error ? e.message : String(e) });
@@ -78,6 +81,7 @@ async function despacharEmpresa(
   empresaId: string,
   ahora: Date,
   configurado: boolean,
+  conGuion: boolean,
   resumen: ResumenDespacho,
 ): Promise<MotivoParada | undefined> {
   const supabase = createAdminClient();
@@ -87,6 +91,8 @@ async function despacharEmpresa(
   if (config.pausa_global) return "pausa_global";
   if (!estaEnFranja(ahora, config)) return "fuera_de_franja";
   if (!configurado) return "sin_configurar";
+  // Sin guion activo no hay qué decir: los items esperan en cola.
+  if (!conGuion) return "sin_guion";
 
   const { data: reservas, error } = await supabase.rpc("reservar_llamadas_lote", { p_empresa_id: empresaId });
   if (error) throw new Error(`reservar_llamadas_lote: ${error.message}`);

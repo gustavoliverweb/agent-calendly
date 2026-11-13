@@ -193,6 +193,118 @@ begin
   raise notice 'AISLAMIENTO OK';
 end $$;
 
+-- Guiones (S3) -----------------------------------------------------------------
+
+reset role;
+
+-- Un guion de B, activo, y otro de A sin activar (como postgres).
+with g as (
+  insert into public.guiones (empresa_id, version, negocio_nombre, nombre_agente, primer_mensaje,
+                              negocio, motivo, oferta, cita, texto, creado_por)
+  values (current_setting('t.eb')::uuid, 0, 'B', 'Bea', 'Soy una asistente virtual, se transcribe.',
+          'b', 'b', 'b', 'b', 'Negocio: B', current_setting('t.ub')::uuid)
+  returning id
+)
+select set_config('t.gb', (select id from g)::text, true);
+update public.empresas set guion_activo_id = current_setting('t.gb')::uuid where id = current_setting('t.eb')::uuid;
+
+do $$
+begin
+  if (select version from public.guiones where id = current_setting('t.gb')::uuid) <> 1 then
+    raise exception 'FALLO: la primera versión de un guion no es la 1';
+  end if;
+  raise notice 'ok: versiones numeradas por empresa';
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  perform public.crear_llamada(current_setting('t.ca')::uuid, null, current_setting('t.ua')::uuid);
+  raise exception 'FALLO: A llamó sin guion activo';
+exception when raise_exception then
+  if sqlerrm <> 'sin_guion' then raise; end if;
+  raise notice 'ok: sin guion activo no se llama';
+end $$;
+
+do $$
+begin
+  if exists (select 1 from public.guiones where empresa_id = current_setting('t.eb')::uuid) then
+    raise exception 'FALLO: A ve los guiones de B';
+  end if;
+  raise notice 'ok: A no ve los guiones de B';
+end $$;
+
+do $$
+begin
+  insert into public.guiones (empresa_id, version, negocio_nombre, nombre_agente, primer_mensaje,
+                              negocio, motivo, oferta, cita, texto, creado_por)
+  values (current_setting('t.eb')::uuid, 0, 'X', 'X', 'Soy una asistente virtual, se transcribe.',
+          'x', 'x', 'x', 'x', 'x', current_setting('t.ua')::uuid);
+  raise exception 'FALLO: A creó un guion en B';
+exception when insufficient_privilege then
+  raise notice 'ok: A no crea guiones en B';
+end $$;
+
+do $$
+begin
+  perform public.activar_guion(current_setting('t.gb')::uuid);
+  raise exception 'FALLO: A activó un guion de B';
+exception when insufficient_privilege then
+  raise notice 'ok: A no activa guiones de B';
+end $$;
+
+-- A crea su guion (versión 1), lo activa y ya puede llamar.
+with g as (
+  insert into public.guiones (empresa_id, version, negocio_nombre, nombre_agente, primer_mensaje,
+                              negocio, motivo, oferta, cita, texto, creado_por)
+  values (current_setting('t.ea')::uuid, 99, 'A', 'Ana', 'Soy una asistente virtual, se transcribe.',
+          'a', 'a', 'a', 'a', 'Negocio: A', current_setting('t.ua')::uuid)
+  returning id, version
+)
+select set_config('t.ga', (select id from g)::text, true),
+       set_config('t.ga_version', (select version from g)::text, true);
+
+do $$
+begin
+  if current_setting('t.ga_version')::int <> 1 then
+    raise exception 'FALLO: la versión la eligió el cliente';
+  end if;
+  update public.guiones set texto = 'cambiado' where id = current_setting('t.ga')::uuid;
+  raise exception 'FALLO: A modificó una versión de su guion';
+exception when insufficient_privilege then
+  raise notice 'ok: las versiones de un guion no se modifican';
+end $$;
+
+do $$
+begin
+  -- Un guion de otra empresa no sirve para llamar a un contacto propio.
+  perform public.crear_llamada(current_setting('t.ca')::uuid, null, current_setting('t.ua')::uuid,
+                               current_setting('t.gb')::uuid, true);
+  raise exception 'FALLO: A llamó con el guion de B';
+exception when raise_exception then
+  if sqlerrm <> 'sin_guion' then raise; end if;
+  raise notice 'ok: A no usa guiones de B';
+end $$;
+
+do $$
+declare
+  v_llamada uuid;
+begin
+  perform public.activar_guion(current_setting('t.ga')::uuid);
+  v_llamada := public.crear_llamada(current_setting('t.ca')::uuid, null, current_setting('t.ua')::uuid);
+  if (select guion_id from public.llamadas where id = v_llamada) is distinct from current_setting('t.ga')::uuid then
+    raise exception 'FALLO: la llamada no guardó el guion activo';
+  end if;
+  raise notice 'ok: la llamada guarda la versión de guion usada';
+end $$;
+
+do $$ begin raise notice 'GUION OK'; end $$;
+
+reset role;
+
 -- Equipo y último propietario (S2) -------------------------------------------
 
 do $$

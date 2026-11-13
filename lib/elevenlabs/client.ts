@@ -1,5 +1,5 @@
 import "server-only";
-import { elevenLabsEnv } from "@/lib/env";
+import { elevenLabsAgenteEnv, elevenLabsEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 
 export class ElevenLabsError extends Error {
@@ -13,7 +13,7 @@ export class ElevenLabsError extends Error {
 }
 
 async function elevenFetch<T>(ruta: string, init: { method?: string; body?: unknown; timeoutMs: number }): Promise<T> {
-  const env = elevenLabsEnv();
+  const env = elevenLabsAgenteEnv();
   const url = new URL(ruta, env.ELEVENLABS_API_BASE);
   const inicio = performance.now();
   let res: Response;
@@ -43,6 +43,14 @@ async function elevenFetch<T>(ruta: string, init: { method?: string; body?: unkn
 
 export type VariablesDinamicas = Record<string, string | number | boolean>;
 
+/**
+ * Lo que cambia por llamada fuera de las variables. Solo la voz: el primer
+ * mensaje viaja como variable ({{primer_mensaje}}), así no hace falta activar
+ * su override. Para cambiar la voz hay que activar la override de voz en la
+ * pestaña Security del agente; si no, ElevenLabs rechaza la conversación.
+ */
+export type OverridesLlamada = { vozId?: string | null };
+
 type OutboundResponse = {
   success: boolean;
   message: string;
@@ -55,7 +63,11 @@ type OutboundResponse = {
  * falla después de que ElevenLabs aceptara la petición, reintentar podría
  * llamar dos veces a la misma persona.
  */
-export async function llamadaSaliente(telefono: string, variables: VariablesDinamicas) {
+export async function llamadaSaliente(
+  telefono: string,
+  variables: VariablesDinamicas,
+  overrides: OverridesLlamada = {},
+) {
   const env = elevenLabsEnv();
   const r = await elevenFetch<OutboundResponse>("/v1/convai/sip-trunk/outbound-call", {
     method: "POST",
@@ -63,7 +75,10 @@ export async function llamadaSaliente(telefono: string, variables: VariablesDina
       agent_id: env.ELEVENLABS_AGENT_ID,
       agent_phone_number_id: env.ELEVENLABS_PHONE_NUMBER_ID,
       to_number: telefono,
-      conversation_initiation_client_data: { dynamic_variables: variables },
+      conversation_initiation_client_data: {
+        dynamic_variables: variables,
+        ...(overrides.vozId ? { conversation_config_override: { tts: { voice_id: overrides.vozId } } } : {}),
+      },
     },
     timeoutMs: 10_000,
   });
@@ -71,6 +86,21 @@ export async function llamadaSaliente(telefono: string, variables: VariablesDina
     throw new ElevenLabsError(r.message || "ElevenLabs no inició la llamada");
   }
   return { conversationId: r.conversation_id, sipCallId: r.sip_call_id };
+}
+
+/**
+ * URL firmada para una conversación de prueba desde el navegador (WebSocket).
+ * Caduca a los 15 minutos y sirve para una sola conversación; así la clave de
+ * la API nunca llega al cliente.
+ */
+export async function urlFirmadaConversacion(): Promise<string> {
+  const env = elevenLabsAgenteEnv();
+  const r = await elevenFetch<{ signed_url: string }>(
+    `/v1/convai/conversation/get-signed-url?agent_id=${encodeURIComponent(env.ELEVENLABS_AGENT_ID)}`,
+    { timeoutMs: 8000 },
+  );
+  if (!r?.signed_url) throw new ElevenLabsError("ElevenLabs no devolvió la URL firmada");
+  return r.signed_url;
 }
 
 export type Conversacion = {

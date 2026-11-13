@@ -9,14 +9,22 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
  * Aun así limita a dónde se conecta la página, quién la enmarca y bloquea
  * plugins y <base> inyectados. Sin upgrade-insecure-requests: lo cubre HSTS
  * y rompería las pruebas en http://localhost.
+ *
+ * "Probar en el navegador" (/app/guion) habla con ElevenLabs por WebSocket,
+ * usa el micrófono y carga sus audio worklets desde blob:. Va en toda la app
+ * y no solo en esa ruta porque la navegación en cliente conserva las
+ * cabeceras de la primera página cargada. Un blob: solo lo puede crear un
+ * script que ya se ejecuta en la página, y el micrófono queda limitado a
+ * este origen.
  */
+const elevenLabs = "https://api.elevenlabs.io wss://api.elevenlabs.io";
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' blob:${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
-  `connect-src 'self'${supabase ? ` ${supabase} ${supabase.replace(/^http/, "ws")}` : ""}`,
+  `connect-src 'self' ${elevenLabs}${supabase ? ` ${supabase} ${supabase.replace(/^http/, "ws")}` : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -28,7 +36,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 

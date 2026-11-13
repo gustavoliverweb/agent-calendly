@@ -1,6 +1,20 @@
 import "server-only";
+import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+/**
+ * Transitorio hasta la S4 (Calendly por empresa): el único calendario es el
+ * de las variables de entorno, que es de la empresa principal. Las llamadas
+ * de otras empresas (p. ej. una prueba desde su panel) no lo consultan ni
+ * reservan en él.
+ */
+export async function llamadaConCalendly(llamadaId: string): Promise<boolean> {
+  const { data } = await createAdminClient().from("llamadas").select("empresa_id").eq("id", llamadaId).maybeSingle();
+  // Una llamada desconocida la trata cada tool como hasta ahora.
+  if (!data) return true;
+  return data.empresa_id === (await empresaPrincipalId());
+}
 
 /** La primera tool que usa el agente demuestra que la llamada está en curso. */
 export async function marcarEnCurso(llamadaId: string) {

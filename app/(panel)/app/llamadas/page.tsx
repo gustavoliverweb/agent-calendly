@@ -91,7 +91,14 @@ async function Listado({ searchParams }: Pick<PageProps<"/app/llamadas">, "searc
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <p className="font-medium">{l.contactos?.nombre ?? "—"}</p>
+                  <p className="font-medium">
+                    {l.contactos?.nombre ?? "—"}
+                    {l.es_prueba && (
+                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                        Prueba
+                      </span>
+                    )}
+                  </p>
                   {l.contactos && <p className="text-xs text-muted-foreground tabular-nums">{formatPhone(l.contactos.telefono)}</p>}
                 </TableCell>
                 <TableCell>
