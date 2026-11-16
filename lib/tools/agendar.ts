@@ -3,11 +3,12 @@ import { z } from "zod";
 import { invalidarDisponibilidad } from "@/lib/calendly/availability";
 import { reservarEnCalendly } from "@/lib/calendly/booking";
 import { CalendlyError } from "@/lib/calendly/client";
+import { registrarErrorCalendly } from "@/lib/calendly/conexion";
 import { formatearHueco } from "@/lib/calendly/format-es";
 import { isValidEmail } from "@/lib/contacts/parse";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { llamadaConCalendly, marcarSeguimiento } from "./llamada";
+import { conexionParaTool, marcarSeguimiento } from "./llamada";
 
 const texto = z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string());
 
@@ -128,14 +129,16 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
     };
   }
 
-  if (!(await llamadaConCalendly(llamada.id))) {
-    log.warn("agendar: la empresa aún no tiene Calendly conectado", { llamada_id: llamada.id });
+  const conexion = await conexionParaTool(llamada.empresa_id);
+  if (!conexion) {
+    log.warn("agendar: la empresa no tiene Calendly listo", { llamada_id: llamada.id });
+    await marcarSeguimiento(llamada.id, "fallo_calendly");
     return CALENDARIO_NO_DISPONIBLE;
   }
 
   let reserva;
   try {
-    reserva = await reservarEnCalendly({
+    reserva = await reservarEnCalendly(conexion, {
       inicio,
       nombre: params.nombre || contacto.nombre,
       email,
@@ -151,6 +154,8 @@ async function agendar(params: z.infer<typeof agendarSchema>, ahora: Date): Prom
         mensaje: "Ese hueco ya no está disponible. Consulta la disponibilidad de nuevo y ofrece otro.",
       };
     }
+    // 403: la cuenta de Calendly no es de pago (la Scheduling API lo exige).
+    if (e.tipo === "auth") await registrarErrorCalendly(conexion, e.status === 403 ? "plan_sin_api" : "api_401");
     await marcarSeguimiento(llamada.id, "fallo_calendly");
     return CALENDARIO_NO_DISPONIBLE;
   }

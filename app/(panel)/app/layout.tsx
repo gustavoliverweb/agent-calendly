@@ -6,6 +6,7 @@ import { NavLinks, PanelNav } from "@/components/panel/nav";
 import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { conexionCalendly } from "@/lib/calendly/conexion";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -61,19 +62,41 @@ async function AvisoSuspendida() {
   );
 }
 
+/** Pasos que faltan para que la empresa pueda llamar (guion y Calendly). */
 async function AvisoSinGuion() {
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const { data } = await supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).maybeSingle();
-  if (!data || data.guion_activo_id) return null;
+  const [{ data }, calendly] = await Promise.all([
+    supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).maybeSingle(),
+    conexionCalendly(empresa.id).catch(() => null),
+  ]);
+  const pasos: { texto: string; href: string; enlace: string }[] = [];
+  if (data && !data.guion_activo_id) {
+    pasos.push({ texto: "no tiene un guion activo, así que no sale ninguna llamada", href: "/app/guion", enlace: "Guion" });
+  }
+  if (!calendly) {
+    pasos.push({
+      texto: "no tiene Calendly conectado, así que el agente no puede ofrecer huecos ni reservar",
+      href: "/app/calendly",
+      enlace: "Calendly",
+    });
+  }
+  if (!pasos.length) return null;
+  const quien = empresa.rol === "propietario" ? "Puedes resolverlo en" : "Pide al propietario que lo resuelva en";
   return (
     <Alert className="mb-6">
       <AlertDescription>
-        Tu empresa aún no tiene un guion activo, así que no sale ninguna llamada.{" "}
-        <Link href="/app/guion" className="font-medium underline">
-          {empresa.rol === "propietario" ? "Créalo en la sección Guion" : "Pide al propietario que lo cree en la sección Guion"}
-        </Link>
-        .
+        <ul className="flex flex-col gap-1">
+          {pasos.map((p) => (
+            <li key={p.href}>
+              Tu empresa {p.texto}. {quien}{" "}
+              <Link href={p.href} className="font-medium underline">
+                {p.enlace}
+              </Link>
+              .
+            </li>
+          ))}
+        </ul>
       </AlertDescription>
     </Alert>
   );

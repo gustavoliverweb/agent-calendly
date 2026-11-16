@@ -1,19 +1,28 @@
 import "server-only";
+import { conexionCalendly, type ConexionCalendly } from "@/lib/calendly/conexion";
 import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Transitorio hasta la S4 (Calendly por empresa): el único calendario es el
- * de las variables de entorno, que es de la empresa principal. Las llamadas
- * de otras empresas (p. ej. una prueba desde su panel) no lo consultan ni
- * reservan en él.
+ * Calendly con el que trabaja una tool: el de la empresa de la llamada. Sin
+ * llamada (p. ej. el tester web de ElevenLabs sin llamada_id), el de la
+ * empresa principal. Null si la empresa no tiene Calendly listo o no se puede
+ * leer: la tool responde "calendario no disponible".
  */
-export async function llamadaConCalendly(llamadaId: string): Promise<boolean> {
+export async function conexionParaTool(empresaId: string | null): Promise<ConexionCalendly | null> {
+  try {
+    return await conexionCalendly(empresaId ?? (await empresaPrincipalId()));
+  } catch (e) {
+    log.error("tool: sin conexión con Calendly", { empresa_id: empresaId, error: e instanceof Error ? e.message : String(e) });
+    return null;
+  }
+}
+
+/** Empresa de una llamada (las tools la deducen de llamada_id, nunca de lo que diga el LLM). */
+export async function empresaDeLlamada(llamadaId: string): Promise<string | null> {
   const { data } = await createAdminClient().from("llamadas").select("empresa_id").eq("id", llamadaId).maybeSingle();
-  // Una llamada desconocida la trata cada tool como hasta ahora.
-  if (!data) return true;
-  return data.empresa_id === (await empresaPrincipalId());
+  return data?.empresa_id ?? null;
 }
 
 /** La primera tool que usa el agente demuestra que la llamada está en curso. */

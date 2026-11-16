@@ -424,6 +424,83 @@ export type Database = {
           },
         ]
       }
+      integraciones_calendly: {
+        Row: {
+          access_token: string | null
+          actualizado_en: string
+          conectado_en: string
+          conectado_por: string | null
+          cuenta_email: string | null
+          cuenta_nombre: string | null
+          empresa_id: string
+          estado: string
+          event_type_nombre: string | null
+          event_type_uri: string | null
+          organizacion_uri: string | null
+          refresh_token: string | null
+          renovando_hasta: string | null
+          token_expira_en: string | null
+          ubicacion: string | null
+          ubicacion_kind: string | null
+          ultimo_error: string | null
+          ultimo_error_en: string | null
+          usuario_uri: string | null
+          webhook_uri: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          actualizado_en?: string
+          conectado_en?: string
+          conectado_por?: string | null
+          cuenta_email?: string | null
+          cuenta_nombre?: string | null
+          empresa_id: string
+          estado?: string
+          event_type_nombre?: string | null
+          event_type_uri?: string | null
+          organizacion_uri?: string | null
+          refresh_token?: string | null
+          renovando_hasta?: string | null
+          token_expira_en?: string | null
+          ubicacion?: string | null
+          ubicacion_kind?: string | null
+          ultimo_error?: string | null
+          ultimo_error_en?: string | null
+          usuario_uri?: string | null
+          webhook_uri?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          actualizado_en?: string
+          conectado_en?: string
+          conectado_por?: string | null
+          cuenta_email?: string | null
+          cuenta_nombre?: string | null
+          empresa_id?: string
+          estado?: string
+          event_type_nombre?: string | null
+          event_type_uri?: string | null
+          organizacion_uri?: string | null
+          refresh_token?: string | null
+          renovando_hasta?: string | null
+          token_expira_en?: string | null
+          ubicacion?: string | null
+          ubicacion_kind?: string | null
+          ultimo_error?: string | null
+          ultimo_error_en?: string | null
+          usuario_uri?: string | null
+          webhook_uri?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integraciones_calendly_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       latidos: {
         Row: {
           en: string
@@ -762,6 +839,10 @@ export type Database = {
         Returns: undefined
       }
       purgar_datos_antiguos: { Args: never; Returns: Json }
+      reclamar_renovacion_calendly: {
+        Args: { p_empresa_id: string }
+        Returns: boolean
+      }
       reservar_llamadas_lote: {
         Args: { p_empresa_id: string }
         Returns: {
@@ -777,9 +858,11 @@ export type Database = {
       resumen_empresas: {
         Args: never
         Returns: {
+          calendly: string
           contactos: number
           creado_en: string
           estado: string
+          guion_activo: boolean
           id: string
           llamadas_30d: number
           miembros: number

@@ -1,7 +1,7 @@
 import "server-only";
-import { calendlyEnv } from "@/lib/env";
 import { TZ } from "@/lib/time/madrid";
 import { calendlyFetch } from "./client";
+import type { ConexionCalendly } from "./conexion";
 
 export type Reserva = {
   inviteeUri: string;
@@ -15,12 +15,12 @@ type InviteeResponse = {
 };
 
 /**
- * Ubicación para el invitee según CALENDLY_LOCATION_KIND. Debe coincidir con
- * la del tipo de evento: sin ella Calendly rechaza la reserva
+ * Ubicación para el invitee (la del tipo de evento de la empresa). Debe
+ * coincidir con la del tipo de evento: sin ella Calendly rechaza la reserva
  * (`invalid_location_choice`), aunque el tipo tenga una sola ubicación.
  */
-function ubicacion(telefono: string) {
-  const { CALENDLY_LOCATION_KIND: kind, CALENDLY_LOCATION: location } = calendlyEnv();
+function ubicacion(conexion: ConexionCalendly, telefono: string) {
+  const { ubicacionKind: kind, ubicacion: location } = conexion;
   if (!kind) return undefined;
   // En "outbound_call" el anfitrión llama al invitee: va su teléfono.
   if (kind === "outbound_call") return { kind, location: telefono };
@@ -28,17 +28,17 @@ function ubicacion(telefono: string) {
 }
 
 /** Crea la reserva en Calendly (Scheduling API, plan de pago). Sin caché ni reintentos. */
-export async function reservarEnCalendly(datos: {
+export async function reservarEnCalendly(conexion: ConexionCalendly, datos: {
   inicio: Date;
   nombre: string;
   email: string;
   telefono: string;
 }): Promise<Reserva> {
-  const location = ubicacion(datos.telefono);
-  const { resource } = await calendlyFetch<InviteeResponse>("/invitees", {
+  const location = ubicacion(conexion, datos.telefono);
+  const { resource } = await calendlyFetch<InviteeResponse>(conexion.token, "/invitees", {
     method: "POST",
     body: {
-      event_type: calendlyEnv().CALENDLY_EVENT_TYPE_URI,
+      event_type: conexion.eventTypeUri,
       start_time: datos.inicio.toISOString(),
       invitee: { name: datos.nombre, email: datos.email, timezone: TZ },
       ...(location ? { location } : {}),

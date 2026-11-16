@@ -1,7 +1,7 @@
 import "server-only";
-import { calendlyEnv } from "@/lib/env";
 import { leerFechaMadrid, madridAUtc } from "@/lib/time/madrid";
 import { calendlyFetch } from "./client";
+import type { ConexionCalendly } from "./conexion";
 
 /** Antelación mínima con la que se ofrece un hueco. */
 export const MARGEN_MIN_MS = 2 * 60 * 60 * 1000;
@@ -63,19 +63,19 @@ export function invalidarDisponibilidad() {
 }
 
 /**
- * Huecos libres del tipo de evento en el rango, con caché de 60 s por rango.
- * Se cachea la promesa para que dos peticiones simultáneas (pre-calentado y
- * la tool) compartan una sola consulta.
+ * Huecos libres del tipo de evento de la empresa en el rango, con caché de
+ * 60 s por empresa, tipo de evento y rango. Se cachea la promesa para que dos
+ * peticiones simultáneas (pre-calentado y la tool) compartan una consulta.
  */
-export function obtenerDisponibilidad({ inicio, fin }: Rango): Promise<Date[]> {
-  const clave = `${inicio.getTime()}|${fin.getTime()}`;
+export function obtenerDisponibilidad(conexion: ConexionCalendly, { inicio, fin }: Rango): Promise<Date[]> {
+  const clave = `${conexion.empresaId}|${conexion.eventTypeUri}|${inicio.getTime()}|${fin.getTime()}`;
   const ahora = Date.now();
   const enCache = cache.get(clave);
   if (enCache && enCache.expira > ahora) return enCache.valor;
 
-  const valor = calendlyFetch<AvailableTimes>("/event_type_available_times", {
+  const valor = calendlyFetch<AvailableTimes>(conexion.token, "/event_type_available_times", {
     query: {
-      event_type: calendlyEnv().CALENDLY_EVENT_TYPE_URI,
+      event_type: conexion.eventTypeUri,
       start_time: inicio.toISOString(),
       end_time: fin.toISOString(),
     },

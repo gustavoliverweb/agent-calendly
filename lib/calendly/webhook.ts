@@ -1,7 +1,6 @@
 import "server-only";
 import { z } from "zod";
 import { normalizePhone } from "@/lib/contacts/phone";
-import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { invalidarDisponibilidad } from "./availability";
@@ -42,21 +41,26 @@ export type ResultadoWebhook =
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
+/**
+ * Aplica un evento del Calendly de una empresa. Todo se busca dentro de esa
+ * empresa: una cita o un contacto de otra nunca se toca.
+ */
 export async function procesarWebhookCalendly(
   w: WebhookCalendly,
-  eventTypeUri: string,
+  empresaId: string,
+  eventTypeUri: string | null,
 ): Promise<ResultadoWebhook> {
   const supabase = createAdminClient();
   let resultado: ResultadoWebhook;
   if (w.event === "invitee.created") {
     // Otras reuniones del mismo calendario no son cosa de la app.
     const tipo = w.payload.scheduled_event.event_type;
-    if (tipo && tipo !== eventTypeUri) return "otro_tipo_de_evento";
-    resultado = await citaCreada(supabase, w.payload);
+    if (!eventTypeUri || (tipo && tipo !== eventTypeUri)) return "otro_tipo_de_evento";
+    resultado = await citaCreada(supabase, empresaId, w.payload);
   } else if (w.event === "invitee.canceled") {
     // Sin filtro de tipo: solo toca citas que la app ya registró, y deben
-    // cancelarse aunque CALENDLY_EVENT_TYPE_URI haya cambiado después.
-    resultado = await citaCancelada(supabase, w.payload);
+    // cancelarse aunque el tipo de evento haya cambiado después.
+    resultado = await citaCancelada(supabase, empresaId, w.payload);
   } else return "evento_ignorado";
 
   invalidarDisponibilidad();
@@ -69,9 +73,13 @@ function comprobar<T extends { error: { code?: string; message: string } | null 
   return r;
 }
 
-async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Promise<ResultadoWebhook> {
+async function citaCreada(
+  supabase: Supabase,
+  empresaId: string,
+  p: WebhookCalendly["payload"],
+): Promise<ResultadoWebhook> {
   const { data: existente } = comprobar(
-    await supabase.from("citas").select("id").eq("calendly_invitee_uri", p.uri).maybeSingle(),
+    await supabase.from("citas").select("id").eq("calendly_invitee_uri", p.uri).eq("empresa_id", empresaId).maybeSingle(),
     "buscar cita",
   );
   // La reservó el agente (o es un reintento del webhook): nada que hacer.
@@ -86,6 +94,7 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
         .from("citas")
         .select("id, contacto_id, llamada_id, empresa_id")
         .eq("calendly_invitee_uri", p.old_invitee)
+        .eq("empresa_id", empresaId)
         .maybeSingle(),
       "buscar cita antigua",
     );
@@ -132,10 +141,7 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
   }
 
   // Reserva hecha fuera del agente (o antes de que el agente guardara la
-  // suya): se asocia al contacto si se reconoce. No se crean contactos.
-  // El Calendly de las variables de entorno es de la empresa principal
-  // (hasta que cada empresa conecte el suyo, fase S4).
-  const empresaId = await empresaPrincipalId();
+  // suya): se asocia al contacto de la empresa si se reconoce. No se crean contactos.
   const contactoId = await buscarContacto(supabase, empresaId, p.email, p.text_reminder_number);
   if (!contactoId) return "sin_contacto";
 
@@ -157,12 +163,17 @@ async function citaCreada(supabase: Supabase, p: WebhookCalendly["payload"]): Pr
   return "registrada_sin_llamada";
 }
 
-async function citaCancelada(supabase: Supabase, p: WebhookCalendly["payload"]): Promise<ResultadoWebhook> {
+async function citaCancelada(
+  supabase: Supabase,
+  empresaId: string,
+  p: WebhookCalendly["payload"],
+): Promise<ResultadoWebhook> {
   const { data: cita } = comprobar(
     await supabase
       .from("citas")
       .select("id, contacto_id, llamada_id, estado")
       .eq("calendly_invitee_uri", p.uri)
+      .eq("empresa_id", empresaId)
       .maybeSingle(),
     "buscar cita",
   );

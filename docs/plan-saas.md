@@ -1,6 +1,6 @@
 # Plan: de un negocio a SaaS multi-cliente
 
-Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`) **S2** sin el envío de emails (migración `20261113000000_admin_equipo.sql`; las invitaciones generan un enlace hasta que haya SMTP propio, `INVITACIONES_POR_EMAIL`) y **S3** (migración `20261114000000_guiones.sql`; la voz queda fija hasta que el cliente elija voces). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
+Estado: **aprobado** (12/11/2026; actualizado con llamadas B2B y marca blanca). Hecho: **S1** (migración `20261112000000_multiempresa.sql`, pruebas `tests/db/aislamiento.sql`) **S2** sin el envío de emails (migración `20261113000000_admin_equipo.sql`; las invitaciones generan un enlace hasta que haya SMTP propio, `INVITACIONES_POR_EMAIL`) **S3** (migración `20261114000000_guiones.sql`; la voz queda fija hasta que el cliente elija voces) y **S4** (migración `20261116000000_calendly_oauth.sql`; falta crear la app OAuth en Calendly y probarlo con una cuenta real). Parte de la app actual (PLAN.md, fases 1–7 hechas y probadas con ElevenLabs y Calendly reales) y la convierte en un SaaS donde cada negocio (empresa) tiene sus datos, su guion, su calendario y su línea, aislados del resto.
 
 ## 1. Decisiones tomadas
 
@@ -34,7 +34,7 @@ app.<marca-saas>.com ───┘  (la empresa se deduce   ├─ ElevenLabs: UN
 ### 2.2 Calendly: OAuth por empresa
 - Una **app OAuth** del proveedor en Calendly (Developer tools → OAuth apps): client ID, client secret y clave de firma de webhooks. PKCE obligatorio; una sola redirect URI (`https://<dominio>/api/calendly/oauth/callback`).
 - Por empresa se guardan **access token** (dura 2 h) y **refresh token**, **cifrados** en BD. La renovación es de **un solo uso**: cada refresh devuelve un refresh token nuevo que sustituye al anterior; se serializa con un bloqueo por empresa para que dos peticiones a la vez no invaliden el token.
-- Tras conectar, la empresa **elige el tipo de evento** en una lista y la app lee su **ubicación** (sustituye a `CALENDLY_EVENT_TYPE_URI` y `CALENDLY_LOCATION_KIND`).
+- Tras conectar, la empresa **elige el tipo de evento** en una lista y la app lee su **ubicación** (la primera del tipo; sustituye a `CALENDLY_EVENT_TYPE_URI` y `CALENDLY_LOCATION_KIND`). Los scopes que necesita la app: `users:read`, `event_types:read`, `scheduled_events:write`, `webhooks:write`.
 - **Webhook por empresa**, creado automáticamente al conectar, hacia `/api/webhooks/calendly/<empresa>`: la URL identifica la empresa y la firma usa la clave de la app OAuth. Se crea con alcance usuario (o organización si quien conecta es admin de su organización Calendly).
 - La reserva por API exige que **la cuenta Calendly de la empresa sea de pago** (Standard o superior); el panel lo avisa si recibe 403. Límite: 100 reservas/día por usuario de Calendly.
 - Si un refresh falla (`invalid_grant`), la empresa queda "Calendly desconectado": aviso en su panel y las tools responden "le llamaremos" como hoy.

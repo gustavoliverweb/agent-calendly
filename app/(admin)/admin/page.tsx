@@ -13,6 +13,13 @@ export const metadata: Metadata = { title: "Empresas" };
 const entero = new Intl.NumberFormat("es-ES");
 const fecha = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", dateStyle: "short" });
 
+const ESTADO_CALENDLY: Record<string, string> = {
+  sin_conectar: "sin conectar",
+  pendiente: "falta el tipo de evento",
+  conectada: "conectado",
+  desconectada: "desconectado",
+};
+
 export default function AdminPage() {
   return (
     <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-muted" />}>
@@ -37,6 +44,7 @@ async function Empresas() {
             <TableRow>
               <TableHead>Empresa</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="hidden lg:table-cell">Puesta en marcha</TableHead>
               <TableHead className="text-right">Miembros</TableHead>
               <TableHead className="text-right">Contactos</TableHead>
               <TableHead className="text-right">Llamadas</TableHead>
@@ -57,6 +65,12 @@ async function Empresas() {
                   <Badge variant={e.estado === "activa" ? "secondary" : "destructive"}>
                     {e.estado === "activa" ? "Activa" : "Suspendida"}
                   </Badge>
+                </TableCell>
+                <TableCell className="hidden text-xs lg:table-cell">
+                  <span className={e.guion_activo ? "" : "text-destructive"}>
+                    {e.guion_activo ? "Guion activo" : "Sin guion"}
+                  </span>
+                  <span className="block text-muted-foreground">Calendly: {ESTADO_CALENDLY[e.calendly] ?? e.calendly}</span>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{e.miembros}</TableCell>
                 <TableCell className="text-right tabular-nums">{entero.format(e.contactos)}</TableCell>

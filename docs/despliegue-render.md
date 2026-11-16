@@ -45,7 +45,8 @@ Con una URL fija ya no hace falta el túnel para probar el agente.
 |---|---|
 | ElevenLabs, tools | URL de `disponibilidad`, `agendar` y `no_llamar` → `https://<url>/api/tools/...` |
 | ElevenLabs, webhook post-llamada | La URL de un webhook no se puede editar: crea uno nuevo hacia `https://<url>/api/webhooks/elevenlabs`, asígnalo al agente y guarda su secreto en `ELEVENLABS_WEBHOOK_SECRET` (en Render y en `.env.local`) |
-| Calendly | `pnpm calendly crear-webhook https://<url>/api/webhooks/calendly` (requiere plan de pago) |
+| Calendly (OAuth, S4) | Redirect URI de la app OAuth de producción: `https://<url>/api/calendly/oauth/callback`. Los webhooks de cada empresa los crea la app al conectar (con `APP_URL`); si cambia el dominio, cada empresa debe pulsar «Desconectar» y volver a conectar |
+| Calendly de entorno (transitorio) | `pnpm calendly crear-webhook https://<url>/api/webhooks/calendly` (requiere plan de pago) |
 | Supabase pg_cron | El SQL de [configuracion-cron.md](configuracion-cron.md) con `app_url` = la URL pública y el mismo `CRON_SECRET` que en Render |
 
 ## 5. Dominio propio (cuando lo haya)

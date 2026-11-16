@@ -54,6 +54,27 @@ const calendlyWebhookSchema = z.object({
   CALENDLY_WEBHOOK_SIGNING_KEY: secret(),
 });
 
+/** Scopes que pide la app (deben estar marcados también en la app OAuth de Calendly). */
+export const CALENDLY_SCOPES = "users:read event_types:read scheduled_events:write webhooks:write";
+
+// App OAuth de la plataforma en Calendly (Developer tools → OAuth apps).
+// Cada empresa conecta su cuenta con ella (S4).
+const calendlyOAuthSchema = z.object({
+  CALENDLY_OAUTH_CLIENT_ID: secret(1),
+  CALENDLY_OAUTH_CLIENT_SECRET: secret(),
+  CALENDLY_OAUTH_WEBHOOK_SIGNING_KEY: secret(),
+  // 32 bytes en base64 (openssl rand -base64 32): cifra los tokens en la BD.
+  ENCRYPTION_KEY: z
+    .string()
+    .trim()
+    .refine((v) => Buffer.from(v, "base64").length === 32, "32 bytes en base64"),
+  // Vacío: no se envía `scope` al autorizar (valen los marcados en la app).
+  CALENDLY_OAUTH_SCOPES: z.string().trim().default(CALENDLY_SCOPES),
+  // Solo para apuntar a servidores simulados en pruebas.
+  CALENDLY_AUTH_BASE: z.url().default("https://auth.calendly.com"),
+  CALENDLY_API_BASE: z.url().default("https://api.calendly.com"),
+});
+
 const appSchema = z.object({
   APP_URL: z.url(),
   TOOLS_SECRET: secret(32),
@@ -84,6 +105,7 @@ export const elevenLabsEnv = loader("ElevenLabs", elevenLabsSchema);
 export const elevenLabsWebhookEnv = loader("ElevenLabs webhook", elevenLabsWebhookSchema);
 export const calendlyEnv = loader("Calendly", calendlySchema);
 export const calendlyWebhookEnv = loader("Calendly webhook", calendlyWebhookSchema);
+export const calendlyOAuthEnv = loader("Calendly OAuth", calendlyOAuthSchema);
 export const appEnv = loader("App", appSchema);
 
 /** Indica si un grupo de variables está completo, sin lanzar error. */

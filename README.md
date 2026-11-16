@@ -38,7 +38,8 @@ Cada usuario pertenece a una o varias **empresas** y solo ve los datos de ellas.
 
 - **Administración de la plataforma** (`/admin`, solo el proveedor): crear empresas e invitar a su propietario, suspender o reactivar, gestionar el equipo de cualquier empresa y ver el uso de los últimos 30 días. Se da acceso con `pnpm admin-plataforma <email>` a un usuario que ya existe.
 - **Equipo** (`/app/equipo`, en cada empresa): el propietario invita, cambia el rol (propietario u operador) y quita miembros. Una empresa siempre conserva al menos un propietario.
-- **Guion** (`/app/guion`, en cada empresa): el propietario redacta por apartados lo que el agente cuenta del negocio, más el nombre del agente y el primer mensaje (que debe identificarlo como IA y avisar de la transcripción). Cada vez que se guarda se crea una versión; la activa es la que usan las llamadas, y cada llamada guarda la suya. Sin guion activo no sale ninguna llamada. **Probar en el navegador** abre una conversación con el micrófono, con una versión y un contacto de la empresa, sin marcar ningún teléfono (la llamada queda en el panel como «Prueba»). Hasta la fase S4, solo la empresa principal tiene Calendly: en las demás, el agente responde que no puede consultar la agenda.
+- **Guion** (`/app/guion`, en cada empresa): el propietario redacta por apartados lo que el agente cuenta del negocio, más el nombre del agente y el primer mensaje (que debe identificarlo como IA y avisar de la transcripción). Cada vez que se guarda se crea una versión; la activa es la que usan las llamadas, y cada llamada guarda la suya. Sin guion activo no sale ninguna llamada. **Probar en el navegador** abre una conversación con el micrófono, con una versión y un contacto de la empresa, sin marcar ningún teléfono (la llamada queda en el panel como «Prueba»). 
+- **Calendly** (`/app/calendly`, en cada empresa): el propietario conecta su cuenta con OAuth, elige el tipo de evento en el que reserva el agente y la app crea el webhook de la empresa. Los tokens se guardan cifrados (`ENCRYPTION_KEY`). Hasta que la empresa principal conecte la suya, usa el Calendly de las variables de entorno. Configuración de la app OAuth: [`docs/configuracion-calendly.md`](docs/configuracion-calendly.md#0-app-oauth-de-la-plataforma-una-vez).
 
 **Invitaciones sin email propio:** mientras Supabase Auth no tenga SMTP propio (su correo por defecto solo llega a los miembros del proyecto de Supabase), las invitaciones generan un **enlace de acceso** que el panel muestra para enviarlo a mano. Cuando haya SMTP, `INVITACIONES_POR_EMAIL=true` (en Render y en `.env.local`) hace que se envíen por correo. Conviene subir la caducidad de esos enlaces en **Authentication → Providers → Email → Email OTP Expiration** (máximo 86400 s = 24 h); si caduca, el equipo tiene la opción «Nuevo enlace de acceso».
 
@@ -98,12 +99,15 @@ app/(panel)/app/lotes       Lotes con progreso; pausar, reanudar y cancelar
 app/(panel)/app/configuracion Franjas, festivos, concurrencia, reintentos y tipo de campaña (+ pausa global en la cabecera)
 app/(panel)/app/guion       Guion por empresa: formulario, versiones y prueba en el navegador (components/guion)
 lib/guion/                  Montaje y validación del guion (con tests) y guion de cada llamada
+app/(panel)/app/calendly    Conectar Calendly (OAuth), tipo de evento y desconectar (components/calendly)
+app/api/calendly/oauth/     Inicio y vuelta del OAuth de Calendly (PKCE)
+app/api/webhooks/calendly/[empresa] Webhook de Calendly de cada empresa
 app/api/cron/despachar      Pasada del motor de lotes cada minuto (Bearer CRON_SECRET)
 lib/calls/                  Lanzar llamadas (reglas + crear_llamada atómica), franjas, mapeo de resultados,
                             dispatcher de lotes y reconciliación de llamadas sin webhook
 lib/lotes/                  Estados, etiquetas y consultas de lotes
 lib/elevenlabs/             Cliente de la API (llamada saliente SIP, conversación)
-lib/calendly/               Cliente, huecos (caché 60 s), formato en español, reserva, webhook
+lib/calendly/               Cliente, conexión por empresa (OAuth, tokens cifrados y renovación), huecos (caché 60 s), formato en español, reserva, webhook
 lib/tools/                  Lógica de cada tool, separada de la ruta HTTP
 lib/time/madrid.ts          Conversión Europe/Madrid ↔ UTC (cambios de horario incluidos)
 scripts/fixtures/           CSV de 50 contactos del criterio de aceptación 1

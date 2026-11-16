@@ -39,6 +39,15 @@ services:
         sync: false
       - key: CALENDLY_WEBHOOK_SIGNING_KEY
         sync: false
+      # App OAuth de la plataforma (S4): cada empresa conecta su Calendly
+      - key: CALENDLY_OAUTH_CLIENT_ID
+        sync: false
+      - key: CALENDLY_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: CALENDLY_OAUTH_WEBHOOK_SIGNING_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
 
       # App
       - key: APP_URL # https://<dominio> o https://<servicio>.onrender.com, sin barra final

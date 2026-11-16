@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { calcularRango, obtenerDisponibilidad } from "@/lib/calendly/availability";
 import { CalendlyError } from "@/lib/calendly/client";
+import type { ConexionCalendly } from "@/lib/calendly/conexion";
 import { formatearHueco, unirOpciones } from "@/lib/calendly/format-es";
 import { seleccionarHuecos } from "@/lib/calendly/slots";
 
@@ -26,25 +27,33 @@ const MENSAJES_RANGO: Record<string, string> = {
   rango_invertido: "La fecha de inicio es posterior a la de fin. Vuelve a consultar con un rango válido.",
 };
 
+const SIN_AGENDA: RespuestaDisponibilidad = {
+  huecos: [],
+  error: "calendario_no_disponible",
+  mensaje: "Ahora mismo no puedo consultar la agenda. Ofrece que le llamemos más tarde.",
+};
+
 export async function consultarDisponibilidad(
+  conexion: ConexionCalendly | null,
   params: { desde?: string; hasta?: string },
   ahora = new Date(),
+  /** Calendly rechazó el token o el plan (401/403): para avisar en el panel. */
+  alFallarAuth?: (status: number | undefined) => Promise<void>,
 ): Promise<RespuestaDisponibilidad> {
   const rango = calcularRango(params.desde, params.hasta, ahora);
   if ("error" in rango) {
     return { huecos: [], error: "fechas_invalidas", mensaje: MENSAJES_RANGO[rango.error] };
   }
 
+  if (!conexion) return SIN_AGENDA;
+
   let libres: Date[];
   try {
-    libres = await obtenerDisponibilidad(rango);
+    libres = await obtenerDisponibilidad(conexion, rango);
   } catch (e) {
     if (!(e instanceof CalendlyError)) throw e;
-    return {
-      huecos: [],
-      error: "calendario_no_disponible",
-      mensaje: "Ahora mismo no puedo consultar la agenda. Ofrece que le llamemos más tarde.",
-    };
+    if (e.tipo === "auth") await alFallarAuth?.(e.status);
+    return SIN_AGENDA;
   }
 
   const huecos = seleccionarHuecos(libres).map((h) => ({

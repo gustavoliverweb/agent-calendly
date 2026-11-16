@@ -2,11 +2,32 @@
 
 La app consulta huecos y reserva citas con la API de Calendly. **La reserva por API (Scheduling API) solo funciona en planes de pago (Standard o superior)**; en el plan gratuito devuelve 403.
 
+Desde la fase S4 **cada empresa conecta su propia cuenta** desde el panel (sección **Calendly**, botón «Conectar con Calendly»), elige el tipo de evento y la app crea su webhook sola. Para eso la plataforma necesita **una app OAuth** en Calendly (apartado 0). Los apartados 2–4 (token personal, `CALENDLY_EVENT_TYPE_URI`, webhook a mano) son el **Calendly de entorno**, transitorio: solo lo usa la empresa principal mientras no conecte su cuenta por OAuth.
+
+## 0. App OAuth de la plataforma (una vez)
+
+1. Con la cuenta de Calendly del proveedor, entra en **developer.calendly.com → Developer tools → OAuth apps → Create new app**. Conviene una app **Sandbox** para pruebas en local y otra **Production** para Render.
+2. Datos de la app:
+   - **Redirect URI** (solo se admite una): `https://<dominio>/api/calendly/oauth/callback`. En Sandbox también vale `http://localhost:3000/api/calendly/oauth/callback`; en Production solo `https`.
+   - **Scopes**: `users:read`, `event_types:read`, `scheduled_events:write` y `webhooks:write` (los `:write` incluyen su `:read`). La app los pide también al autorizar (`CALENDLY_OAUTH_SCOPES`; si Calendly rechazara el parámetro, déjalo vacío y valdrán los marcados en la app).
+3. Al crearla, Calendly muestra **una sola vez** el client ID, el client secret y la clave de firma de webhooks: guárdalos en `CALENDLY_OAUTH_CLIENT_ID`, `CALENDLY_OAUTH_CLIENT_SECRET` y `CALENDLY_OAUTH_WEBHOOK_SIGNING_KEY` (en `.env.local` y en Render). Si se pierde la clave de firma, hay que pedirla a `support+developer@calendly.com`.
+4. Genera `ENCRYPTION_KEY` con `openssl rand -base64 32` (la misma en local y en Render si comparten base de datos). Cifra los tokens en la BD: **si se cambia, todas las empresas tienen que volver a conectar Calendly**.
+
+Qué hace la app con cada empresa:
+
+- Guarda el access token (2 h) y el refresh token **cifrados**. El refresh token es de un solo uso: la app renueva con un turno por empresa para que dos peticiones a la vez no lo invaliden. Si Calendly lo rechaza (`invalid_grant`: permiso retirado, contraseña cambiada…), la empresa queda «Desconectada» con un aviso y el agente ofrece llamar más tarde.
+- Crea un webhook con alcance de usuario hacia `https://<dominio>/api/webhooks/calendly/<id de la empresa>` (eventos `invitee.created` e `invitee.canceled`), firmado con la clave de la app.
+- Una cuenta de Calendly solo puede estar conectada a una empresa.
+- La ubicación que envía al reservar es la primera del tipo de evento elegido.
+- Si una reserva devuelve 403 (cuenta sin plan de pago), el panel lo avisa.
+
+**Paso de la empresa principal al OAuth:** cuando conecte su cuenta y elija el tipo de evento, el webhook antiguo (`/api/webhooks/calendly`) deja de procesarse. Después, bórralo con `pnpm calendly webhooks` y `pnpm calendly borrar-webhook <uri>`, y se pueden quitar de Render las variables `CALENDLY_TOKEN`, `CALENDLY_EVENT_TYPE_URI`, `CALENDLY_WEBHOOK_SIGNING_KEY` y `CALENDLY_LOCATION*`.
+
 ## 1. Tipo de evento
 
 Crea (o elige) en Calendly el tipo de evento que reservará el agente. Recomendaciones:
 
-- **Una sola ubicación** (p. ej. "Llamada telefónica: yo llamo al invitado", o una dirección fija), indicada **siempre** en `CALENDLY_LOCATION_KIND` (y `CALENDLY_LOCATION` si la ubicación lleva texto). Sin ella, Calendly rechaza la reserva por API con `invalid_location_choice` aunque el tipo de evento tenga una sola ubicación. Valores habituales: `google_conference` (Google Meet), `zoom_conference`, `physical` (con la dirección en `CALENDLY_LOCATION`), `outbound_call` (el anfitrión llama; la app envía el teléfono del contacto).
+- **Una sola ubicación** (p. ej. "Llamada telefónica: yo llamo al invitado", o una dirección fija). Con OAuth la app la lee del tipo de evento; con el Calendly de entorno hay que indicarla **siempre** en `CALENDLY_LOCATION_KIND` (y `CALENDLY_LOCATION` si la ubicación lleva texto). Sin ella, Calendly rechaza la reserva por API con `invalid_location_choice` aunque el tipo de evento tenga una sola ubicación. Valores habituales: `google_conference` (Google Meet), `zoom_conference`, `physical` (con la dirección en `CALENDLY_LOCATION`), `outbound_call` (el anfitrión llama; la app envía el teléfono del contacto).
 - **Sin preguntas obligatorias**: la reserva por API fallaría si falta alguna.
 - Horario, duración, antelación mínima y descansos se configuran **en Calendly**: la app no los duplica, solo ofrece lo que Calendly da como libre. Además, la app no ofrece huecos que empiecen en menos de 2 horas.
 

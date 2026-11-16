@@ -1,5 +1,4 @@
 import "server-only";
-import { calendlyEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 
 /**
@@ -49,9 +48,17 @@ type Opciones = {
   timeoutMs?: number;
 };
 
-export async function calendlyFetch<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
-  const env = calendlyEnv();
-  const url = new URL(ruta, env.CALENDLY_API_BASE);
+/** Base de la API; se puede cambiar solo para apuntar a un servidor simulado en pruebas. */
+export function calendlyApiBase() {
+  return process.env.CALENDLY_API_BASE?.trim() || "https://api.calendly.com";
+}
+
+/**
+ * Petición a la API de Calendly con el token de una empresa (OAuth) o el de
+ * entorno. `ruta` puede ser relativa o una URI completa de Calendly.
+ */
+export async function calendlyFetch<T>(token: string, ruta: string, opciones: Opciones = {}): Promise<T> {
+  const url = new URL(ruta, calendlyApiBase());
   for (const [k, v] of Object.entries(opciones.query ?? {})) url.searchParams.set(k, v);
 
   const inicio = performance.now();
@@ -60,7 +67,7 @@ export async function calendlyFetch<T>(ruta: string, opciones: Opciones = {}): P
     res = await fetch(url, {
       method: opciones.method ?? "GET",
       headers: {
-        Authorization: `Bearer ${env.CALENDLY_TOKEN}`,
+        Authorization: `Bearer ${token}`,
         ...(opciones.body ? { "Content-Type": "application/json" } : {}),
       },
       body: opciones.body ? JSON.stringify(opciones.body) : undefined,

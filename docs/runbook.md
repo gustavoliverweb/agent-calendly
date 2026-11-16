@@ -42,6 +42,14 @@ Generar un secreto nuevo: `openssl rand -hex 32`.
 
 Para que no haya llamadas a medias, conviene rotar con la **pausa global** activada. Las tools fallarían con 401 durante los segundos en que los dos lados no coinciden.
 
+### ENCRYPTION_KEY
+
+Cifra los tokens de Calendly de todas las empresas. No se puede rotar sin más: si se cambia, los tokens guardados no se pueden descifrar y **cada empresa tiene que volver a conectar Calendly** desde su panel. Si se filtra, cambia la clave, revoca el client secret de la app OAuth en Calendly (Developer tools) y avisa a las empresas para que reconecten.
+
+## Calendly desconectado en una empresa
+
+En `/admin` aparece «Calendly: desconectado» y la empresa ve el aviso en su sección Calendly. Pasa cuando Calendly retira el permiso (el usuario cambió la contraseña o el email de acceso, revocó la app, o se perdió un refresh token). Solución: el propietario pulsa «Volver a conectar»; si es la misma cuenta, conserva el tipo de evento.
+
 ## Derecho de supresión (RGPD)
 
 Ficha del contacto → **Borrar contacto**. Borra:

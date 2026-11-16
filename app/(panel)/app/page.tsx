@@ -19,10 +19,9 @@ import {
 } from "@/lib/dashboard/queries";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
+import { conexionCalendly } from "@/lib/calendly/conexion";
 import {
   appEnv,
-  calendlyEnv,
-  calendlyWebhookEnv,
   elevenLabsEnv,
   elevenLabsWebhookEnv,
   isConfigured,
@@ -251,7 +250,9 @@ async function Totales() {
 }
 
 async function IntegracionesCard() {
+  const empresa = await getEmpresaActual();
   const despacho = await ultimoDespacho();
+  const calendly = await conexionCalendly(empresa.id).catch(() => null);
   const ahora = new Date();
   const cronOk = despacho != null && ahora.getTime() - despacho.getTime() <= LATIDO_MAX_MS;
   const items = [
@@ -259,8 +260,11 @@ async function IntegracionesCard() {
     { nombre: "Ajustes de la app", ok: isConfigured(appEnv) },
     { nombre: "Agente de voz (ElevenLabs)", ok: isConfigured(elevenLabsEnv) },
     { nombre: "Webhook de ElevenLabs", ok: isConfigured(elevenLabsWebhookEnv) },
-    { nombre: "Agenda (Calendly)", ok: isConfigured(calendlyEnv) },
-    { nombre: "Webhook de Calendly", ok: isConfigured(calendlyWebhookEnv) },
+    {
+      nombre: "Agenda (Calendly)",
+      ok: calendly != null,
+      detalle: calendly?.origen === "entorno" ? "provisional de la plataforma" : calendly ? undefined : "sin conectar",
+    },
     {
       nombre: "Tarea programada (lotes)",
       ok: cronOk,

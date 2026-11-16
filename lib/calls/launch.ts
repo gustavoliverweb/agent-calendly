@@ -1,7 +1,7 @@
 import "server-only";
 import { after } from "next/server";
 import { calcularRango, obtenerDisponibilidad } from "@/lib/calendly/availability";
-import { calendlyEnv, isConfigured } from "@/lib/env";
+import { conexionCalendly } from "@/lib/calendly/conexion";
 import { llamadaSaliente, type VariablesDinamicas } from "@/lib/elevenlabs/client";
 import { variablesGuion, type GuionLlamada } from "@/lib/guion/guion";
 import { guionDeLlamada } from "@/lib/guion/queries";
@@ -198,12 +198,21 @@ export async function iniciarConversacion(opciones: {
     // Un webhook muy rápido (p. ej. fallo inmediato) pudo llegar antes de
     // guardar conversation_id: se procesa ahora.
     await procesarEventosPendientes(conversacion.conversationId);
-    // Pre-calienta la disponibilidad mientras suena y saluda (§10.4).
-    if (isConfigured(calendlyEnv)) {
-      const rango = calcularRango(undefined, undefined, new Date());
-      if (!("error" in rango)) await obtenerDisponibilidad(rango).catch(() => undefined);
-    }
+    // Pre-calienta la disponibilidad (y renueva el token si toca) mientras suena y saluda (§10.4).
+    await precalentarCalendly(llamadaId);
   });
 
   return { ok: true, conversationId: conversacion.conversationId };
+}
+
+async function precalentarCalendly(llamadaId: string) {
+  try {
+    const { data } = await createAdminClient().from("llamadas").select("empresa_id").eq("id", llamadaId).maybeSingle();
+    if (!data) return;
+    const conexion = await conexionCalendly(data.empresa_id);
+    const rango = calcularRango(undefined, undefined, new Date());
+    if (conexion && !("error" in rango)) await obtenerDisponibilidad(conexion, rango);
+  } catch {
+    // Solo es una optimización: la tool volverá a intentarlo.
+  }
 }

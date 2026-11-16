@@ -59,6 +59,12 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
+        <Dato titulo="Guion" valor={empresa.guion_activo ? "Activo" : "Sin guion"} />
+        <Dato
+          titulo="Calendly"
+          valor={({ sin_conectar: "Sin conectar", pendiente: "Falta el tipo de evento", conectada: "Conectado", desconectada: "Desconectado" } as Record<string, string>)[empresa.calendly] ?? empresa.calendly}
+        />
+        <Dato titulo="Miembros" valor={entero.format(empresa.miembros)} />
         <Dato titulo="Contactos" valor={entero.format(empresa.contactos)} />
         <Dato titulo="Llamadas (30 días)" valor={entero.format(empresa.llamadas_30d)} />
         <Dato titulo="Minutos (30 días)" valor={entero.format(Math.round(Number(empresa.segundos_30d) / 60))} />

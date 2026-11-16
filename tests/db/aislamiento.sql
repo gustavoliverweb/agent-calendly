@@ -360,3 +360,54 @@ begin
 end $$;
 
 do $$ begin raise notice 'EQUIPO OK'; end $$;
+
+-- Calendly por empresa (S4) ----------------------------------------------------
+
+insert into public.integraciones_calendly (empresa_id, estado, access_token, refresh_token, usuario_uri)
+values (current_setting('t.ea')::uuid, 'conectada', 'cifrado-a', 'cifrado-r', 'https://api.calendly.com/users/test-a');
+
+do $$
+begin
+  if not public.reclamar_renovacion_calendly(current_setting('t.ea')::uuid) then
+    raise exception 'FALLO: no se pudo reclamar la renovación';
+  end if;
+  if public.reclamar_renovacion_calendly(current_setting('t.ea')::uuid) then
+    raise exception 'FALLO: dos renovaciones a la vez de la misma empresa';
+  end if;
+  raise notice 'ok: una sola renovación de token a la vez por empresa';
+end $$;
+
+do $$
+begin
+  insert into public.empresas (nombre, slug) values ('Empresa C', 'test-aislamiento-c');
+  insert into public.integraciones_calendly (empresa_id, estado, access_token, refresh_token, usuario_uri)
+  select id, 'pendiente', 'x', 'y', 'https://api.calendly.com/users/test-a'
+    from public.empresas where slug = 'test-aislamiento-c';
+  raise exception 'FALLO: la misma cuenta de Calendly conectada a dos empresas';
+exception when unique_violation then
+  raise notice 'ok: una cuenta de Calendly solo se conecta a una empresa';
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  perform 1 from public.integraciones_calendly;
+  raise exception 'FALLO: un usuario lee los tokens de Calendly';
+exception when insufficient_privilege then
+  raise notice 'ok: los tokens de Calendly son solo del servidor';
+end $$;
+
+do $$
+begin
+  perform public.reclamar_renovacion_calendly(current_setting('t.ea')::uuid);
+  raise exception 'FALLO: un usuario reclama la renovación del token';
+exception when insufficient_privilege then
+  raise notice 'ok: renovar tokens es solo del servidor';
+end $$;
+
+reset role;
+
+do $$ begin raise notice 'CALENDLY OK'; end $$;
