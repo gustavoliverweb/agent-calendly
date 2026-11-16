@@ -67,7 +67,7 @@ describe("OAuth de Calendly", () => {
       code_challenge_method: "S256",
       code_challenge: "reto",
       state: "estado-123",
-      scope: "users:read event_types:read scheduled_events:write webhooks:write",
+      scope: "users:read event_types:read scheduled_events:read scheduled_events:write webhooks:read webhooks:write",
     });
   });
 

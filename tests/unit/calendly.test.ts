@@ -225,6 +225,16 @@ describe("Calendly con fetch simulado", () => {
     await expect(calendlyFetch("token", "/users/me")).rejects.toMatchObject({ tipo: "temporal" });
   });
 
+  it("un 400 por falta de scope de OAuth se clasifica como auth (hay que reconectar)", () => {
+    expect(
+      clasificarError(400, {
+        title: "Invalid Argument",
+        message: "The supplied parameters are invalid.",
+        details: [{ parameter: "events", message: "missing required scope: scheduled_events:read for event: invitee.created" }],
+      }),
+    ).toBe("auth");
+  });
+
   it("un 403 de plan sin Scheduling API se clasifica como auth", async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ title: "Permission Denied" }, { status: 403 }));
     const e = await calendlyFetch("token", "/invitees", { method: "POST", body: {} }).catch((x) => x);

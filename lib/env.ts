@@ -54,8 +54,14 @@ const calendlyWebhookSchema = z.object({
   CALENDLY_WEBHOOK_SIGNING_KEY: secret(),
 });
 
-/** Scopes que pide la app (deben estar marcados también en la app OAuth de Calendly). */
-export const CALENDLY_SCOPES = "users:read event_types:read scheduled_events:write webhooks:write";
+/**
+ * Scopes que pide la app (deben estar marcados también en la app OAuth de
+ * Calendly). Aunque la documentación dice que `:write` incluye `:read`,
+ * Calendly exige los dos: crear el webhook de citas pide
+ * `scheduled_events:read` y listar webhooks, `webhooks:read`.
+ */
+export const CALENDLY_SCOPES =
+  "users:read event_types:read scheduled_events:read scheduled_events:write webhooks:read webhooks:write";
 
 // App OAuth de la plataforma en Calendly (Developer tools → OAuth apps).
 // Cada empresa conecta su cuenta con ella (S4).

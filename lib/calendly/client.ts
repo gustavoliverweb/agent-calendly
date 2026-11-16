@@ -30,12 +30,17 @@ type CuerpoError = {
 // por el texto o porque el parámetro rechazado es start_time.
 const HUECO_OCUPADO = /no longer available|not available|unavailable|already (been )?(booked|taken)|time.*taken/i;
 
+// Falta un scope de OAuth: Calendly lo devuelve como 403 ("Insufficient scope")
+// o como 400 con "missing required scope" en los detalles. Se arregla reconectando.
+const SIN_SCOPE = /insufficient scope|missing required scope/i;
+
 export function clasificarError(status: number, cuerpo: CuerpoError): TipoErrorCalendly {
   if (status === 401 || status === 403) return "auth";
   if (status === 429 || status >= 500) return "temporal";
   const textos = [cuerpo.title, cuerpo.message, ...(cuerpo.details ?? []).flatMap((d) => [d.message, d.code])]
     .filter(Boolean)
     .join(" ");
+  if (SIN_SCOPE.test(textos)) return "auth";
   if (HUECO_OCUPADO.test(textos)) return "hueco_no_disponible";
   if ((cuerpo.details ?? []).some((d) => d.parameter === "start_time")) return "hueco_no_disponible";
   return "validacion";
