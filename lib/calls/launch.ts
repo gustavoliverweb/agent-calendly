@@ -5,6 +5,7 @@ import { conexionCalendly } from "@/lib/calendly/conexion";
 import { llamadaSaliente, type VariablesDinamicas } from "@/lib/elevenlabs/client";
 import { variablesGuion, type GuionLlamada } from "@/lib/guion/guion";
 import { guionDeLlamada } from "@/lib/guion/queries";
+import { lineaDeEmpresa } from "@/lib/telefono";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fechaMadrid, partesMadrid } from "@/lib/time/madrid";
@@ -16,6 +17,9 @@ export type MotivoRechazo =
   | "pausa_global"
   | "empresa_suspendida"
   | "sin_guion"
+  | "sin_linea"
+  | "limite_minutos"
+  | "concurrencia_global"
   | "no_encontrado"
   | "no_llamar"
   | "sin_consentimiento"
@@ -78,6 +82,15 @@ export async function lanzarLlamada(opciones: {
       mensaje: "Sin consentimiento registrado no se puede hacer una llamada comercial.",
     };
   }
+  const linea = await lineaDeEmpresa(opciones.empresaId);
+  if (!linea) {
+    return {
+      ok: false,
+      motivo: "sin_linea",
+      mensaje: "Tu empresa aún no tiene línea telefónica. Puedes probar el agente en el navegador (sección Guion).",
+    };
+  }
+
   if (!estaEnFranja(ahora, config)) {
     const festivo = config.festivos.includes(fechaMadrid(ahora));
     return {
@@ -100,7 +113,7 @@ export async function lanzarLlamada(opciones: {
       return {
         ok: false,
         motivo,
-        mensaje: `Ya hay ${config.max_concurrencia} llamadas en curso, el máximo permitido. Prueba en un momento.`,
+        mensaje: "Tu empresa ya tiene en curso el máximo de llamadas simultáneas. Prueba en un momento.",
       };
     }
     if (motivo === "llamada_activa") return { ok: false, motivo, mensaje: "Este contacto ya tiene una llamada en curso." };
@@ -109,6 +122,12 @@ export async function lanzarLlamada(opciones: {
       return { ok: false, motivo, mensaje: "La cuenta de tu empresa está suspendida: no se pueden hacer llamadas." };
     }
     if (motivo === "no_llamar") return { ok: false, motivo, mensaje: "El contacto ha pedido no ser llamado." };
+    if (motivo === "concurrencia_global") {
+      return { ok: false, motivo, mensaje: "La plataforma está al máximo de llamadas simultáneas. Prueba en un momento." };
+    }
+    if (motivo === "limite_minutos") {
+      return { ok: false, motivo, mensaje: "Tu empresa ha alcanzado el límite de minutos de este mes. Contacta con nosotros para ampliarlo." };
+    }
     if (motivo === "sin_guion") {
       return { ok: false, motivo, mensaje: "Tu empresa aún no tiene un guion activo: créalo en la sección Guion." };
     }
@@ -116,7 +135,13 @@ export async function lanzarLlamada(opciones: {
     return { ok: false, motivo: "error", mensaje: "No se ha podido registrar la llamada." };
   }
 
-  const r = await iniciarConversacion({ llamadaId, contacto, ahora, loteId: opciones.loteId });
+  const r = await iniciarConversacion({
+    llamadaId,
+    contacto,
+    ahora,
+    loteId: opciones.loteId,
+    phoneNumberId: linea.phoneNumberId,
+  });
   if (!r.ok) {
     return {
       ok: false,
@@ -163,6 +188,8 @@ export async function iniciarConversacion(opciones: {
   contacto: ContactoLlamada;
   ahora: Date;
   loteId?: string;
+  /** Línea de la empresa (lineaDeEmpresa). */
+  phoneNumberId: string;
 }): Promise<{ ok: true; conversationId: string } | { ok: false; error: unknown }> {
   const { llamadaId, contacto, ahora } = opciones;
   const supabase = createAdminClient();
@@ -173,6 +200,7 @@ export async function iniciarConversacion(opciones: {
     // crear_llamada y el motor de lotes no crean llamadas sin guion.
     if (!guion) throw new Error("la llamada no tiene guion");
     conversacion = await llamadaSaliente(
+      opciones.phoneNumberId,
       contacto.telefono,
       variablesLlamada({ llamadaId, contacto, guion, ahora }),
       { vozId: guion.voz_id },

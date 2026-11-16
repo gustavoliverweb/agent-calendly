@@ -116,6 +116,8 @@ const MENSAJES_PRUEBA: Record<string, string> = {
   no_llamar: "Ese contacto ha pedido no ser llamado: elige otro.",
   llamada_activa: "Ese contacto ya tiene una llamada en curso. Espera a que termine o elige otro.",
   concurrencia: "Se ha alcanzado el máximo de llamadas simultáneas. Prueba en un momento.",
+  concurrencia_global: "La plataforma está al máximo de llamadas simultáneas. Prueba en un momento.",
+  limite_minutos: "Tu empresa ha alcanzado el límite de minutos de este mes (las pruebas también cuentan).",
 };
 
 /**

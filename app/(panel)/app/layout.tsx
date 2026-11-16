@@ -7,6 +7,7 @@ import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { conexionCalendly } from "@/lib/calendly/conexion";
+import { lineaDeEmpresa } from "@/lib/telefono";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -62,13 +63,15 @@ async function AvisoSuspendida() {
   );
 }
 
-/** Pasos que faltan para que la empresa pueda llamar (guion y Calendly). */
+/** Pasos que faltan para que la empresa pueda llamar (guion, Calendly, línea) y límite de minutos agotado. */
 async function AvisoSinGuion() {
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const [{ data }, calendly] = await Promise.all([
-    supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).maybeSingle(),
+  const [{ data }, calendly, linea, { data: minutos }] = await Promise.all([
+    supabase.from("empresas").select("guion_activo_id, limite_minutos_mes").eq("id", empresa.id).maybeSingle(),
     conexionCalendly(empresa.id).catch(() => null),
+    lineaDeEmpresa(empresa.id),
+    supabase.rpc("minutos_mes", { p_empresa_id: empresa.id }),
   ]);
   const pasos: { texto: string; href: string; enlace: string }[] = [];
   if (data && !data.guion_activo_id) {
@@ -81,6 +84,20 @@ async function AvisoSinGuion() {
       enlace: "Calendly",
     });
   }
+  if (!linea) {
+    pasos.push({
+      texto: "aún no tiene línea telefónica: puede preparar todo y probar el agente en el navegador, pero no llamar por teléfono",
+      href: "/app/telefono",
+      enlace: "Teléfono",
+    });
+  }
+  if (data?.limite_minutos_mes && Number(minutos ?? 0) >= data.limite_minutos_mes) {
+    pasos.push({
+      texto: "ha alcanzado el límite de minutos de este mes y no sale ninguna llamada más",
+      href: "/app/telefono",
+      enlace: "Teléfono",
+    });
+  }
   if (!pasos.length) return null;
   const quien = empresa.rol === "propietario" ? "Puedes resolverlo en" : "Pide al propietario que lo resuelva en";
   return (
@@ -88,7 +105,7 @@ async function AvisoSinGuion() {
       <AlertDescription>
         <ul className="flex flex-col gap-1">
           {pasos.map((p) => (
-            <li key={p.href}>
+            <li key={p.texto}>
               Tu empresa {p.texto}. {quien}{" "}
               <Link href={p.href} className="font-medium underline">
                 {p.enlace}

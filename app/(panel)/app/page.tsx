@@ -20,9 +20,10 @@ import {
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { conexionCalendly } from "@/lib/calendly/conexion";
+import { lineaDeEmpresa } from "@/lib/telefono";
 import {
   appEnv,
-  elevenLabsEnv,
+  elevenLabsAgenteEnv,
   elevenLabsWebhookEnv,
   isConfigured,
   supabaseEnv,
@@ -252,13 +253,18 @@ async function Totales() {
 async function IntegracionesCard() {
   const empresa = await getEmpresaActual();
   const despacho = await ultimoDespacho();
-  const calendly = await conexionCalendly(empresa.id).catch(() => null);
+  const [calendly, linea] = await Promise.all([conexionCalendly(empresa.id).catch(() => null), lineaDeEmpresa(empresa.id)]);
   const ahora = new Date();
   const cronOk = despacho != null && ahora.getTime() - despacho.getTime() <= LATIDO_MAX_MS;
   const items = [
     { nombre: "Base de datos (Supabase)", ok: isConfigured(supabaseEnv) },
     { nombre: "Ajustes de la app", ok: isConfigured(appEnv) },
-    { nombre: "Agente de voz (ElevenLabs)", ok: isConfigured(elevenLabsEnv) },
+    { nombre: "Agente de voz (ElevenLabs)", ok: isConfigured(elevenLabsAgenteEnv) },
+    {
+      nombre: "Línea telefónica",
+      ok: linea != null,
+      detalle: linea?.origen === "entorno" ? "provisional de la plataforma" : (linea?.numero ?? (linea ? undefined : "sin línea")),
+    },
     { nombre: "Webhook de ElevenLabs", ok: isConfigured(elevenLabsWebhookEnv) },
     {
       nombre: "Agenda (Calendly)",

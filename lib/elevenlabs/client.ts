@@ -1,5 +1,5 @@
 import "server-only";
-import { elevenLabsAgenteEnv, elevenLabsEnv } from "@/lib/env";
+import { elevenLabsAgenteEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 
 export class ElevenLabsError extends Error {
@@ -59,21 +59,23 @@ type OutboundResponse = {
 };
 
 /**
- * Lanza una llamada saliente por el SIP trunk. Sin reintentos: si la red
- * falla después de que ElevenLabs aceptara la petición, reintentar podría
- * llamar dos veces a la misma persona.
+ * Lanza una llamada saliente por la línea SIP de la empresa (`phoneNumberId`,
+ * el número importado en ElevenLabs). Sin reintentos: si la red falla después
+ * de que ElevenLabs aceptara la petición, reintentar podría llamar dos veces
+ * a la misma persona.
  */
 export async function llamadaSaliente(
+  phoneNumberId: string,
   telefono: string,
   variables: VariablesDinamicas,
   overrides: OverridesLlamada = {},
 ) {
-  const env = elevenLabsEnv();
+  const env = elevenLabsAgenteEnv();
   const r = await elevenFetch<OutboundResponse>("/v1/convai/sip-trunk/outbound-call", {
     method: "POST",
     body: {
       agent_id: env.ELEVENLABS_AGENT_ID,
-      agent_phone_number_id: env.ELEVENLABS_PHONE_NUMBER_ID,
+      agent_phone_number_id: phoneNumberId,
       to_number: telefono,
       conversation_initiation_client_data: {
         dynamic_variables: variables,
@@ -101,6 +103,27 @@ export async function urlFirmadaConversacion(): Promise<string> {
   );
   if (!r?.signed_url) throw new ElevenLabsError("ElevenLabs no devolvió la URL firmada");
   return r.signed_url;
+}
+
+export type NumeroElevenLabs = {
+  phoneNumberId: string;
+  numero: string;
+  etiqueta: string | null;
+  proveedor: string | null;
+};
+
+type NumeroApi = { phone_number_id: string; phone_number: string; label?: string | null; provider?: string | null };
+
+/** Números importados en la cuenta de ElevenLabs del proveedor (para asignarlos a empresas en /admin). */
+export async function listarNumeros(): Promise<NumeroElevenLabs[]> {
+  const r = await elevenFetch<NumeroApi[] | { phone_numbers?: NumeroApi[] }>("/v1/convai/phone-numbers", { timeoutMs: 8000 });
+  const lista = Array.isArray(r) ? r : (r?.phone_numbers ?? []);
+  return lista.map((n) => ({
+    phoneNumberId: n.phone_number_id,
+    numero: n.phone_number,
+    etiqueta: n.label ?? null,
+    proveedor: n.provider ?? null,
+  }));
 }
 
 export type Conversacion = {

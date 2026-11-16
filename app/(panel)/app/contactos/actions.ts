@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { log } from "@/lib/log";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { borrarConversacion } from "@/lib/elevenlabs/client";
-import { elevenLabsEnv, isConfigured } from "@/lib/env";
+import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
 
 export type FormState = { error?: string; ok?: boolean; id?: string };
 
@@ -126,7 +126,7 @@ export async function borrarContacto(id: string): Promise<FormState> {
 
   let pendientes: string[] = [];
   if (conversaciones.length) {
-    if (isConfigured(elevenLabsEnv)) {
+    if (isConfigured(elevenLabsAgenteEnv)) {
       const r = await Promise.allSettled(conversaciones.map((c) => borrarConversacion(c)));
       pendientes = conversaciones.filter((_, i) => r[i].status === "rejected");
     } else {

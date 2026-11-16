@@ -411,3 +411,109 @@ end $$;
 reset role;
 
 do $$ begin raise notice 'CALENDLY OK'; end $$;
+
+-- Línea y límites (S5) -------------------------------------------------------------
+
+-- Segundo contacto de A y una llamada terminada de 2 minutos este mes.
+with c as (
+  insert into public.contactos (empresa_id, nombre, telefono, consentimiento)
+  values (current_setting('t.ea')::uuid, 'Contacto A2', '+34600000009', true) returning id
+)
+select set_config('t.ca2', (select id from c)::text, true);
+
+insert into public.llamadas (contacto_id, estado, duracion_seg, finalizada_en)
+values (current_setting('t.ca2')::uuid, 'completada', 120, now());
+
+do $$
+begin
+  if public.minutos_mes(current_setting('t.ea')::uuid) <> 2 then
+    raise exception 'FALLO: minutos del mes mal calculados (%)', public.minutos_mes(current_setting('t.ea')::uuid);
+  end if;
+  raise notice 'ok: minutos del mes por empresa';
+end $$;
+
+-- Como el servidor (service role), igual que el dispatcher.
+select set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+
+-- Límite de minutos alcanzado: no sale ninguna llamada más.
+update public.empresas set limite_minutos_mes = 1 where id = current_setting('t.ea')::uuid;
+do $$
+begin
+  perform public.crear_llamada(current_setting('t.ca2')::uuid);
+  raise exception 'FALLO: se llamó con el límite de minutos agotado';
+exception when raise_exception then
+  if sqlerrm <> 'limite_minutos' then raise; end if;
+  raise notice 'ok: con el límite de minutos agotado no se llama';
+end $$;
+update public.empresas set limite_minutos_mes = null where id = current_setting('t.ea')::uuid;
+
+-- Concurrencia global: con el máximo ya ocupado, ninguna empresa llama.
+update public.ajustes_plataforma set max_concurrencia_global = greatest(1, public.llamadas_activas_global());
+do $$
+begin
+  if public.llamadas_activas_global() < 1 then
+    raise exception 'FALLO: la prueba necesita una llamada abierta (la de la sección de guiones)';
+  end if;
+  perform public.crear_llamada(current_setting('t.ca2')::uuid);
+  raise exception 'FALLO: se superó la concurrencia global';
+exception when raise_exception then
+  if sqlerrm <> 'concurrencia_global' then raise; end if;
+  raise notice 'ok: la concurrencia global limita a todas las empresas';
+end $$;
+
+-- Concurrencia contratada: tope de la que configura la empresa.
+update public.ajustes_plataforma set max_concurrencia_global = 500;
+update public.empresas set max_concurrencia_contratada = 1 where id = current_setting('t.ea')::uuid;
+update public.configuracion set max_concurrencia = 5 where empresa_id = current_setting('t.ea')::uuid;
+do $$
+begin
+  perform public.crear_llamada(current_setting('t.ca2')::uuid);
+  raise exception 'FALLO: la empresa superó su concurrencia contratada';
+exception when raise_exception then
+  if sqlerrm <> 'concurrencia' then raise; end if;
+  raise notice 'ok: la concurrencia contratada manda sobre la configurada';
+end $$;
+
+do $$
+begin
+  perform public.crear_lote(current_setting('t.ea')::uuid, array[current_setting('t.ca2')::uuid], 'lote límites');
+  update public.lotes set estado = 'activo' where empresa_id = current_setting('t.ea')::uuid and nombre = 'lote límites';
+  if exists (select 1 from public.reservar_llamadas_lote(current_setting('t.ea')::uuid)) then
+    raise exception 'FALLO: el motor de lotes superó la concurrencia contratada';
+  end if;
+  update public.empresas set max_concurrencia_contratada = 5 where id = current_setting('t.ea')::uuid;
+  if exists (select 1 from public.reservar_llamadas_lote(current_setting('t.ea')::uuid, 0)) then
+    raise exception 'FALLO: el motor de lotes no respetó el reparto (p_max)';
+  end if;
+  if (select count(*) from public.reservar_llamadas_lote(current_setting('t.ea')::uuid)) <> 1 then
+    raise exception 'FALLO: con hueco libre el motor de lotes no reservó';
+  end if;
+  update public.empresas set max_concurrencia_contratada = 1 where id = current_setting('t.ea')::uuid;
+  raise notice 'ok: el motor de lotes respeta la concurrencia contratada y el reparto';
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  update public.empresas set limite_minutos_mes = null, max_concurrencia_contratada = 50, phone_number_id = 'x'
+   where id = current_setting('t.ea')::uuid;
+  perform 1 from public.ajustes_plataforma;
+  raise exception 'FALLO: un usuario lee los ajustes de la plataforma';
+exception when insufficient_privilege then
+  raise notice 'ok: los ajustes de la plataforma son solo del servidor';
+end $$;
+
+reset role;
+
+do $$
+begin
+  if (select max_concurrencia_contratada from public.empresas where id = current_setting('t.ea')::uuid) <> 1
+     or (select phone_number_id from public.empresas where id = current_setting('t.ea')::uuid) is not null then
+    raise exception 'FALLO: una empresa cambió su propia línea o sus límites';
+  end if;
+  raise notice 'ok: la línea y los límites solo los cambia el proveedor';
+  raise notice 'LIMITES OK';
+end $$;

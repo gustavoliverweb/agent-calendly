@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { despachar } from "@/lib/calls/dispatcher";
 import { getEmpresaActual } from "@/lib/empresa";
-import { elevenLabsEnv, isConfigured } from "@/lib/env";
+import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,7 @@ export async function crearLote(ids: string[], nombre?: string): Promise<CrearLo
   const user = await getCurrentUser();
   const parsed = crearSchema.safeParse({ ids: [...new Set(ids)], nombre });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  if (!isConfigured(elevenLabsEnv)) {
+  if (!isConfigured(elevenLabsAgenteEnv)) {
     return { error: "El agente de voz todavía no está configurado (faltan las claves de ElevenLabs)." };
   }
 

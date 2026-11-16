@@ -46,6 +46,18 @@ Para que no haya llamadas a medias, conviene rotar con la **pausa global** activ
 
 Cifra los tokens de Calendly de todas las empresas. No se puede rotar sin más: si se cambia, los tokens guardados no se pueden descifrar y **cada empresa tiene que volver a conectar Calendly** desde su panel. Si se filtra, cambia la clave, revoca el client secret de la app OAuth en Calendly (Developer tools) y avisa a las empresas para que reconecten.
 
+## Alta de la línea de una empresa
+
+1. La empresa envía los datos de su troncal SIP (operador, número, servidor/dominio, usuario, contraseña) por un canal seguro (no por email en claro).
+2. ElevenLabs → **Phone numbers → Import number → SIP trunk**.
+3. `/admin` → empresa → **Línea y límites**: elegir el número y guardar. La empresa ve «Activa» en su sección Teléfono.
+4. Lanzar una llamada de prueba a un teléfono propio desde la ficha de un contacto.
+
+## Límites de uso
+
+- **Concurrencia global** (`/admin`, arriba): las conversaciones simultáneas del plan de ElevenLabs. Si se supera, ElevenLabs cobra tarifa «burst»; la app no lanza más de esas.
+- **Por empresa** (ficha en `/admin`): llamadas simultáneas contratadas (la empresa puede configurar menos) y minutos al mes. Al llegar al límite de minutos no sale ninguna llamada (tampoco pruebas) hasta el mes siguiente, y la empresa lo ve en el panel. Las llamadas en curso al alcanzarlo terminan normalmente.
+
 ## Calendly desconectado en una empresa
 
 En `/admin` aparece «Calendly: desconectado» y la empresa ve el aviso en su sección Calendly. Pasa cuando Calendly retira el permiso (el usuario cambió la contraseña o el email de acceso, revocó la app, o se perdió un refresh token). Solución: el propietario pulsa «Volver a conectar»; si es la misma cuenta, conserva el tipo de evento.

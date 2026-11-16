@@ -8,8 +8,20 @@ Lo que la app espera del agente de ElevenLabs. Hay **un solo agente para todas l
 |---|---|
 | `ELEVENLABS_API_KEY` | Perfil → API keys (permiso de Conversational AI) |
 | `ELEVENLABS_AGENT_ID` | URL o ajustes del agente |
-| `ELEVENLABS_PHONE_NUMBER_ID` | Phone numbers → número SIP importado (solo para llamadas por teléfono; la prueba en el navegador no lo necesita) |
+| `ELEVENLABS_PHONE_NUMBER_ID` | Transitorio: línea de la empresa principal mientras no tenga una asignada en `/admin`. La de cada empresa se guarda en la BD (ver [Líneas](#líneas-de-las-empresas)) |
 | `ELEVENLABS_WEBHOOK_SECRET` | Se muestra al crear el webhook post-llamada |
+
+## Líneas de las empresas
+
+Cada empresa llama desde su propia línea SIP (S5):
+
+1. La empresa contrata una troncal SIP con su operador y envía al proveedor los datos de conexión (servidor/dominio SIP, usuario, contraseña, número).
+2. El proveedor la importa en ElevenLabs: **Phone numbers → Import number → SIP trunk**, con esos datos.
+3. En `/admin` → ficha de la empresa → **Línea y límites**, elige el número en la lista (la app la lee de ElevenLabs) y guarda. Un número solo puede estar en una empresa.
+
+Sin línea, la empresa puede preparar todo y probar el agente en el navegador; las llamadas por teléfono y los lotes esperan.
+
+**Concurrencia:** la del plan de ElevenLabs es una para toda la plataforma. Se fija en `/admin` («Llamadas simultáneas de la plataforma») y el motor de lotes la reparte entre las empresas con cola. Además, cada empresa tiene sus llamadas simultáneas contratadas (tope de lo que configure) y, si se quiere, un límite de minutos al mes.
 
 ## Primer mensaje y voz
 

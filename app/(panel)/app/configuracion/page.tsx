@@ -27,7 +27,10 @@ export default function ConfiguracionPage() {
 async function Formulario() {
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const config = await leerConfiguracion(supabase, empresa.id);
+  const [config, { data: emp }] = await Promise.all([
+    leerConfiguracion(supabase, empresa.id),
+    supabase.from("empresas").select("max_concurrencia_contratada").eq("id", empresa.id).single(),
+  ]);
   const inicial = {
     max_concurrencia: config.max_concurrencia,
     franjas: config.franjas,
@@ -44,7 +47,11 @@ async function Formulario() {
       <p className="text-xs text-muted-foreground">Última modificación: {fecha.format(new Date(config.actualizado_en))}</p>
       {/* key: tras guardar, el formulario parte de los valores nuevos (y la
           pausa global, que también toca esta fila, no borra lo que se edita). */}
-      <FormularioConfiguracion key={JSON.stringify(inicial)} inicial={inicial} />
+      <FormularioConfiguracion
+        key={JSON.stringify(inicial)}
+        inicial={inicial}
+        maxContratada={emp?.max_concurrencia_contratada ?? 1}
+      />
     </div>
   );
 }

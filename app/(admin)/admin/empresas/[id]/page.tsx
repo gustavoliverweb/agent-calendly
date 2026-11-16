@@ -4,6 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { AccionesEmpresa } from "@/components/admin/acciones-empresa";
+import { LineaLimites, type NumeroDisponible } from "@/components/admin/linea-limites";
+import { listarNumeros } from "@/lib/elevenlabs/client";
+import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
 import { Equipo } from "@/components/equipo/equipo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +44,20 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
   ]);
   const empresa = resumen?.find((e) => e.id === id);
   if (!empresa) notFound();
+
+  // Números importados en ElevenLabs; los de otras empresas salen como asignados.
+  let numeros: NumeroDisponible[] | null = null;
+  if (isConfigured(elevenLabsAgenteEnv)) {
+    try {
+      const asignados = new Map((resumen ?? []).filter((e) => e.phone_number_id).map((e) => [e.phone_number_id, e.nombre]));
+      numeros = (await listarNumeros()).map((n) => ({
+        ...n,
+        asignadoA: n.phoneNumberId !== empresa.phone_number_id ? (asignados.get(n.phoneNumberId) ?? null) : null,
+      }));
+    } catch {
+      numeros = null;
+    }
+  }
   if (error) throw new Error(`No se pudo cargar el equipo: ${error.message}`);
 
   return (
@@ -68,7 +85,20 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
         <Dato titulo="Contactos" valor={entero.format(empresa.contactos)} />
         <Dato titulo="Llamadas (30 días)" valor={entero.format(empresa.llamadas_30d)} />
         <Dato titulo="Minutos (30 días)" valor={entero.format(Math.round(Number(empresa.segundos_30d) / 60))} />
+        <Dato titulo="Línea" valor={empresa.phone_number_id ? (empresa.telefono_numero ?? "Asignada") : "Sin línea"} />
       </div>
+
+      <LineaLimites
+        empresaId={empresa.id}
+        inicial={{
+          phoneNumberId: empresa.phone_number_id,
+          telefonoNumero: empresa.telefono_numero,
+          limiteMinutos: empresa.limite_minutos_mes,
+          maxConcurrencia: empresa.max_concurrencia_contratada,
+        }}
+        numeros={numeros}
+        minutosMes={Number(empresa.minutos_mes)}
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold tracking-tight">Equipo</h2>

@@ -22,6 +22,12 @@ export async function guardarConfiguracion(datos: ConfiguracionForm): Promise<Gu
 
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
+  const { data: emp } = await supabase.from("empresas").select("max_concurrencia_contratada").eq("id", empresa.id).single();
+  if (emp && parsed.data.max_concurrencia > emp.max_concurrencia_contratada) {
+    return {
+      error: `Tu empresa tiene contratadas ${emp.max_concurrencia_contratada} llamadas simultáneas como máximo. Para ampliarlo, contacta con nosotros.`,
+    };
+  }
   const { error } = await supabase
     .from("configuracion")
     .update({ ...parsed.data, actualizado_por: user.id })

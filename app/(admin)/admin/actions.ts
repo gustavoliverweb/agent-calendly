@@ -143,3 +143,72 @@ export async function accesoEnEmpresa(empresaId: string, usuarioId: string): Pro
   if (!z.uuid().safeParse(empresaId).success || !z.uuid().safeParse(usuarioId).success) return { error: "Datos no válidos" };
   return nuevoAcceso(empresaId, usuarioId);
 }
+
+// --- Línea y límites (S5) ---------------------------------------------------------
+
+const lineaSchema = z.object({
+  empresaId: z.uuid(),
+  phoneNumberId: z
+    .string()
+    .trim()
+    .max(100)
+    .transform((v) => v || null),
+  telefonoNumero: z
+    .string()
+    .trim()
+    .max(30)
+    .transform((v) => v || null),
+  limiteMinutos: z.number().int("Minutos: número entero").min(1, "Minutos: mínimo 1").max(1_000_000).nullable(),
+  maxConcurrencia: z.number().int().min(1, "Llamadas simultáneas: mínimo 1").max(50, "Llamadas simultáneas: máximo 50"),
+});
+
+export type LineaLimites = z.input<typeof lineaSchema>;
+
+/** Asigna la línea (número importado en ElevenLabs) y los límites contratados de una empresa. */
+export async function guardarLineaYLimites(datos: LineaLimites): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  const parsed = lineaSchema.safeParse(datos);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const d = parsed.data;
+
+  const { error } = await createAdminClient()
+    .from("empresas")
+    .update({
+      phone_number_id: d.phoneNumberId,
+      telefono_numero: d.phoneNumberId ? d.telefonoNumero : null,
+      limite_minutos_mes: d.limiteMinutos,
+      max_concurrencia_contratada: d.maxConcurrencia,
+    })
+    .eq("id", d.empresaId);
+  if (error?.code === UNIQUE_VIOLATION) return { error: "Ese número ya está asignado a otra empresa." };
+  if (error) {
+    log.error("guardar línea y límites", { code: error.code, message: error.message });
+    return { error: "No se han podido guardar la línea y los límites." };
+  }
+  await auditar(admin.id, d.empresaId, "cambiar_linea_limites", "empresa", {
+    linea: Boolean(d.phoneNumberId),
+    limite_minutos_mes: d.limiteMinutos,
+    max_concurrencia_contratada: d.maxConcurrencia,
+  });
+  refresh();
+  return {};
+}
+
+/** Conversaciones simultáneas que permite el plan de ElevenLabs, para toda la plataforma. */
+export async function guardarConcurrenciaGlobal(maximo: number): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  const parsed = z.number().int().min(1, "Mínimo 1").max(500, "Máximo 500").safeParse(maximo);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const { error } = await createAdminClient()
+    .from("ajustes_plataforma")
+    .update({ max_concurrencia_global: parsed.data })
+    .eq("id", true);
+  if (error) {
+    log.error("guardar concurrencia global", { code: error.code });
+    return { error: "No se ha podido guardar." };
+  }
+  log.warn("concurrencia global cambiada", { maximo: parsed.data, por: admin.id });
+  refresh();
+  return {};
+}

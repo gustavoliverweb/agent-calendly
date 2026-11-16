@@ -19,7 +19,7 @@ type Valores = Omit<ConfiguracionForm, "franjas" | "festivos"> & { franjas: Fran
 
 const fechaLarga = new Intl.DateTimeFormat("es-ES", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
-export function FormularioConfiguracion({ inicial }: { inicial: Valores }) {
+export function FormularioConfiguracion({ inicial, maxContratada }: { inicial: Valores; maxContratada: number }) {
   const [v, setV] = useState<Valores>(inicial);
   const [festivo, setFestivo] = useState("");
   const [pending, startTransition] = useTransition();
@@ -188,13 +188,13 @@ export function FormularioConfiguracion({ inicial }: { inicial: Valores }) {
           <Campo
             id="max_concurrencia"
             label="Llamadas simultáneas (máx.)"
-            ayuda="No superes el límite de llamadas simultáneas de tu plan de ElevenLabs: por encima se cobra tarifa “burst”."
+            ayuda={`Tu empresa tiene contratadas hasta ${maxContratada}. Para ampliarlo, contacta con nosotros.`}
           >
             <Input
               id="max_concurrencia"
               type="number"
               min={1}
-              max={10}
+              max={Math.min(10, maxContratada)}
               value={v.max_concurrencia as number}
               onChange={(e) => set("max_concurrencia", e.target.valueAsNumber)}
               required

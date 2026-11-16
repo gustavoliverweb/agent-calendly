@@ -1,14 +1,16 @@
 import "server-only";
-import { elevenLabsEnv, isConfigured } from "@/lib/env";
+import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
 import { ElevenLabsError, obtenerConversacion } from "@/lib/elevenlabs/client";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { lineaDeEmpresa } from "@/lib/telefono";
 import { leerConfiguracion, type Configuracion } from "./config";
 import { iniciarConversacion } from "./launch";
 import { aplicarEvento, webhookElevenLabsSchema, type LlamadaAbierta, type WebhookElevenLabs } from "./post-call";
 import { siguienteInicioFranja, estaEnFranja } from "./window";
+import { calcularCuota } from "./reparto";
 
-type MotivoParada = "pausa_global" | "fuera_de_franja" | "sin_configurar" | "sin_guion";
+type MotivoParada = "pausa_global" | "fuera_de_franja" | "sin_configurar" | "sin_guion" | "sin_linea";
 
 export type ResumenDespacho = {
   lanzadas: number;
@@ -34,8 +36,13 @@ const CADA_PURGA_MS = 24 * 3_600_000;
  * Una pasada del motor de lotes (§9.2) por cada empresa activa: reconcilia
  * llamadas sin webhook, reclama tantos items como huecos libres tenga y
  * lanza sus llamadas. Se puede llamar a la vez desde varios sitios (cron,
- * webhook, panel): la reserva en BD está serializada por empresa. No lanza
- * excepciones; el fallo de una empresa no para a las demás.
+ * webhook, panel): la reserva en BD está serializada. No lanza excepciones;
+ * el fallo de una empresa no para a las demás.
+ *
+ * Reparto (S5): la concurrencia del plan de ElevenLabs es una para toda la
+ * plataforma. Cada pasada reparte los huecos libres a partes iguales entre
+ * las empresas con cola, y el orden rota cada minuto para que no empiece
+ * siempre la misma.
  */
 export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
   const resumen: ResumenDespacho = { lanzadas: 0, fallidas: 0, reconciliadas: 0, lotesCerrados: 0 };
@@ -46,11 +53,18 @@ export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
       .select("id, guion_activo_id")
       .eq("estado", "activa");
     if (error) throw new Error(`empresas: ${error.message}`);
-    const configurado = isConfigured(elevenLabsEnv);
+    const configurado = isConfigured(elevenLabsAgenteEnv);
+    // Sin reparto (error al calcularlo) la BD sigue aplicando el límite global.
+    const cuota = await cuotaPorEmpresa().catch((e) => {
+      log.warn("reparto de concurrencia no disponible", { error: e instanceof Error ? e.message : String(e) });
+      return undefined;
+    });
+    const giro = empresas.length ? Math.floor(ahora.getTime() / 60_000) % empresas.length : 0;
+    const enOrden = [...empresas.slice(giro), ...empresas.slice(0, giro)];
 
-    for (const { id, guion_activo_id } of empresas) {
+    for (const { id, guion_activo_id } of enOrden) {
       try {
-        const parada = await despacharEmpresa(id, ahora, configurado, Boolean(guion_activo_id), resumen);
+        const parada = await despacharEmpresa(id, ahora, configurado, Boolean(guion_activo_id), cuota, resumen);
         if (parada) resumen.paradas = { ...resumen.paradas, [id]: parada };
       } catch (e) {
         log.error("despacho de empresa falló", { empresa_id: id, error: e instanceof Error ? e.message : String(e) });
@@ -82,6 +96,7 @@ async function despacharEmpresa(
   ahora: Date,
   configurado: boolean,
   conGuion: boolean,
+  cuota: number | undefined,
   resumen: ResumenDespacho,
 ): Promise<MotivoParada | undefined> {
   const supabase = createAdminClient();
@@ -93,8 +108,10 @@ async function despacharEmpresa(
   if (!configurado) return "sin_configurar";
   // Sin guion activo no hay qué decir: los items esperan en cola.
   if (!conGuion) return "sin_guion";
+  const linea = await lineaDeEmpresa(empresaId);
+  if (!linea) return "sin_linea";
 
-  const { data: reservas, error } = await supabase.rpc("reservar_llamadas_lote", { p_empresa_id: empresaId });
+  const { data: reservas, error } = await supabase.rpc("reservar_llamadas_lote", { p_empresa_id: empresaId, p_max: cuota });
   if (error) throw new Error(`reservar_llamadas_lote: ${error.message}`);
 
   const resultados = await Promise.all(
@@ -104,6 +121,7 @@ async function despacharEmpresa(
         contacto: { id: r.contacto_id, nombre: r.nombre, telefono: r.telefono, email: r.email },
         ahora,
         loteId: r.lote_id,
+        phoneNumberId: linea.phoneNumberId,
       });
       if (!res.ok) await reprogramarTrasError(r.item_id, res.error, ahora, config);
       return res.ok;
@@ -113,6 +131,21 @@ async function despacharEmpresa(
   resumen.lanzadas += lanzadas;
   resumen.fallidas += resultados.length - lanzadas;
   return undefined;
+}
+
+/**
+ * Huecos que puede ocupar cada empresa en esta pasada: los libres de la
+ * plataforma entre las empresas con cola (mínimo 1; la BD vuelve a comprobar
+ * el límite global al reservar).
+ */
+async function cuotaPorEmpresa(): Promise<number> {
+  const supabase = createAdminClient();
+  const [{ data: global, error: errGlobal }, { data: colas, error: errColas }] = await Promise.all([
+    supabase.rpc("concurrencia_global"),
+    supabase.rpc("empresas_con_cola"),
+  ]);
+  if (errGlobal || errColas) throw new Error(`reparto: ${(errGlobal ?? errColas)?.message}`);
+  return calcularCuota(global?.[0]?.maximo ?? 0, global?.[0]?.activas ?? 0, colas?.length ?? 0);
 }
 
 /** Retención RGPD: borra conversaciones y webhooks antiguos (§13.3). */

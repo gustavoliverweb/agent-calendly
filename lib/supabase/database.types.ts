@@ -29,6 +29,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ajustes_plataforma: {
+        Row: {
+          actualizado_en: string
+          id: boolean
+          max_concurrencia_global: number
+        }
+        Insert: {
+          actualizado_en?: string
+          id?: boolean
+          max_concurrencia_global?: number
+        }
+        Update: {
+          actualizado_en?: string
+          id?: boolean
+          max_concurrencia_global?: number
+        }
+        Relationships: []
+      }
       auditoria: {
         Row: {
           accion: string
@@ -278,8 +296,12 @@ export type Database = {
           estado: string
           guion_activo_id: string | null
           id: string
+          limite_minutos_mes: number | null
+          max_concurrencia_contratada: number
           nombre: string
+          phone_number_id: string | null
           slug: string
+          telefono_numero: string | null
           zona_horaria: string
         }
         Insert: {
@@ -288,8 +310,12 @@ export type Database = {
           estado?: string
           guion_activo_id?: string | null
           id?: string
+          limite_minutos_mes?: number | null
+          max_concurrencia_contratada?: number
           nombre: string
+          phone_number_id?: string | null
           slug: string
+          telefono_numero?: string | null
           zona_horaria?: string
         }
         Update: {
@@ -298,8 +324,12 @@ export type Database = {
           estado?: string
           guion_activo_id?: string | null
           id?: string
+          limite_minutos_mes?: number | null
+          max_concurrencia_contratada?: number
           nombre?: string
+          phone_number_id?: string | null
           slug?: string
+          telefono_numero?: string | null
           zona_horaria?: string
         }
         Relationships: [
@@ -785,6 +815,13 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: undefined
       }
+      concurrencia_global: {
+        Args: never
+        Returns: {
+          activas: number
+          maximo: number
+        }[]
+      }
       contactos_por_estado: {
         Args: { p_empresa_id: string }
         Returns: {
@@ -811,6 +848,7 @@ export type Database = {
         }
         Returns: string
       }
+      empresas_con_cola: { Args: never; Returns: string[] }
       equipo_empresa: {
         Args: { p_empresa_id: string }
         Returns: {
@@ -834,17 +872,19 @@ export type Database = {
         }[]
       }
       llamadas_activas: { Args: { p_empresa_id: string }; Returns: number }
+      llamadas_activas_global: { Args: never; Returns: number }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }
         Returns: undefined
       }
+      minutos_mes: { Args: { p_empresa_id: string }; Returns: number }
       purgar_datos_antiguos: { Args: never; Returns: Json }
       reclamar_renovacion_calendly: {
         Args: { p_empresa_id: string }
         Returns: boolean
       }
       reservar_llamadas_lote: {
-        Args: { p_empresa_id: string }
+        Args: { p_empresa_id: string; p_max?: number }
         Returns: {
           contacto_id: string
           email: string
@@ -864,11 +904,16 @@ export type Database = {
           estado: string
           guion_activo: boolean
           id: string
+          limite_minutos_mes: number
           llamadas_30d: number
+          max_concurrencia_contratada: number
           miembros: number
+          minutos_mes: number
           nombre: string
+          phone_number_id: string
           segundos_30d: number
           slug: string
+          telefono_numero: string
         }[]
       }
       usuario_por_email: { Args: { p_email: string }; Returns: string }
