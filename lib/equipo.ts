@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { appEnv } from "@/lib/env";
 import { log } from "@/lib/log";
+import { origenEmpresa } from "@/lib/dominio/contexto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -29,9 +30,14 @@ export const rolSchema = z.enum(["propietario", "operador"]);
 
 const UNIQUE_VIOLATION = "23505";
 
-/** Enlace a /auth/confirm, el mismo formato que las plantillas de correo de supabase/templates/. */
-function enlaceConfirmacion(tokenHash: string, tipo: "invite" | "recovery") {
-  const url = new URL("/auth/confirm", appEnv().APP_URL);
+/**
+ * Enlace a /auth/confirm, el mismo formato que las plantillas de correo de
+ * supabase/templates/, en el dominio de la empresa (marca blanca): la sesión
+ * queda en ese dominio. El enlace lo construye la app, así que no hace falta
+ * dar de alta cada dominio en las redirect URLs de Supabase Auth.
+ */
+async function enlaceConfirmacion(empresaId: string, tokenHash: string, tipo: "invite" | "recovery") {
+  const url = new URL("/auth/confirm", await origenEmpresa(empresaId));
   url.searchParams.set("token_hash", tokenHash);
   url.searchParams.set("type", tipo);
   url.searchParams.set("next", "/cuenta/contrasena");
@@ -61,7 +67,8 @@ export async function invitarAEmpresa(empresaId: string, email: string, rol: Rol
   let resultado: ResultadoInvitacion;
   if (appEnv().INVITACIONES_POR_EMAIL) {
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: new URL("/auth/confirm?next=/cuenta/contrasena", appEnv().APP_URL).toString(),
+      // Con correo, el dominio debe estar en las redirect URLs de Supabase Auth (docs/runbook.md).
+      redirectTo: new URL("/auth/confirm?next=/cuenta/contrasena", await origenEmpresa(empresaId)).toString(),
     });
     if (error || !data.user) {
       log.error("invitar: envío de invitación", { message: error?.message });
@@ -76,7 +83,7 @@ export async function invitarAEmpresa(empresaId: string, email: string, rol: Rol
       return { error: "No se ha podido generar la invitación. Inténtalo de nuevo." };
     }
     usuarioId = data.user.id;
-    resultado = { tipo: "enlace", enlace: enlaceConfirmacion(data.properties.hashed_token, "invite") };
+    resultado = { tipo: "enlace", enlace: await enlaceConfirmacion(empresaId, data.properties.hashed_token, "invite") };
   }
 
   const { error } = await admin.from("miembros").insert({ empresa_id: empresaId, usuario_id: usuarioId, rol });
@@ -110,7 +117,8 @@ export async function nuevoAcceso(empresaId: string, usuarioId: string): Promise
 
   if (appEnv().INVITACIONES_POR_EMAIL) {
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      redirectTo: new URL("/auth/confirm?next=/cuenta/contrasena", appEnv().APP_URL).toString(),
+      // Con correo, el dominio debe estar en las redirect URLs de Supabase Auth (docs/runbook.md).
+      redirectTo: new URL("/auth/confirm?next=/cuenta/contrasena", await origenEmpresa(empresaId)).toString(),
     });
     if (error) {
       log.error("nuevo acceso: envío", { message: error.message });
@@ -124,7 +132,7 @@ export async function nuevoAcceso(empresaId: string, usuarioId: string): Promise
     log.error("nuevo acceso: generar enlace", { message: error.message });
     return { error: "No se ha podido generar el enlace. Inténtalo de nuevo." };
   }
-  return { tipo: "enlace", enlace: enlaceConfirmacion(data.properties.hashed_token, "recovery") };
+  return { tipo: "enlace", enlace: await enlaceConfirmacion(empresaId, data.properties.hashed_token, "recovery") };
 }
 
 const MENSAJE_ULTIMO_PROPIETARIO = "La empresa necesita al menos un propietario: nombra otro antes.";

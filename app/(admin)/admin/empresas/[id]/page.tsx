@@ -6,7 +6,10 @@ import { ArrowLeftIcon } from "lucide-react";
 import { AccionesEmpresa } from "@/components/admin/acciones-empresa";
 import { LineaLimites, type NumeroDisponible } from "@/components/admin/linea-limites";
 import { listarNumeros } from "@/lib/elevenlabs/client";
-import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
+import { elevenLabsAgenteEnv, isConfigured, renderEnv } from "@/lib/env";
+import { Dominios } from "@/components/admin/dominios";
+import { origenEmpresa } from "@/lib/dominio/contexto";
+import { destinoCname } from "@/lib/dominio/render";
 import { Equipo } from "@/components/equipo/equipo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,10 +41,12 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = createAdminClient();
-  const [{ data: resumen }, { data: miembros, error }, { data: tarifa }] = await Promise.all([
+  const [{ data: resumen }, { data: miembros, error }, { data: tarifa }, { data: dominios }, direccion] = await Promise.all([
     supabase.rpc("resumen_empresas"),
     supabase.rpc("equipo_empresa", { p_empresa_id: id }),
     supabase.from("empresas").select("precio_minuto").eq("id", id).maybeSingle(),
+    supabase.from("dominios_empresa").select("id, dominio, estado, detalle, comprobado_en").eq("empresa_id", id).order("creado_en"),
+    origenEmpresa(id),
   ]);
   const empresa = resumen?.find((e) => e.id === id);
   if (!empresa) notFound();
@@ -100,6 +105,20 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
         }}
         numeros={numeros}
         minutosMes={Number(empresa.minutos_mes)}
+      />
+
+      <Dominios
+        empresaId={empresa.id}
+        dominios={(dominios ?? []).map((d) => ({
+          id: d.id,
+          dominio: d.dominio,
+          estado: d.estado,
+          detalle: d.detalle,
+          comprobadoEn: d.comprobado_en,
+        }))}
+        destinoCname={destinoCname()}
+        renderConfigurado={isConfigured(renderEnv)}
+        direccion={direccion}
       />
 
       <section className="flex flex-col gap-3">

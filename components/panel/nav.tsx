@@ -13,6 +13,7 @@ import {
   CalendarDaysIcon,
   PhoneCallIcon,
   GaugeIcon,
+  PaletteIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const ITEMS = [
   { href: "/app/calendly", label: "Calendly", icon: CalendarDaysIcon },
   { href: "/app/telefono", label: "Teléfono", icon: PhoneCallIcon },
   { href: "/app/uso", label: "Uso", icon: GaugeIcon },
+  { href: "/app/marca", label: "Marca", icon: PaletteIcon },
   { href: "/app/equipo", label: "Equipo", icon: UserCogIcon },
   { href: "/app/configuracion", label: "Configuración", icon: SettingsIcon },
 ] as const;

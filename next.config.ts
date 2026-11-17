@@ -22,7 +22,8 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' blob:${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
+  // Logos y favicons de las empresas (bucket público "marca" de Supabase Storage).
+  `img-src 'self' blob: data:${supabase ? ` ${supabase}` : ""}`,
   "font-src 'self'",
   `connect-src 'self' ${elevenLabs}${supabase ? ` ${supabase} ${supabase.replace(/^http/, "ws")}` : ""}`,
   "object-src 'none'",

@@ -2,10 +2,13 @@ import "server-only";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { contextoDominio } from "@/lib/dominio/contexto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/** Si el usuario de la sesión administra la plataforma (el proveedor del SaaS). */
+/** Si el usuario de la sesión administra la plataforma (el proveedor del SaaS) y está en su dominio. */
 export const esAdminPlataforma = cache(async (): Promise<boolean> => {
+  // /admin solo existe en el dominio de la plataforma, nunca en el de una empresa.
+  if ((await contextoDominio()).tipo !== "plataforma") return false;
   const user = await getCurrentUser();
   const { data } = await createAdminClient()
     .from("admins_plataforma")

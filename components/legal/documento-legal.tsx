@@ -20,7 +20,7 @@ export function metadataLegal(title: string, description: string): Metadata {
 const etiqueta = "font-mono text-[11px] tracking-[0.22em] uppercase";
 
 // Tipografía del cuerpo sin plugin: los documentos son HTML semántico plano.
-const cuerpo = cn(
+export const cuerpoLegal = cn(
   "text-[15px] leading-relaxed text-neutral-700",
   "[&_h2]:mt-14 [&_h2]:scroll-mt-28 [&_h2]:text-2xl [&_h2]:tracking-[-0.03em] [&_h2]:text-neutral-950 [&_h2:first-child]:mt-0",
   "[&_h3]:mt-8 [&_h3]:text-lg [&_h3]:tracking-[-0.02em] [&_h3]:text-neutral-950",
@@ -81,7 +81,7 @@ export function DocumentoLegal({ ruta, titulo, children }: { ruta: RutaLegal; ti
             </div>
           )}
 
-          <div className={cn(cuerpo, "mt-12")}>{children}</div>
+          <div className={cn(cuerpoLegal, "mt-12")}>{children}</div>
         </article>
       </div>
     </main>

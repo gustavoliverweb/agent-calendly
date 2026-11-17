@@ -66,6 +66,21 @@ Cifra los tokens de Calendly de todas las empresas. No se puede rotar sin más: 
 
 Criterios: mes natural en la zona horaria de la empresa; los minutos son la suma de segundos de conversación / 60 (sin redondear cada llamada al minuto) e incluyen las pruebas en el navegador, igual que el límite mensual. El CSV usa «;» y coma decimal (Excel en español).
 
+## Dominio propio de una empresa (marca blanca)
+
+1. La empresa crea en su DNS un **CNAME** de un subdominio (p. ej. `llamadas.empresa.com`) hacia el host `onrender.com` del servicio (lo muestra la ficha en `/admin`) y borra los registros AAAA de ese nombre. Mejor subdominio que dominio raíz: el raíz necesita registros A y Render le añade el `www`.
+2. `/admin` → empresa → **Dominios** → Añadir.
+   - Con `RENDER_API_KEY` y `RENDER_SERVICE_ID`, se añade solo al servicio de Render. «Comprobar» consulta su verificación.
+   - Sin ellas, añádelo también en Render (servicio → Settings → Custom Domains). «Comprobar» solo mira el DNS.
+3. Cuando aparece «Verificado», sus usuarios entran por `https://llamadas.empresa.com`: ven su logo y color, y los enlaces de invitación nuevos usan ese dominio. La sesión es por dominio, así que la primera vez hay que iniciar sesión de nuevo.
+4. La empresa rellena su **Marca** (logo, color, datos legales). Sus páginas legales siguen marcadas como borrador hasta que tenga los datos obligatorios y el asesor revise los textos (`TEXTOS_REVISADOS`).
+
+Notas:
+- **Calendly**: «Conectar» en el dominio de una empresa pasa por el dominio de la plataforma (la redirect URI de la app OAuth sigue siendo `APP_URL/api/calendly/oauth/callback`) y vuelve al de la empresa.
+- **Subdominios de la plataforma** (cuando haya marca y dominio propios): con `BASE_DOMAIN=<dominio>`, cada empresa entra también por `<slug>.<dominio>`. Hacen falta un dominio comodín `*.<dominio>` en Render (CNAME `*`, `_acme-challenge` y `_cf-custom-hostname`, según Render) y que el dominio raíz apunte también a Render.
+- **Correo** (cuando haya SMTP): los enlaces de los correos de Supabase apuntan al dominio de la empresa, así que cada dominio debe estar en Supabase → Authentication → URL Configuration → Redirect URLs (`https://llamadas.empresa.com/**`). Los enlaces copiados desde el panel no lo necesitan.
+- Plan Pro de Render: 15 dominios incluidos por workspace, y cada dominio extra cuesta 0,25 $/mes.
+
 ## Calendly desconectado en una empresa
 
 En `/admin` aparece «Calendly: desconectado» y la empresa ve el aviso en su sección Calendly. Pasa cuando Calendly retira el permiso (el usuario cambió la contraseña o el email de acceso, revocó la app, o se perdió un refresh token). Solución: el propietario pulsa «Volver a conectar»; si es la misma cuenta, conserva el tipo de evento.

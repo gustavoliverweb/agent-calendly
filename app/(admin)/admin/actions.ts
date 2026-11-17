@@ -14,6 +14,10 @@ import {
   type ResultadoInvitacion,
   type Rol,
 } from "@/lib/equipo";
+import { olvidarDominios } from "@/lib/dominio/contexto";
+import { validarDominioPropio } from "@/lib/dominio/hosts";
+import { anadirDominioRender, borrarDominioRender, comprobarDns, RenderError, verificarDominioRender } from "@/lib/dominio/render";
+import { isConfigured, renderEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { slugSchema } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -217,6 +221,88 @@ export async function guardarConcurrenciaGlobal(maximo: number): Promise<{ error
     return { error: "No se ha podido guardar." };
   }
   log.warn("concurrencia global cambiada", { maximo: parsed.data, por: admin.id });
+  refresh();
+  return {};
+}
+
+// --- Dominios propios (marca blanca) -------------------------------------------
+
+async function resultadoRender(dominio: string): Promise<{ estado: "pendiente" | "verificado" | "error"; render_id?: string; detalle: string }> {
+  if (!isConfigured(renderEnv)) {
+    const dns = await comprobarDns(dominio);
+    return dns.ok
+      ? { estado: "verificado", detalle: `${dns.detalle}. Sin API de Render: comprueba allí que el dominio está añadido y con certificado.` }
+      : { estado: "pendiente", detalle: `Añádelo en Render (Settings → Custom Domains). ${dns.detalle}` };
+  }
+  try {
+    const r = await anadirDominioRender(dominio);
+    if (r.verificado) return { estado: "verificado", render_id: r.id, detalle: "Render lo sirve con HTTPS." };
+    await verificarDominioRender(dominio).catch(() => undefined);
+    const dns = await comprobarDns(dominio);
+    return { estado: "pendiente", render_id: r.id, detalle: `Render aún no lo ha verificado. ${dns.detalle}` };
+  } catch (e) {
+    return { estado: "error", detalle: e instanceof RenderError ? `Render: ${e.message}` : "No se pudo contactar con Render." };
+  }
+}
+
+/** Da de alta un dominio propio de la empresa (y en Render, si hay API). */
+export async function anadirDominio(empresaId: string, valor: string): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  if (!z.uuid().safeParse(empresaId).success) return { error: "Empresa no válida." };
+  const v = validarDominioPropio(valor);
+  if ("error" in v) return { error: v.error };
+
+  const supabase = createAdminClient();
+  const { data: fila, error } = await supabase
+    .from("dominios_empresa")
+    .insert({ empresa_id: empresaId, dominio: v.dominio })
+    .select("id")
+    .single();
+  if (error?.code === UNIQUE_VIOLATION) return { error: "Ese dominio ya está asignado." };
+  if (error || !fila) {
+    log.error("añadir dominio", { code: error?.code });
+    return { error: "No se ha podido añadir el dominio." };
+  }
+  const r = await resultadoRender(v.dominio);
+  await supabase.from("dominios_empresa").update({ ...r, comprobado_en: new Date().toISOString() }).eq("id", fila.id);
+  olvidarDominios();
+  await auditar(admin.id, empresaId, "anadir_dominio", "empresa", { dominio: v.dominio, estado: r.estado });
+  refresh();
+  return {};
+}
+
+/** Vuelve a comprobar el DNS y el certificado de un dominio. */
+export async function comprobarDominio(id: string): Promise<{ error?: string; estado?: string }> {
+  await requireAdminPlataforma();
+  if (!z.uuid().safeParse(id).success) return { error: "Dominio no válido." };
+  const supabase = createAdminClient();
+  const { data: fila } = await supabase.from("dominios_empresa").select("dominio").eq("id", id).maybeSingle();
+  if (!fila) return { error: "Dominio no encontrado." };
+  const r = await resultadoRender(fila.dominio);
+  await supabase.from("dominios_empresa").update({ ...r, comprobado_en: new Date().toISOString() }).eq("id", id);
+  olvidarDominios();
+  refresh();
+  return { estado: r.estado };
+}
+
+/** Quita un dominio de la empresa (y de Render, si hay API). Sus usuarios siguen entrando por las otras direcciones. */
+export async function quitarDominio(id: string): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  if (!z.uuid().safeParse(id).success) return { error: "Dominio no válido." };
+  const supabase = createAdminClient();
+  const { data: fila } = await supabase.from("dominios_empresa").select("dominio, empresa_id, render_id").eq("id", id).maybeSingle();
+  if (!fila) return { error: "Dominio no encontrado." };
+  if (fila.render_id && isConfigured(renderEnv)) {
+    try {
+      await borrarDominioRender(fila.dominio);
+    } catch (e) {
+      return { error: e instanceof RenderError ? `Render: ${e.message}` : "No se pudo quitar de Render." };
+    }
+  }
+  const { error } = await supabase.from("dominios_empresa").delete().eq("id", id);
+  if (error) return { error: "No se ha podido quitar el dominio." };
+  olvidarDominios();
+  await auditar(admin.id, fila.empresa_id, "quitar_dominio", "empresa", { dominio: fila.dominio });
   refresh();
   return {};
 }

@@ -59,6 +59,19 @@ services:
       # USD/min que cobra ElevenLabs al proveedor: estimación de coste en /admin.
       - key: COSTE_MINUTO_ESTIMADO
         value: "0.12"
+      # Marca blanca (opcionales): dominio base de los subdominios de empresa,
+      # hosts extra de la plataforma, destino del CNAME y API de Render para
+      # dar de alta los dominios de empresa desde /admin.
+      - key: BASE_DOMAIN
+        sync: false
+      - key: PLATFORM_HOSTS
+        sync: false
+      - key: RENDER_SERVICE_HOST
+        sync: false
+      - key: RENDER_API_KEY
+        sync: false
+      - key: RENDER_SERVICE_ID
+        sync: false
       # true cuando Supabase Auth tenga SMTP propio; si no, el panel muestra el enlace de invitación.
       - key: INVITACIONES_POR_EMAIL
         value: "false"

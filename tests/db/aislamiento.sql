@@ -617,3 +617,67 @@ end $$;
 reset role;
 
 do $$ begin raise notice 'USO OK'; end $$;
+
+-- Marca blanca (S6b) ---------------------------------------------------------------
+
+insert into public.dominios_empresa (empresa_id, dominio, estado)
+values (current_setting('t.ea')::uuid, 'llamadas.empresa-a.test', 'verificado'),
+       (current_setting('t.ec')::uuid, 'llamadas.empresa-c.test', 'verificado');
+
+do $$
+begin
+  insert into public.dominios_empresa (empresa_id, dominio) values (current_setting('t.ea')::uuid, 'llamadas.empresa-c.test');
+  raise exception 'FALLO: un dominio se asignó a dos empresas';
+exception when unique_violation then
+  raise notice 'ok: cada dominio es de una sola empresa';
+end $$;
+
+do $$
+begin
+  insert into public.dominios_empresa (empresa_id, dominio) values (current_setting('t.ea')::uuid, 'Llamadas.Empresa.test:443');
+  raise exception 'FALLO: se aceptó un dominio mal formado';
+exception when check_violation then
+  raise notice 'ok: dominios en minúsculas y sin puerto';
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  if exists (select 1 from public.dominios_empresa where empresa_id = current_setting('t.ec')::uuid) then
+    raise exception 'FALLO: un usuario ve los dominios de otra empresa';
+  end if;
+  if not exists (select 1 from public.dominios_empresa where empresa_id = current_setting('t.ea')::uuid) then
+    raise exception 'FALLO: un usuario no ve los dominios de su empresa';
+  end if;
+  raise notice 'ok: cada empresa ve solo sus dominios';
+end $$;
+
+do $$
+begin
+  insert into public.dominios_empresa (empresa_id, dominio) values (current_setting('t.ea')::uuid, 'otro.empresa-a.test');
+  raise exception 'FALLO: un usuario da de alta un dominio';
+exception when insufficient_privilege then
+  raise notice 'ok: los dominios solo los da de alta el proveedor';
+end $$;
+
+do $$
+begin
+  update public.empresas set marca_color = '#ff0000' where id = current_setting('t.ea')::uuid;
+  raise exception 'FALLO: un usuario cambia la marca sin pasar por el servidor';
+exception when insufficient_privilege then
+  raise notice 'ok: la marca solo se cambia desde el servidor';
+end $$;
+
+reset role;
+
+do $$
+begin
+  update public.empresas set marca_color = '#FF0000' where id = current_setting('t.ea')::uuid;
+  raise exception 'FALLO: se aceptó un color mal formado';
+exception when check_violation then
+  raise notice 'ok: color en #rrggbb';
+  raise notice 'MARCA OK';
+end $$;

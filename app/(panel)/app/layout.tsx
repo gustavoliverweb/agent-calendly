@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/marca/logo";
+import { LogoMarca } from "@/components/marca/logo-marca";
 import { NavLinks, PanelNav } from "@/components/panel/nav";
 import { PausaGlobal } from "@/components/panel/pausa-global";
 import { UserMenu } from "@/components/panel/user-menu";
@@ -9,17 +9,30 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { conexionCalendly } from "@/lib/calendly/conexion";
 import { lineaDeEmpresa } from "@/lib/telefono";
 import { getEmpresaActual } from "@/lib/empresa";
+import { esColorValido, textoSobre } from "@/lib/dominio/estilo";
 import { createClient } from "@/lib/supabase/server";
 
-/** El panel es privado: fuera de los buscadores. */
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+/** El panel es privado (fuera de los buscadores) y lleva el nombre y el favicon de la empresa. */
+export async function generateMetadata(): Promise<Metadata> {
+  const { marca } = await getEmpresaActual();
+  return {
+    robots: { index: false, follow: false },
+    title: { template: `%s · ${marca.nombre}`, default: marca.nombre },
+    ...(marca.faviconUrl ? { icons: { icon: marca.faviconUrl } } : {}),
+  };
+}
 
 export default function PanelLayout({ children }: LayoutProps<"/app">) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="panel-marca flex min-h-full flex-1 flex-col">
+      <Suspense fallback={null}>
+        <ColorMarca />
+      </Suspense>
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4">
         <Link href="/app" aria-label="Resumen del panel">
-          <Logo />
+          <Suspense fallback={<span className="block h-7 w-32" />}>
+            <LogoEmpresa />
+          </Suspense>
         </Link>
         <div className="flex items-center gap-2">
           <Suspense fallback={null}>
@@ -47,6 +60,20 @@ export default function PanelLayout({ children }: LayoutProps<"/app">) {
         </main>
       </div>
     </div>
+  );
+}
+
+async function LogoEmpresa() {
+  const { marca } = await getEmpresaActual();
+  return <LogoMarca marca={marca} />;
+}
+
+/** Color de la empresa en botones, foco y barras del panel (validado: #rrggbb). */
+async function ColorMarca() {
+  const { marca } = await getEmpresaActual();
+  if (!marca.color || !esColorValido(marca.color)) return null;
+  return (
+    <style>{`.panel-marca{--primary:${marca.color};--primary-foreground:${textoSobre(marca.color)};--ring:${marca.color}}`}</style>
   );
 }
 

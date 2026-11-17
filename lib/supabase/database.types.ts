@@ -289,6 +289,47 @@ export type Database = {
           },
         ]
       }
+      dominios_empresa: {
+        Row: {
+          comprobado_en: string | null
+          creado_en: string
+          detalle: string | null
+          dominio: string
+          empresa_id: string
+          estado: string
+          id: string
+          render_id: string | null
+        }
+        Insert: {
+          comprobado_en?: string | null
+          creado_en?: string
+          detalle?: string | null
+          dominio: string
+          empresa_id: string
+          estado?: string
+          id?: string
+          render_id?: string | null
+        }
+        Update: {
+          comprobado_en?: string | null
+          creado_en?: string
+          detalle?: string | null
+          dominio?: string
+          empresa_id?: string
+          estado?: string
+          id?: string
+          render_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dominios_empresa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           actualizado_en: string
@@ -296,7 +337,16 @@ export type Database = {
           estado: string
           guion_activo_id: string | null
           id: string
+          legal_domicilio: string | null
+          legal_email: string | null
+          legal_nif: string | null
+          legal_razon_social: string | null
+          legal_registro: string | null
           limite_minutos_mes: number | null
+          marca_color: string | null
+          marca_favicon: string | null
+          marca_logo: string | null
+          marca_nombre: string | null
           max_concurrencia_contratada: number
           nombre: string
           phone_number_id: string | null
@@ -311,7 +361,16 @@ export type Database = {
           estado?: string
           guion_activo_id?: string | null
           id?: string
+          legal_domicilio?: string | null
+          legal_email?: string | null
+          legal_nif?: string | null
+          legal_razon_social?: string | null
+          legal_registro?: string | null
           limite_minutos_mes?: number | null
+          marca_color?: string | null
+          marca_favicon?: string | null
+          marca_logo?: string | null
+          marca_nombre?: string | null
           max_concurrencia_contratada?: number
           nombre: string
           phone_number_id?: string | null
@@ -326,7 +385,16 @@ export type Database = {
           estado?: string
           guion_activo_id?: string | null
           id?: string
+          legal_domicilio?: string | null
+          legal_email?: string | null
+          legal_nif?: string | null
+          legal_razon_social?: string | null
+          legal_registro?: string | null
           limite_minutos_mes?: number | null
+          marca_color?: string | null
+          marca_favicon?: string | null
+          marca_logo?: string | null
+          marca_nombre?: string | null
           max_concurrencia_contratada?: number
           nombre?: string
           phone_number_id?: string | null

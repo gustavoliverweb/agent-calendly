@@ -1,7 +1,8 @@
 import "server-only";
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { COLUMNAS_MARCA, contextoDominio, empresaDeFila, type Marca } from "@/lib/dominio/contexto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -12,28 +13,32 @@ export type EmpresaActual = {
   slug: string;
   estado: string;
   rol: Database["public"]["Enums"]["miembro_rol"];
+  marca: Marca;
 };
 
 /**
- * Empresa en la que trabaja el usuario de la sesión: la primera de la que es
- * miembro. Cuando cada empresa tenga su dominio (marca blanca), saldrá del
- * dominio de la petición. Redirige a /cuenta/sin-empresa si no pertenece a ninguna.
+ * Empresa en la que trabaja el usuario de la sesión:
+ * - En el dominio de una empresa (marca blanca), esa empresa; si el usuario
+ *   no es miembro, a /cuenta/sin-empresa.
+ * - En el dominio de la plataforma, la primera de la que es miembro.
+ * - En un dominio que no es de nadie, 404.
  *
  * Todas las consultas del panel filtran por este id además de por RLS: RLS
  * deja ver todas las empresas del usuario, y el panel muestra solo una.
  */
 export const getEmpresaActual = cache(async (): Promise<EmpresaActual> => {
-  const user = await getCurrentUser();
+  const [user, ctx] = await Promise.all([getCurrentUser(), contextoDominio()]);
+  if (ctx.tipo === "desconocido") notFound();
   const supabase = await createClient();
-  const { data } = await supabase
+  let consulta = supabase
     .from("miembros")
-    .select("rol, empresas (id, nombre, slug, estado)")
-    .eq("usuario_id", user.id)
-    .order("creado_en")
-    .limit(1)
-    .maybeSingle();
+    .select(`rol, empresas (${COLUMNAS_MARCA})`)
+    .eq("usuario_id", user.id);
+  if (ctx.tipo === "empresa") consulta = consulta.eq("empresa_id", ctx.empresa.id);
+  const { data } = await consulta.order("creado_en").limit(1).maybeSingle();
   if (!data?.empresas) redirect("/cuenta/sin-empresa");
-  return { ...data.empresas, rol: data.rol };
+  const e = empresaDeFila(data.empresas);
+  return { id: e.id, nombre: e.nombre, slug: e.slug, estado: e.estado, rol: data.rol, marca: e.marca };
 });
 
 /**

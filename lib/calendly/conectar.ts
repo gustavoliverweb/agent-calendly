@@ -24,10 +24,20 @@ import { canjearCodigo, OAuthCalendlyError, revocarToken } from "./oauth";
 
 export const COOKIE_OAUTH = "calendly_oauth";
 
-/** Lo que viaja en la cookie entre "Conectar" y la vuelta de Calendly. */
-export type EstadoOAuth = { v: string; s: string; e: string };
+/**
+ * Lo que viaja en la cookie entre "Conectar" y la vuelta de Calendly. Si se
+ * empezó en el dominio de una empresa (puente), lleva también el usuario
+ * (`u`, sin sesión en el dominio de la plataforma) y el origen al que volver (`o`).
+ */
+export type EstadoOAuth = { v: string; s: string; e: string; u?: string; o?: string };
 
-const estadoSchema = z.object({ v: z.string().min(43).max(128), s: z.string().min(16).max(64), e: z.uuid() });
+const estadoSchema = z.object({
+  v: z.string().min(43).max(128),
+  s: z.string().min(16).max(64),
+  e: z.uuid(),
+  u: z.uuid().optional(),
+  o: z.url().optional(),
+});
 
 export function leerEstadoOAuth(cookie: string | undefined): EstadoOAuth | null {
   if (!cookie) return null;

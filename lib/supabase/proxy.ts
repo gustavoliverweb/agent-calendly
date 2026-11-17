@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { esHostPlataforma, normalizarHost } from "@/lib/dominio/hosts";
 import type { Database } from "./database.types";
 
 /**
@@ -17,8 +18,30 @@ function isPrivate(pathname: string) {
  * Refresca la sesión de Supabase en cada petición y redirige a /login
  * las rutas del panel cuando no hay usuario.
  */
+/** Páginas legales que en el dominio de una empresa muestran los datos de esa empresa. */
+const LEGALES = ["/aviso-legal", "/privacidad", "/cookies"];
+
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const { pathname } = request.nextUrl;
+  const host = normalizarHost(request.headers.get("x-forwarded-host") ?? request.headers.get("host"));
+  const dominioEmpresa = !esHostPlataforma(host);
+
+  // Dominio de una empresa (marca blanca): sin landing, directo al panel/login.
+  const redirigir = (ruta: string) => redireccion(request, ruta);
+  if (dominioEmpresa && pathname === "/") return redirigir("/app");
+  // Las páginas legales de empresa solo existen reescritas desde su dominio.
+  if (!dominioEmpresa && (pathname === "/legal-empresa" || pathname.startsWith("/legal-empresa/"))) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+  const reescritura = dominioEmpresa && LEGALES.includes(pathname) ? `/legal-empresa${pathname}` : null;
+  const siguiente = () => {
+    if (!reescritura) return NextResponse.next({ request });
+    const url = request.nextUrl.clone();
+    url.pathname = reescritura;
+    return NextResponse.rewrite(url, { request });
+  };
+
+  let response = siguiente();
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +53,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = siguiente();
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -46,23 +69,28 @@ export async function updateSession(request: NextRequest) {
   // cierres de sesión aleatorios difíciles de depurar.
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
-  const { pathname } = request.nextUrl;
 
   if (!user && isPrivate(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = pathname === "/app" ? "" : `?next=${encodeURIComponent(pathname)}`;
-    return copyCookies(response, NextResponse.redirect(url));
+    return copyCookies(response, redirigir(pathname === "/app" ? "/login" : `/login?next=${encodeURIComponent(pathname)}`));
   }
 
-  if (user && pathname === "/login") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/app";
-    url.search = "";
-    return copyCookies(response, NextResponse.redirect(url));
-  }
+  if (user && pathname === "/login") return copyCookies(response, redirigir("/app"));
 
   return response;
+}
+
+/**
+ * Redirección al dominio público por el que entró el navegador (el de la
+ * empresa, con marca blanca): la URL de la petición lleva el host interno
+ * (detrás del proxy de Render, o localhost) y el proxy exige una URL absoluta.
+ */
+function redireccion(request: NextRequest, ruta: string) {
+  const bruto = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim();
+  const host = normalizarHost(bruto);
+  const local = host === "localhost" || host === "127.0.0.1";
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0].trim() || (local ? "http" : "https");
+  const origen = host ? `${proto}://${local ? bruto : host}` : request.nextUrl.origin;
+  return NextResponse.redirect(new URL(ruta, origen), 307);
 }
 
 function copyCookies(from: NextResponse, to: NextResponse) {

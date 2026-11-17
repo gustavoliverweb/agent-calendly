@@ -89,6 +89,15 @@ const appSchema = z.object({
   INVITACIONES_POR_EMAIL: z.stringbool().default(false),
 });
 
+// API de Render (marca blanca): alta de los dominios propios de las empresas en
+// el servicio. Opcional: sin ella, el proveedor los añade a mano en Render.
+const renderSchema = z.object({
+  RENDER_API_KEY: secret(),
+  RENDER_SERVICE_ID: z.string().trim().regex(/^srv-[a-z0-9]+$/, "srv-…"),
+  // Solo para apuntar a un servidor simulado en pruebas.
+  RENDER_API_BASE: z.url().default("https://api.render.com/v1"),
+});
+
 function loader<T extends z.ZodType>(name: string, schema: T) {
   let cached: z.infer<T> | undefined;
   return (): z.infer<T> => {
@@ -110,6 +119,7 @@ export const calendlyEnv = loader("Calendly", calendlySchema);
 export const calendlyWebhookEnv = loader("Calendly webhook", calendlyWebhookSchema);
 export const calendlyOAuthEnv = loader("Calendly OAuth", calendlyOAuthSchema);
 export const appEnv = loader("App", appSchema);
+export const renderEnv = loader("Render", renderSchema);
 
 /** Indica si un grupo de variables está completo, sin lanzar error. */
 export function isConfigured(load: () => unknown): boolean {
