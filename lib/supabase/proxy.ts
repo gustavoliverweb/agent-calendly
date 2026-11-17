@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { RECURSOS } from "@/lib/contenido/recursos";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { esHostPlataforma, normalizarHost } from "@/lib/dominio/hosts";
 import type { Database } from "./database.types";
@@ -20,7 +21,22 @@ function isPrivate(pathname: string) {
  * las rutas del panel cuando no hay usuario.
  */
 /** Páginas de la web de la plataforma: no existen en el dominio de una empresa. */
-const WEB_PLATAFORMA = ["/precios", "/seguridad", "/contacto", "/soluciones"];
+const WEB_PLATAFORMA = [
+  "/producto",
+  "/precios",
+  "/seguridad",
+  "/integraciones",
+  "/calculadora",
+  "/contacto",
+  "/soluciones",
+  "/recursos",
+];
+
+/** Páginas con slug: solo existen los de su contenido. */
+const CON_SLUG = [
+  { prefijo: "/soluciones/", slugs: SOLUCIONES.map((s) => s.slug) },
+  { prefijo: "/recursos/", slugs: RECURSOS.map((r) => r.slug) },
+];
 
 /** Páginas legales que en el dominio de una empresa muestran los datos de esa empresa. */
 const LEGALES = ["/aviso-legal", "/privacidad", "/cookies"];
@@ -36,8 +52,9 @@ export async function updateSession(request: NextRequest) {
   if (dominioEmpresa && WEB_PLATAFORMA.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return new NextResponse("Not Found", { status: 404 });
   }
-  // Soluciones: solo las que existen (con Cache Components, notFound() llega tarde y respondería 200).
-  if (!dominioEmpresa && pathname.startsWith("/soluciones/") && !SOLUCIONES.some((s) => pathname === `/soluciones/${s.slug}`)) {
+  // Soluciones y recursos: solo los que existen (con Cache Components, notFound() llega tarde y respondería 200).
+  const conSlug = CON_SLUG.find((c) => pathname.startsWith(c.prefijo));
+  if (!dominioEmpresa && conSlug && !conSlug.slugs.includes(pathname.slice(conSlug.prefijo.length))) {
     return new NextResponse("Not Found", { status: 404 });
   }
   // Las páginas legales de empresa solo existen reescritas desde su dominio.

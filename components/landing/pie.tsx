@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { DOCUMENTOS_LEGALES } from "@/components/legal/documento-legal";
 import { Logo } from "@/components/marca/logo";
+import { RECURSOS } from "@/lib/contenido/recursos";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { enlaceDemo, MARCA } from "@/lib/marca";
 
 export function Pie() {
   return (
     <footer data-tema="oscuro" className="bg-tinta-950 px-6 pt-20 pb-10 text-white">
-      <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[2fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
         <div>
           <Logo />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/55">{MARCA.descripcion}</p>
@@ -15,11 +16,11 @@ export function Pie() {
         <div>
           <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Producto</p>
           <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
-            <li><Link href="/#como-funciona" className="hover:text-white">Cómo funciona</Link></li>
-            <li><Link href="/#panel" className="hover:text-white">El panel</Link></li>
+            <li><Link href="/producto" className="hover:text-white">Qué hace</Link></li>
+            <li><Link href="/integraciones" className="hover:text-white">Integraciones</Link></li>
             <li><Link href="/precios" className="hover:text-white">Precios</Link></li>
+            <li><Link href="/calculadora" className="hover:text-white">Calculadora de retorno</Link></li>
             <li><Link href="/seguridad" className="hover:text-white">Seguridad y RGPD</Link></li>
-            <li><Link href="/#preguntas" className="hover:text-white">Preguntas</Link></li>
           </ul>
         </div>
         <div>
@@ -32,6 +33,19 @@ export function Pie() {
                 </Link>
               </li>
             ))}
+          </ul>
+        </div>
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Recursos</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+            {RECURSOS.map((r) => (
+              <li key={r.slug}>
+                <Link href={`/recursos/${r.slug}`} className="hover:text-white">
+                  {r.titulo}
+                </Link>
+              </li>
+            ))}
+            <li><Link href="/recursos" className="hover:text-white">Todas las guías</Link></li>
           </ul>
         </div>
         <div>

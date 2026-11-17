@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { solicitudSchema } from "@/lib/contenido/contacto";
+import { RECURSOS } from "@/lib/contenido/recursos";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
 
 const base = { nombre: "Laura", email: "Laura@Clinica.ES", privacidad: "on" };
@@ -33,6 +34,14 @@ describe("formulario de contacto", () => {
   it("cada solución preselecciona un sector válido del formulario", () => {
     for (const s of SOLUCIONES) {
       expect(solicitudSchema.parse({ ...base, sector: s.sector }).sector).toBe(s.sector);
+    }
+  });
+
+  it("las páginas con slug llegan como origen válido y no repiten slug", () => {
+    const rutas = [...SOLUCIONES.map((s) => `/soluciones/${s.slug}`), ...RECURSOS.map((r) => `/recursos/${r.slug}`)];
+    expect(new Set(rutas).size).toBe(rutas.length);
+    for (const origen of rutas) {
+      expect(solicitudSchema.parse({ ...base, origen }).origen).toBe(origen);
     }
   });
 });

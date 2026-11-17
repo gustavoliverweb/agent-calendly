@@ -143,6 +143,242 @@ export const SOLUCIONES: Solucion[] = [
     cta: { titulo: "Tu agenda puede llenarse sola.", destacado: "Te lo enseñamos con tu guion." },
   },
   {
+    slug: "inmobiliarias",
+    sector: "Inmobiliaria",
+    menu: "Inmobiliarias",
+    seo: {
+      titulo: "Agente de voz con IA para inmobiliarias",
+      descripcion:
+        "Llama a cada persona que pregunta por un inmueble, resuelve sus dudas y le agenda la visita o la valoración en tu Calendly. Para agencias inmobiliarias y promotoras.",
+    },
+    hero: {
+      etiqueta: "Para inmobiliarias",
+      titulo: "Cada consulta por un piso, con su visita.",
+      destacado: "Sin que tus agentes vivan al teléfono.",
+      texto:
+        "El agente llama a quien pregunta por un inmueble o pide una valoración, le resuelve lo básico y le agenda la visita en el calendario de tu equipo. Tus agentes enseñan casas en lugar de devolver llamadas.",
+    },
+    problema: {
+      titulo: "Un anuncio trae decenas de consultas.",
+      destacado: "Llamarlas todas no cabe en el día.",
+      items: [
+        [
+          "Gana quien llama primero",
+          "Quien pregunta por un piso suele preguntar por varios a la vez. La agencia que llama antes es la que enseña la casa.",
+        ],
+        [
+          "Tus agentes están en la calle",
+          "Entre visitas, captaciones y notarías, las consultas de los portales se acumulan hasta la noche.",
+        ],
+        [
+          "Propietarios que se enfrían",
+          "Quien pide una valoración también la pide a otras agencias. Si nadie le llama esa semana, la captación es de otro.",
+        ],
+      ],
+    },
+    pasos: {
+      titulo: "Así llena la agenda de visitas",
+      destacado: "mientras tu equipo está fuera.",
+      items: [
+        {
+          clave: "Importa",
+          titulo: "Sube las consultas.",
+          texto: "Un CSV exportado de los portales o de tu CRM inmobiliario, con el inmueble por el que preguntó cada persona en las notas.",
+        },
+        {
+          clave: "Llama",
+          titulo: "Llama en tu horario.",
+          texto: "Por lotes, con las llamadas simultáneas que elijas, en tus franjas y nunca en festivos. Si no contestan, reintenta otro día.",
+        },
+        {
+          clave: "Resuelve",
+          titulo: "Contesta con tu guion.",
+          texto: "Zona, cómo funciona la visita, qué documentación pedís. Lo que no esté en tu guion, como el precio final o una rebaja, lo deja para tu agente: no promete nada.",
+        },
+        {
+          clave: "Agenda",
+          titulo: "Reserva la visita o la valoración.",
+          texto: "Ofrece huecos reales del calendario de tu equipo y la persona recibe la confirmación por email. Si cancela o cambia la hora, el panel se actualiza solo.",
+        },
+      ],
+    },
+    dialogo: {
+      titulo: "Una valoración, agendada.",
+      texto: "Un ejemplo con el guion de una agencia que capta propietarios. El agente se presenta como asistente virtual desde la primera frase.",
+      conversacion: {
+        titulo: "Inmobiliaria · solicitud de valoración web",
+        turnos: [
+          {
+            quien: "agente",
+            texto:
+              "Hola, ¿hablo con Javier? Le llamo de Inmobiliaria Centro. Soy Marta, una asistente virtual con inteligencia artificial, y esta llamada se transcribe. Nos pidió una valoración de su vivienda.",
+          },
+          { quien: "contacto", texto: "Sí, estoy pensando en vender el piso." },
+          {
+            quien: "agente",
+            texto:
+              "Perfecto. La valoración es gratuita: uno de nuestros agentes visita la vivienda unos cuarenta y cinco minutos y le entrega un informe con el precio de mercado. ¿Qué día le viene bien?",
+          },
+          { quien: "contacto", texto: "Mejor un sábado por la mañana." },
+          { quien: "nota", texto: "consulta la disponibilidad del sábado en Calendly" },
+          { quien: "agente", texto: "Este sábado tengo a las 10:00 o a las 12:00. ¿Cuál prefiere?" },
+          { quien: "contacto", texto: "A las 10:00." },
+          { quien: "nota", texto: "reserva la visita y envía la confirmación por email" },
+          { quien: "agente", texto: "Hecho, sábado a las 10:00. Le llega ahora la confirmación con los datos de la visita." },
+        ],
+      },
+    },
+    beneficios: {
+      titulo: "Más visitas y captaciones.",
+      destacado: "Menos llamadas perdidas.",
+      items: [
+        ["Rapidez en cada consulta", "Lanza un lote cuando entran las consultas y el agente llama dentro de tu horario, sin esperar a que alguien se libere."],
+        ["Visitas en el calendario de tu equipo", "Reserva en tu Calendly durante la llamada, con huecos reales. Si uno se ocupa, ofrece otro."],
+        ["Sin promesas que no puedes cumplir", "Precios, rebajas o condiciones solo si están en tu guion. Lo demás lo trata tu agente en la visita."],
+        ["Cada conversación, transcrita", "Sabes qué buscaba cada persona antes de la visita: zona, presupuesto, plazos."],
+        ["Rellamadas cuando lo piden", "Si alguien pide que le llamen otro día, queda en seguimiento con el momento que indicó."],
+        ["Reintentos automáticos", "Quien no contesta vuelve a la cola otro día y a otra hora, según tus reglas."],
+      ],
+    },
+    preguntas: [
+      [
+        "¿Sirve para compradores y para propietarios?",
+        "Sí. Cada guion tiene su objetivo: agendar una visita a un inmueble o una valoración de una vivienda. Puedes tener una versión para cada campaña y activar la que toque.",
+      ],
+      [
+        "¿Puede hablar de un inmueble concreto?",
+        "El guion es el mismo para todas las llamadas de una campaña, así que funciona mejor con lo común: la zona, cómo es una visita, qué documentación pedís. El detalle de cada piso, mejor en la visita.",
+      ],
+      [
+        "¿Necesito que cada agente tenga su Calendly?",
+        "No. Cada cuenta se conecta a un Calendly y a un tipo de evento, y el agente reserva en ese calendario. Si tu equipo reparte las visitas de otra forma, lo vemos contigo en la demo.",
+      ],
+      [
+        "¿Puedo llamar a cualquier persona que preguntó en un portal?",
+        "Si te dejó su teléfono para que le contactaras por ese inmueble, normalmente sí, y el sistema guarda el origen de ese consentimiento. Para campañas de captación en frío, revisa la base jurídica con tu asesor.",
+      ],
+    ],
+    cta: { titulo: "Tu equipo, enseñando casas.", destacado: "Las llamadas, para el agente." },
+  },
+  {
+    slug: "formacion",
+    sector: "Academia o formación",
+    menu: "Academias y formación",
+    seo: {
+      titulo: "Agente de voz con IA para academias y centros de formación",
+      descripcion:
+        "Llama a cada persona que pide información sobre un curso, resuelve sus dudas y le agenda una sesión informativa o una prueba de nivel en tu Calendly.",
+    },
+    hero: {
+      etiqueta: "Para academias y centros de formación",
+      titulo: "Cada solicitud de información, con su entrevista.",
+      destacado: "Antes de que se matricule en otro sitio.",
+      texto:
+        "El agente llama a quien pide información sobre un curso, le explica cómo funciona y le agenda una sesión informativa o una prueba de nivel con tu equipo de admisiones.",
+    },
+    problema: {
+      titulo: "Las matrículas se deciden en días.",
+      destacado: "Y llegan todas a la vez.",
+      items: [
+        [
+          "Picos de solicitudes",
+          "Antes de cada convocatoria entran cientos de formularios en pocas semanas. Admisiones no da abasto para llamarlos.",
+        ],
+        [
+          "Se informan en varios centros",
+          "Quien busca un curso pide información a varias academias. La primera que le explica bien el programa suele quedarse la matrícula.",
+        ],
+        [
+          "Llamadas fuera de hora",
+          "Muchas personas solo pueden hablar por la tarde, cuando el equipo ya se ha ido. El agente llama en las franjas que decidas.",
+        ],
+      ],
+    },
+    pasos: {
+      titulo: "Así llena las sesiones informativas",
+      destacado: "sin ampliar admisiones.",
+      items: [
+        {
+          clave: "Importa",
+          titulo: "Sube las solicitudes.",
+          texto: "Un CSV de tu formulario web o de tus campañas, con el curso que interesa a cada persona en las notas y su consentimiento.",
+        },
+        {
+          clave: "Llama",
+          titulo: "Llama cuando pueden hablar.",
+          texto: "Configura franjas de tarde si es cuando contestan. Por lotes, con reintentos otro día y a otra hora.",
+        },
+        {
+          clave: "Explica",
+          titulo: "Resuelve las dudas con tu guion.",
+          texto: "Modalidad, duración, horarios, requisitos, becas o financiación si los incluyes. Lo que no esté en el guion, lo deja para la sesión: no inventa.",
+        },
+        {
+          clave: "Agenda",
+          titulo: "Reserva la sesión.",
+          texto: "Una entrevista, una sesión informativa o una prueba de nivel en el Calendly de admisiones, con la confirmación por email.",
+        },
+      ],
+    },
+    dialogo: {
+      titulo: "Una sesión informativa, agendada.",
+      texto: "Un ejemplo con el guion de una academia de idiomas. El agente se presenta como asistente virtual desde la primera frase.",
+      conversacion: {
+        titulo: "Academia de idiomas · formulario de un curso",
+        turnos: [
+          {
+            quien: "agente",
+            texto:
+              "Hola, ¿hablo con Andrea? Le llamo de Academia Norte. Soy Lucía, una asistente virtual con inteligencia artificial, y esta llamada se transcribe. Pidió información sobre el curso de inglés.",
+          },
+          { quien: "contacto", texto: "Sí, quería saber los horarios." },
+          {
+            quien: "agente",
+            texto:
+              "Hay grupos de mañana y de tarde, dos días por semana. Para recomendarle el grupo adecuado hacemos una prueba de nivel gratuita de veinte minutos. ¿Le agendo una?",
+          },
+          { quien: "contacto", texto: "Vale, el martes si puede ser." },
+          { quien: "nota", texto: "consulta la disponibilidad del martes en Calendly" },
+          { quien: "agente", texto: "El martes tengo a las 18:00 o a las 19:30. ¿Cuál prefiere?" },
+          { quien: "contacto", texto: "A las 19:30." },
+          { quien: "nota", texto: "reserva la prueba y envía la confirmación por email" },
+          { quien: "agente", texto: "Listo, martes a las 19:30. Le llega la confirmación al correo que nos dejó." },
+        ],
+      },
+    },
+    beneficios: {
+      titulo: "Más sesiones informativas.",
+      destacado: "Mismo equipo de admisiones.",
+      items: [
+        ["Aguanta los picos", "Tú decides cuántas llamadas simultáneas: el agente absorbe la avalancha de antes de cada convocatoria."],
+        ["Llama cuando contestan", "Franjas configurables por día de la semana y sin festivos."],
+        ["Un guion por campaña", "Versiones distintas para cada curso o convocatoria, y activas la que toque."],
+        ["Cada llamada, transcrita", "Admisiones llega a la sesión sabiendo qué curso interesa y qué dudas tenía la persona."],
+        ["Rellamadas cuando lo piden", "Si alguien pide que le llamen más tarde, queda en seguimiento con el momento que indicó."],
+        ["Consentimiento registrado", "En campañas comerciales solo llama a quien dio su consentimiento, con fecha y origen."],
+      ],
+    },
+    preguntas: [
+      [
+        "¿Puede llamar a menores?",
+        "No lo recomendamos. En cursos para menores, la lista debe ser de madres, padres o tutores, y el guion debe dirigirse a ellos.",
+      ],
+      [
+        "¿Puede explicar precios, becas o financiación?",
+        "Sí, si los pones en tu guion. Si le preguntan algo que no está, lo deja para la sesión con admisiones en lugar de improvisar.",
+      ],
+      [
+        "¿Sirve para varios cursos a la vez?",
+        "Cada guion tiene un objetivo. Puedes guardar una versión por curso y activar la de la campaña que vas a lanzar, o hacer un guion general que agende una sesión informativa.",
+      ],
+      [
+        "¿Y para recuperar a quien no terminó la matrícula?",
+        "Sí. Si ya tienes relación con esas personas, puede ser una campaña no comercial: revisa la base jurídica con tu asesor y elige el tipo de campaña en el panel.",
+      ],
+    ],
+    cta: { titulo: "Tus convocatorias, llenas.", destacado: "Sin colapsar admisiones." },
+  },
+  {
     slug: "b2b",
     sector: "Servicios a empresas (B2B)",
     menu: "Prospección B2B",

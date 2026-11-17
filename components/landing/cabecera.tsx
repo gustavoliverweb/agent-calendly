@@ -8,11 +8,12 @@ import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { enlaceDemo } from "@/lib/marca";
 import { cn } from "@/lib/utils";
 
+// El primero va antes del menú de soluciones. «Contacto» lo cubre el botón «Hablemos».
 const SECCIONES = [
-  { href: "/#como-funciona", texto: "Cómo funciona" },
+  { href: "/producto", texto: "Producto" },
   { href: "/precios", texto: "Precios" },
+  { href: "/recursos", texto: "Recursos" },
   { href: "/seguridad", texto: "Seguridad" },
-  { href: "/contacto", texto: "Contacto" },
 ];
 
 /**
