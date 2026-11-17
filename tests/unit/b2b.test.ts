@@ -53,6 +53,25 @@ describe("resultado de una llamada B2B", () => {
     expect(decidirResultado(fin({ hablo_con_decisor: true, pide_rellamada: true }), ctx).llamada.clasificacion).toBe("rellamar");
   });
 
+  it("encuentra los campos por su nombre cuando el identificador es automático (aitem_…)", () => {
+    const d = leerDatosRecogidos({
+      interes: { data_collection_id: "interes", name: "interes", value: "si" },
+      aitem_0901m7n1x50efr18ctbrg6srzgv4: { data_collection_id: "aitem_0901m7n1x50efr18ctbrg6srzgv4", name: "hablo_con_decisor", value: false },
+      aitem_8201m7n1xtymep5tns1eyzzsvhc1: { data_collection_id: "aitem_8201m7n1xtymep5tns1eyzzsvhc1", name: "nombre_contacto", value: "Ana López" },
+      aitem_2901m7n1zdwge6fsh01v57g98xk2: { data_collection_id: "aitem_2901m7n1zdwge6fsh01v57g98xk2", name: "telefono_directo", value: "910 00 00 01" },
+    });
+    expect(d).toMatchObject({ interes: "si", hablo_con_decisor: false, nombre_contacto: "Ana López", telefono_directo: "910 00 00 01" });
+    expect(decidirResultado(fin(d), ctx).llamada.clasificacion).toBe("pasado_a_otra_persona");
+  });
+
+  it("si coinciden, manda el identificador sobre el nombre", () => {
+    const d = leerDatosRecogidos({
+      interes: { name: "interes", value: "no" },
+      aitem_x: { name: "interes", value: "si" },
+    });
+    expect(d.interes).toBe("no");
+  });
+
   it("lee los datos B2B del análisis", () => {
     expect(
       leerDatosRecogidos({

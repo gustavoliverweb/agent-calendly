@@ -223,11 +223,23 @@ function aTexto(v: unknown): string | undefined {
   return typeof v === "string" && v.trim() ? v.trim() : undefined;
 }
 
-/** Lee `data_collection_results` ({ id: { value } }) tolerando tipos sueltos. */
+/**
+ * Lee `data_collection_results` ({ id: { name, value } }) tolerando tipos sueltos.
+ *
+ * Cada campo se busca por su identificador y, si no está, por su nombre: el
+ * panel de ElevenLabs crea los campos nuevos con un identificador automático
+ * (`aitem_…`) y deja lo que se escribe como `name`.
+ */
 export function leerDatosRecogidos(resultados: unknown): DatosRecogidos {
   if (!resultados || typeof resultados !== "object") return {};
+  const porId = resultados as Record<string, unknown>;
+  const porNombre = new Map<string, unknown>();
+  for (const r of Object.values(porId)) {
+    const nombre = r && typeof r === "object" && "name" in r ? (r as { name: unknown }).name : undefined;
+    if (typeof nombre === "string" && nombre.trim() && !porNombre.has(nombre.trim())) porNombre.set(nombre.trim(), r);
+  }
   const valor = (id: string) => {
-    const r = (resultados as Record<string, unknown>)[id];
+    const r = porId[id] ?? porNombre.get(id);
     return r && typeof r === "object" && "value" in r ? (r as { value: unknown }).value : undefined;
   };
   const interes = aTexto(valor("interes"))?.toLowerCase();

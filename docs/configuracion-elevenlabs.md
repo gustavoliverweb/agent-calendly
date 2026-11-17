@@ -70,9 +70,9 @@ Detalle de respuestas y errores: [configuracion-calendly.md](configuracion-calen
 
 ## Data collection (análisis post-llamada)
 
-La app lee estos identificadores exactos. Si no existen, la llamada se clasifica igual, pero con menos detalle.
+La app busca cada campo por su identificador y, si no lo encuentra, por su **nombre**: el panel de ElevenLabs crea los campos nuevos con un identificador automático (`aitem_…`), así que basta con que el nombre sea exactamente el de la tabla. Si un campo no existe, la llamada se clasifica igual, pero con menos detalle.
 
-| ID | Tipo | Descripción para el LLM |
+| Nombre | Tipo | Descripción para el LLM |
 |---|---|---|
 | `interes` | string | `si`, `no` o `dudoso`: ¿el contacto mostró interés en la cita? |
 | `motivo_rechazo` | string | Si no le interesa, por qué (breve) |
