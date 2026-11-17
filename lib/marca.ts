@@ -5,8 +5,9 @@
 export const MARCA = {
   nombre: "Cadencia",
   descripcion: "Agente de voz con IA que llama a tus leads, conversa con ellos y les agenda la cita en tu calendario.",
-  // Destino de "Solicitar una demo" hasta que haya formulario propio.
+  // Contacto que aparece en la web (también en /contacto como alternativa al formulario).
   email: "hola@example.com",
 } as const;
 
-export const enlaceDemo = `mailto:${MARCA.email}?subject=${encodeURIComponent(`Demo de ${MARCA.nombre}`)}`;
+/** Destino de «Solicitar una demo»: el formulario de contacto. */
+export const enlaceDemo = "/contacto";

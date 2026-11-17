@@ -741,3 +741,41 @@ update public.empresas set b2b_habilitado = false where id = current_setting('t.
 update public.configuracion set max_reintentos = max_reintentos where empresa_id = current_setting('t.ec')::uuid;
 
 do $$ begin raise notice 'B2B OK'; end $$;
+
+-- Solicitudes de contacto de la web ----------------------------------------------
+
+insert into public.solicitudes_contacto (nombre, email, actualizado_en)
+values ('Antigua', 'antigua@example.com', now() - interval '13 months'),
+       ('Reciente', 'reciente@example.com', now());
+
+-- La purga borra las de hace más de 12 meses (el trigger no toca un insert).
+do $$
+begin
+  perform public.purgar_datos_antiguos();
+  if exists (select 1 from public.solicitudes_contacto where email = 'antigua@example.com')
+     or not exists (select 1 from public.solicitudes_contacto where email = 'reciente@example.com') then
+    raise exception 'FALLO: la purga de solicitudes no respeta los 12 meses';
+  end if;
+  raise notice 'ok: las solicitudes se borran a los 12 meses';
+end $$;
+
+set local role anon;
+do $$
+begin
+  insert into public.solicitudes_contacto (nombre, email) values ('x', 'x@example.com');
+  raise exception 'FALLO: un visitante escribe directamente en solicitudes_contacto';
+exception when insufficient_privilege then
+  raise notice 'ok: las solicitudes solo las guarda el servidor';
+end $$;
+reset role;
+
+set local role authenticated;
+do $$
+begin
+  perform 1 from public.solicitudes_contacto;
+  raise exception 'FALLO: un usuario del panel lee las solicitudes';
+exception when insufficient_privilege then
+  raise notice 'ok: las solicitudes no se leen con la sesión';
+  raise notice 'SOLICITUDES OK';
+end $$;
+reset role;

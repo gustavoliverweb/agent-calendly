@@ -332,3 +332,16 @@ export async function cambiarB2b(empresaId: string, habilitado: boolean): Promis
   refresh();
   return {};
 }
+
+// --- Solicitudes de la web -------------------------------------------------------
+
+export async function cambiarEstadoSolicitud(id: string, estado: "nueva" | "atendida" | "descartada"): Promise<{ error?: string }> {
+  await requireAdminPlataforma();
+  if (!z.uuid().safeParse(id).success || !["nueva", "atendida", "descartada"].includes(estado)) {
+    return { error: "Solicitud no válida." };
+  }
+  const { error } = await createAdminClient().from("solicitudes_contacto").update({ estado }).eq("id", id);
+  if (error) return { error: "No se ha podido cambiar el estado." };
+  refresh();
+  return {};
+}

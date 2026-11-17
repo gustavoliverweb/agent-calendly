@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { esHostPlataforma, normalizarHost } from "@/lib/dominio/hosts";
 import type { Database } from "./database.types";
 
@@ -18,6 +19,9 @@ function isPrivate(pathname: string) {
  * Refresca la sesión de Supabase en cada petición y redirige a /login
  * las rutas del panel cuando no hay usuario.
  */
+/** Páginas de la web de la plataforma: no existen en el dominio de una empresa. */
+const WEB_PLATAFORMA = ["/precios", "/seguridad", "/contacto", "/soluciones"];
+
 /** Páginas legales que en el dominio de una empresa muestran los datos de esa empresa. */
 const LEGALES = ["/aviso-legal", "/privacidad", "/cookies"];
 
@@ -26,9 +30,16 @@ export async function updateSession(request: NextRequest) {
   const host = normalizarHost(request.headers.get("x-forwarded-host") ?? request.headers.get("host"));
   const dominioEmpresa = !esHostPlataforma(host);
 
-  // Dominio de una empresa (marca blanca): sin landing, directo al panel/login.
+  // Dominio de una empresa (marca blanca): sin landing ni páginas de la plataforma, directo al panel/login.
   const redirigir = (ruta: string) => redireccion(request, ruta);
   if (dominioEmpresa && pathname === "/") return redirigir("/app");
+  if (dominioEmpresa && WEB_PLATAFORMA.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+  // Soluciones: solo las que existen (con Cache Components, notFound() llega tarde y respondería 200).
+  if (!dominioEmpresa && pathname.startsWith("/soluciones/") && !SOLUCIONES.some((s) => pathname === `/soluciones/${s.slug}`)) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
   // Las páginas legales de empresa solo existen reescritas desde su dominio.
   if (!dominioEmpresa && (pathname === "/legal-empresa" || pathname.startsWith("/legal-empresa/"))) {
     return new NextResponse("Not Found", { status: 404 });

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { DOCUMENTOS_LEGALES } from "@/components/legal/documento-legal";
 import { Logo } from "@/components/marca/logo";
+import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { enlaceDemo, MARCA } from "@/lib/marca";
 
 export function Pie() {
   return (
     <footer data-tema="oscuro" className="bg-tinta-950 px-6 pt-20 pb-10 text-white">
-      <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[2fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-[2fr_1fr_1fr_1fr]">
         <div>
           <Logo />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/55">{MARCA.descripcion}</p>
@@ -16,15 +17,28 @@ export function Pie() {
           <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
             <li><Link href="/#como-funciona" className="hover:text-white">Cómo funciona</Link></li>
             <li><Link href="/#panel" className="hover:text-white">El panel</Link></li>
-            <li><Link href="/#seguridad" className="hover:text-white">Seguridad y RGPD</Link></li>
+            <li><Link href="/precios" className="hover:text-white">Precios</Link></li>
+            <li><Link href="/seguridad" className="hover:text-white">Seguridad y RGPD</Link></li>
             <li><Link href="/#preguntas" className="hover:text-white">Preguntas</Link></li>
+          </ul>
+        </div>
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Soluciones</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+            {SOLUCIONES.map((s) => (
+              <li key={s.slug}>
+                <Link href={`/soluciones/${s.slug}`} className="hover:text-white">
+                  {s.menu}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
           <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Cuenta</p>
           <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
             <li><Link href="/login" className="hover:text-white">Acceder al panel</Link></li>
-            <li><a href={enlaceDemo} className="hover:text-white">Solicitar una demo</a></li>
+            <li><Link href={enlaceDemo} className="hover:text-white">Solicitar una demo</Link></li>
             <li><a href={`mailto:${MARCA.email}`} className="hover:text-white">{MARCA.email}</a></li>
           </ul>
         </div>

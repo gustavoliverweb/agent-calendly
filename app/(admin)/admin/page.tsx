@@ -33,9 +33,10 @@ export default function AdminPage() {
 async function Empresas() {
   await requireAdminPlataforma();
   const supabase = createAdminClient();
-  const [{ data: empresas, error }, { data: global }] = await Promise.all([
+  const [{ data: empresas, error }, { data: global }, { count: nuevas }] = await Promise.all([
     supabase.rpc("resumen_empresas"),
     supabase.rpc("concurrencia_global"),
+    supabase.from("solicitudes_contacto").select("id", { count: "exact", head: true }).eq("estado", "nueva"),
   ]);
   if (error) throw new Error(`No se pudieron cargar las empresas: ${error.message}`);
 
@@ -43,6 +44,9 @@ async function Empresas() {
     <>
       <PageHeader title="Empresas" description="Clientes de la plataforma. Uso de los últimos 30 días.">
         <div className="flex flex-wrap gap-2">
+          <Link href="/admin/solicitudes" className={buttonVariants({ variant: "outline" })}>
+            Solicitudes{nuevas ? ` (${nuevas})` : ""}
+          </Link>
           <Link href="/admin/uso" className={buttonVariants({ variant: "outline" })}>
             Uso y facturación
           </Link>

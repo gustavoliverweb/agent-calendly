@@ -889,6 +889,51 @@ export type Database = {
           },
         ]
       }
+      solicitudes_contacto: {
+        Row: {
+          actualizado_en: string
+          creado_en: string
+          email: string
+          empresa: string | null
+          estado: string
+          id: string
+          mensaje: string | null
+          nombre: string
+          origen: string | null
+          sector: string | null
+          telefono: string | null
+          volumen: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          creado_en?: string
+          email: string
+          empresa?: string | null
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          nombre: string
+          origen?: string | null
+          sector?: string | null
+          telefono?: string | null
+          volumen?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          creado_en?: string
+          email?: string
+          empresa?: string | null
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          nombre?: string
+          origen?: string | null
+          sector?: string | null
+          telefono?: string | null
+          volumen?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

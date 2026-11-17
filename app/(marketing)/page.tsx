@@ -4,14 +4,8 @@ import { LlamadaDemo } from "@/components/landing/llamada-demo";
 import { OndaPuntos } from "@/components/landing/onda-puntos";
 import { PanelDemo } from "@/components/landing/panel-demo";
 import { enlaceDemo, MARCA } from "@/lib/marca";
+import { botonBorde, botonPrincipal, etiqueta, titular } from "@/components/landing/estilos";
 import { cn } from "@/lib/utils";
-
-const titular = "font-normal tracking-[-0.045em] text-balance";
-const etiqueta = "font-mono text-[11px] tracking-[0.22em] uppercase";
-const botonPrincipal =
-  "inline-flex h-12 items-center gap-2 rounded-full bg-marca-600 px-6 text-[15px] text-white shadow-[0_10px_30px_-12px_rgba(225,29,46,0.6)] transition-colors hover:bg-marca-700";
-const botonBorde =
-  "inline-flex h-12 items-center gap-2 rounded-full border border-neutral-300 bg-white px-6 text-[15px] text-neutral-950 transition-colors hover:border-neutral-950";
 
 const PASOS = [
   {
@@ -67,7 +61,7 @@ const RGPD = [
 const PREGUNTAS = [
   [
     "¿Qué necesito para empezar?",
-    "Una cuenta de Calendly de pago (su API de reservas lo requiere), una cuenta de ElevenLabs y un número de teléfono con línea SIP para las llamadas salientes. Nosotros configuramos el resto.",
+    "Una cuenta de Calendly de pago (su API de reservas lo requiere) y un número de teléfono con línea SIP de tu operador para las llamadas salientes. El agente de voz y el resto de la configuración los ponemos nosotros.",
   ],
   [
     "¿La persona sabe que habla con una IA?",
@@ -83,7 +77,7 @@ const PREGUNTAS = [
   ],
   [
     "¿Cuánto cuesta cada llamada?",
-    "Depende del proveedor de voz y del operador. Como referencia, una llamada de tres minutos ronda los 0,30–0,40 $ en consumo. El panel muestra una estimación diaria.",
+    "Pagas por minuto de conversación, con un límite mensual que decides tú, y ves el consumo en el panel. Te preparamos un plan según tu volumen: mira cómo funciona en Precios.",
   ],
   [
     "¿Puedo pararlo en cualquier momento?",
@@ -107,14 +101,14 @@ export default function Landing() {
               la cita sin que nadie de tu equipo descuelgue el teléfono.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <a href={enlaceDemo} className={botonPrincipal}>
+              <Link href={enlaceDemo} className={botonPrincipal}>
                 Solicitar una demo <ArrowRightIcon className="size-4" />
-              </a>
+              </Link>
               <a href="#como-funciona" className={botonBorde}>
                 Ver cómo funciona
               </a>
             </div>
-            <p className={cn(etiqueta, "mt-10 text-neutral-400")}>Con Calendly y ElevenLabs · Pensado para el RGPD</p>
+            <p className={cn(etiqueta, "mt-10 text-neutral-400")}>Con tu Calendly · Pensado para el RGPD</p>
           </div>
           <div className="relative h-[clamp(16rem,38vw,30rem)]">
             <OndaPuntos color="225, 29, 46" columnas={54} puntosPorColumna={70} />
@@ -271,9 +265,9 @@ export default function Landing() {
             Tus leads esperan una llamada. <span className="text-white/45">Que la reciban hoy.</span>
           </h2>
           <div className="mt-11 flex flex-wrap justify-center gap-3">
-            <a href={enlaceDemo} className={botonPrincipal}>
+            <Link href={enlaceDemo} className={botonPrincipal}>
               Solicitar una demo <ArrowRightIcon className="size-4" />
-            </a>
+            </Link>
             <Link
               href="/login"
               className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 px-6 text-[15px] text-white transition-colors hover:border-white"

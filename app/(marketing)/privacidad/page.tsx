@@ -45,7 +45,10 @@ export default function Privacidad() {
         <tbody>
           <tr>
             <th scope="row">Datos</th>
-            <td>Email, nombre y lo que nos cuentes en el mensaje.</td>
+            <td>
+              Nombre y email y, si nos los das en el formulario de contacto, empresa, teléfono, sector, volumen aproximado de
+              contactos y lo que nos cuentes en el mensaje.
+            </td>
           </tr>
           <tr>
             <th scope="row">Finalidad</th>
