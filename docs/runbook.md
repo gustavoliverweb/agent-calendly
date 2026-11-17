@@ -1,20 +1,27 @@
 # Runbook de operación
 
-Qué hacer ante las situaciones habituales con el panel en producción. Los avisos del **Resumen** son el primer sitio donde mirar.
+Qué hacer ante las situaciones habituales con el panel en producción. Los avisos del **Resumen** son el primer sitio donde mirar. Para dar de alta una empresa nueva, sigue la [guía de alta](guia-alta.md).
 
 ## Parar todo de inmediato
 
-Botón **Pausa global** de la cabecera, en cualquier página.
+Botón **Pausa global** de la cabecera del panel, en cualquier página. Afecta solo a la empresa desde la que se pulsa.
 
-- Deja de lanzarse cualquier llamada nueva, tanto de los lotes como manual.
+- Deja de lanzarse cualquier llamada nueva de esa empresa, tanto de los lotes como manual.
 - Las llamadas que ya están sonando terminan con normalidad.
 - Para reanudar, el mismo botón, que pide confirmación.
 
-Si el panel no carga, se puede hacer en Supabase → SQL Editor:
+Si el panel no carga, o hay que parar **todas** las empresas a la vez, se hace en Supabase → SQL Editor:
 
 ```sql
-update public.configuracion set pausa_global = true where id = 1;
+-- Una empresa
+update public.configuracion set pausa_global = true
+ where empresa_id = (select id from public.empresas where slug = 'identificador-de-la-empresa');
+
+-- Toda la plataforma
+update public.configuracion set pausa_global = true;
 ```
+
+Para reanudar, lo mismo con `false`. Ojo: reanudar toda la plataforma quita también la pausa de las empresas que la tenían puesta por su cuenta.
 
 ## Avisos del Resumen
 
