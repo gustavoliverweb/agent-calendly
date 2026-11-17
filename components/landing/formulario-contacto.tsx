@@ -3,15 +3,15 @@
 import { startTransition, useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRightIcon, CheckIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { enviarSolicitud, type EnvioState } from "@/app/(marketing)/contacto/actions";
 import { botonPrincipal } from "@/components/landing/estilos";
 import { SECTORES, VOLUMENES } from "@/lib/contenido/contacto";
 import { cn } from "@/lib/utils";
 
 const campo =
-  "h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-[15px] text-neutral-950 outline-none transition-colors placeholder:text-neutral-400 focus:border-marca-600 focus:ring-2 focus:ring-marca-100";
-const etiquetaCampo = "text-sm text-neutral-700";
+  "h-12 w-full rounded-xl border border-carbon/25 bg-white px-4 text-[16px] text-carbon outline-none transition-colors placeholder:text-ceniza/70 focus:border-marca-600 focus:ring-2 focus:ring-marca-100";
+const etiquetaCampo = "text-[15px] font-medium text-carbon";
 
 /** Formulario de «Solicitar una demo». Lee ?origen= y ?sector= de la URL: renderizar dentro de <Suspense>. */
 export function FormularioContacto() {
@@ -22,12 +22,12 @@ export function FormularioContacto() {
 
   if (state.ok) {
     return (
-      <div role="status" className="rounded-3xl border border-neutral-200 p-8">
+      <div role="status" className="rounded-[1.75rem] border border-carbon/15 p-8">
         <span className="flex size-11 items-center justify-center rounded-full bg-marca-50 text-marca-600">
           <CheckIcon className="size-5" />
         </span>
         <h2 className="mt-6 text-3xl tracking-[-0.03em]">Solicitud recibida.</h2>
-        <p className="mt-3 leading-relaxed text-neutral-600">
+        <p className="mt-3 leading-relaxed text-ceniza">
           Gracias. Te escribiremos o te llamaremos para preparar la demo con un caso como el tuyo.
         </p>
         <Link href="/" className="mt-6 inline-block text-sm underline underline-offset-4 hover:text-marca-700">
@@ -45,7 +45,7 @@ export function FormularioContacto() {
         const data = new FormData(e.currentTarget);
         startTransition(() => action(data));
       }}
-      className="flex flex-col gap-5 rounded-3xl border border-neutral-200 p-6 sm:p-8"
+      className="flex flex-col gap-5 rounded-[1.75rem] border border-carbon/15 p-6 sm:p-8"
       noValidate
     >
       <input type="hidden" name="origen" value={origen} />
@@ -104,7 +104,7 @@ export function FormularioContacto() {
         />
       </label>
 
-      <label className="flex items-start gap-3 text-sm text-neutral-600">
+      <label className="flex items-start gap-3 text-sm text-ceniza">
         <input type="checkbox" name="privacidad" required className="mt-0.5 size-4 accent-marca-600" />
         <span>
           He leído la{" "}
@@ -123,7 +123,7 @@ export function FormularioContacto() {
 
       <div>
         <button type="submit" disabled={pending} className={cn(botonPrincipal, "disabled:opacity-60")}>
-          {pending ? "Enviando…" : "Solicitar una demo"} {!pending && <ArrowRightIcon className="size-4" />}
+          {pending ? "Enviando…" : "Solicitar una demo"}
         </button>
       </div>
     </form>

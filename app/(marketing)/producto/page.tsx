@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRightIcon } from "lucide-react";
-import { CtaFinal, Dialogo, Hero, Pasos, Preguntas, Seccion, Tarjetas } from "@/components/landing/bloques";
-import { etiqueta, titular } from "@/components/landing/estilos";
+import { CtaFinal, Dialogo, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
 import { MARCA } from "@/lib/marca";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Producto",
@@ -144,9 +141,8 @@ const PREGUNTAS: [string, string][] = [
 
 export default function ProductoPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Producto"
         titulo="Llama, conversa y agenda."
         destacado="Tú solo miras el panel."
         texto={
@@ -159,45 +155,42 @@ export default function ProductoPage() {
         secundaria={{ href: "#panel", texto: "Ver el panel" }}
       />
 
-      <Seccion etiqueta="Durante la llamada" titulo="Lo que hace el agente," destacado="paso a paso.">
+      <Seccion titulo="Lo que hace el agente, paso a paso.">
         <Pasos items={EN_LLAMADA} />
       </Seccion>
 
-      <section data-tema="oscuro" className="bg-tinta-950 px-6 py-24 text-white lg:py-32">
-        <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.25fr]">
-          <div>
-            <p className={cn(etiqueta, "text-marca-400")}>Prueba antes de llamar</p>
-            <h2 className={cn(titular, "mt-5 text-[clamp(2.1rem,4.2vw,3.6rem)] leading-[1.02]")}>
-              Escucha tu guion <span className="text-white/45">antes que tus clientes.</span>
-            </h2>
-            <p className="mt-6 max-w-md leading-relaxed text-white/60">
-              Desde el panel hablas con el agente en el navegador, con tu guion y tu agenda reales. Ajustas lo que no te
-              convenza y activas la versión buena.
-            </p>
-          </div>
-          <Dialogo
-            titulo="Prueba en el navegador · objeción"
-            turnos={[
-              { quien: "agente", texto: "…la primera visita es gratuita y dura unos treinta minutos. ¿Le busco un hueco esta semana?" },
-              { quien: "contacto", texto: "Ahora no me viene bien, estoy muy liado." },
-              { quien: "agente", texto: "Lo entiendo. ¿Prefiere que le llame otro día? Dígame cuándo le viene mejor y le llamo entonces." },
-              { quien: "contacto", texto: "El lunes por la mañana." },
-              { quien: "nota", texto: "clasifica la llamada como «rellamar» y deja el contacto en seguimiento" },
-            ]}
-          />
-        </div>
-      </section>
+      <Seccion
+        oscuro
+        titulo="Escucha tu guion antes que tus clientes."
+        texto={
+          <p>
+            Desde el panel hablas con el agente en el navegador, con tu guion y tu agenda reales. Ajustas lo que no te
+            convenza y activas la versión buena.
+          </p>
+        }
+      >
+        <Dialogo
+          titulo="Prueba en el navegador: una objeción"
+          turnos={[
+            { quien: "agente", texto: "…la primera visita es gratuita y dura unos treinta minutos. ¿Le busco un hueco esta semana?" },
+            { quien: "contacto", texto: "Ahora no me viene bien, estoy muy liado." },
+            { quien: "agente", texto: "Lo entiendo. ¿Prefiere que le llame otro día? Dígame cuándo le viene mejor y le llamo entonces." },
+            { quien: "contacto", texto: "El lunes por la mañana." },
+            { quien: "nota", texto: "Clasifica la llamada como «rellamar» y deja el contacto en seguimiento." },
+          ]}
+        />
+      </Seccion>
 
-      <Seccion id="panel" etiqueta="El panel" titulo="Todo en un sitio." destacado="Sin hojas de cálculo.">
-        <ul className="grid gap-px overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-200 sm:grid-cols-2 lg:grid-cols-3">
+      <Seccion id="panel" apilada titulo="Todo en un sitio, sin hojas de cálculo.">
+        <ul className="grid gap-x-12 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {MODULOS.map((m) => (
-            <li key={m.nombre} className="bg-white p-7 sm:p-8">
-              <p className={cn(etiqueta, "text-marca-600")}>{m.nombre}</p>
-              <h3 className="mt-5 text-xl tracking-[-0.02em]">{m.texto}</h3>
-              <ul className="mt-5 flex flex-col gap-2.5 text-[15px] leading-relaxed text-neutral-600">
+            <li key={m.nombre}>
+              <h3 className="text-[25px] font-semibold tracking-[-0.02em]">{m.nombre}</h3>
+              <p className="mt-1 text-[17px] text-carbon">{m.texto}</p>
+              <ul className="mt-4 flex flex-col gap-2 text-[16px] leading-relaxed text-ceniza">
                 {m.puntos.map((p) => (
                   <li key={p} className="flex gap-3">
-                    <span className="mt-2.5 h-px w-3 shrink-0 bg-marca-400" aria-hidden />
+                    <span className="mt-[0.7em] size-1 shrink-0 rounded-full bg-marca-600" aria-hidden />
                     {p}
                   </li>
                 ))}
@@ -207,27 +200,23 @@ export default function ProductoPage() {
         </ul>
       </Seccion>
 
-      <Seccion oscuro etiqueta="Para crecer" titulo="Cuando necesitas más" destacado="que un agente.">
-        <Tarjetas items={PARA_EQUIPOS} oscuro columnas={2} />
+      <Seccion oscuro titulo="Cuando necesitas más que un agente.">
+        <Lista items={PARA_EQUIPOS} oscuro />
       </Seccion>
 
-      <Seccion etiqueta="Sigue leyendo" titulo="Cómo encaja" destacado="con lo que ya usas.">
-        <ul className="grid gap-5 md:grid-cols-3">
+      <Seccion titulo="Cómo encaja con lo que ya usas.">
+        <ul className="border-b border-carbon/10">
           {[
             { href: "/integraciones", titulo: "Integraciones", texto: "Calendly, tu línea de teléfono y tus listas de contactos." },
             { href: "/seguridad", titulo: "Seguridad y RGPD", texto: "Cómo cumple el agente en cada llamada y dónde están tus datos." },
-            { href: "/calculadora", titulo: "Calculadora", texto: "Estima cuántas citas y minutos saldrían de tus leads." },
+            { href: "/calculadora", titulo: "Calculadora de retorno", texto: "Cuántas citas y minutos saldrían de tus leads." },
           ].map((l) => (
-            <li key={l.href}>
-              <Link
-                href={l.href}
-                className="group flex h-full flex-col rounded-3xl border border-neutral-200 p-7 transition-colors hover:border-neutral-950 sm:p-8"
-              >
-                <span className="flex items-center justify-between text-xl tracking-[-0.02em]">
+            <li key={l.href} className="border-t border-carbon/10">
+              <Link href={l.href} className="group block py-6">
+                <span className="text-[25px] font-semibold tracking-[-0.02em] underline decoration-marca-600/0 decoration-2 underline-offset-4 transition-colors group-hover:decoration-marca-600">
                   {l.titulo}
-                  <ArrowUpRightIcon className="size-5 text-neutral-400 transition-colors group-hover:text-marca-600" />
                 </span>
-                <span className="mt-3 leading-relaxed text-neutral-600">{l.texto}</span>
+                <span className="mt-1 block text-[17px] text-ceniza">{l.texto}</span>
               </Link>
             </li>
           ))}

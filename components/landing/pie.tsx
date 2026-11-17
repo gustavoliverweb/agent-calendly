@@ -7,15 +7,15 @@ import { enlaceDemo, MARCA } from "@/lib/marca";
 
 export function Pie() {
   return (
-    <footer data-tema="oscuro" className="bg-tinta-950 px-6 pt-20 pb-10 text-white">
+    <footer data-tema="oscuro" className="border-t border-white/15 bg-tinta-950 px-6 pt-20 pb-10 text-white">
       <div className="mx-auto grid max-w-7xl gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
         <div>
           <Logo />
-          <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/55">{MARCA.descripcion}</p>
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-white/70">{MARCA.descripcion}</p>
         </div>
         <div>
-          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Producto</p>
-          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+          <p className="text-[15px] font-semibold text-white">Producto</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/75">
             <li><Link href="/producto" className="hover:text-white">Qué hace</Link></li>
             <li><Link href="/integraciones" className="hover:text-white">Integraciones</Link></li>
             <li><Link href="/precios" className="hover:text-white">Precios</Link></li>
@@ -24,8 +24,8 @@ export function Pie() {
           </ul>
         </div>
         <div>
-          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Soluciones</p>
-          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+          <p className="text-[15px] font-semibold text-white">Soluciones</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/75">
             {SOLUCIONES.map((s) => (
               <li key={s.slug}>
                 <Link href={`/soluciones/${s.slug}`} className="hover:text-white">
@@ -36,8 +36,8 @@ export function Pie() {
           </ul>
         </div>
         <div>
-          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Recursos</p>
-          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+          <p className="text-[15px] font-semibold text-white">Recursos</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/75">
             {RECURSOS.map((r) => (
               <li key={r.slug}>
                 <Link href={`/recursos/${r.slug}`} className="hover:text-white">
@@ -49,15 +49,15 @@ export function Pie() {
           </ul>
         </div>
         <div>
-          <p className="font-mono text-[11px] tracking-[0.2em] text-marca-400 uppercase">Cuenta</p>
-          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/70">
+          <p className="text-[15px] font-semibold text-white">Cuenta</p>
+          <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/75">
             <li><Link href="/login" className="hover:text-white">Acceder al panel</Link></li>
             <li><Link href={enlaceDemo} className="hover:text-white">Solicitar una demo</Link></li>
             <li><a href={`mailto:${MARCA.email}`} className="hover:text-white">{MARCA.email}</a></li>
           </ul>
         </div>
       </div>
-      <div className="mx-auto mt-16 flex max-w-7xl flex-wrap justify-between gap-4 border-t border-white/10 pt-6 font-mono text-[11px] tracking-[0.14em] text-white/35 uppercase">
+      <div className="mx-auto mt-16 flex max-w-7xl flex-wrap justify-between gap-4 border-t border-white/10 pt-6 text-[14px] text-white/55">
         <span>© {MARCA.nombre}</span>
         <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">
           {DOCUMENTOS_LEGALES.map((d) => (

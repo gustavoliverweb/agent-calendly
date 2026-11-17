@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CtaFinal, Hero, Preguntas, Seccion, Tarjetas } from "@/components/landing/bloques";
-import { etiqueta } from "@/components/landing/estilos";
+import { CtaFinal, Hero, Lista, Preguntas, Seccion } from "@/components/landing/bloques";
 import { MARCA } from "@/lib/marca";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Seguridad y RGPD",
@@ -97,9 +95,8 @@ const PREGUNTAS: [string, string][] = [
 
 export default function SeguridadPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Seguridad y RGPD"
         titulo="Llama a quien quiere."
         destacado="Respeta a quien no."
         texto={
@@ -112,54 +109,49 @@ export default function SeguridadPage() {
         secundaria={{ href: "/privacidad", texto: "Política de privacidad" }}
       />
 
-      <Seccion
-        oscuro
-        etiqueta="En cada llamada"
-        titulo="Transparente con quien contesta."
-        destacado="Siempre."
-      >
-        <Tarjetas items={LLAMADA} oscuro columnas={2} />
+      <Seccion oscuro titulo="Transparente con quien contesta, siempre.">
+        <Lista items={LLAMADA} oscuro />
       </Seccion>
 
       <Seccion
-        etiqueta="Base legal"
         titulo="Cada campaña, con su regla."
-        destacado="Aplicada por el sistema."
-        texto={<p>Eliges el tipo de campaña y la plataforma decide a quién se puede llamar. Se comprueba al crear el lote y otra vez justo antes de cada llamada.</p>}
+        texto={
+          <p>
+            Eliges el tipo de campaña y la plataforma decide a quién se puede llamar. Se comprueba al crear el lote y otra
+            vez justo antes de cada llamada.
+          </p>
+        }
       >
-        <ul className="grid gap-5 lg:grid-cols-3">
+        <dl className="border-b border-carbon/10">
           {CAMPANAS.map((c) => (
-            <li key={c.tipo} className="rounded-3xl border border-neutral-200 p-7 sm:p-8">
-              <p className={cn(etiqueta, "text-marca-600")}>{c.tipo}</p>
-              <h3 className="mt-5 text-xl tracking-[-0.02em]">{c.regla}</h3>
-              <p className="mt-3 leading-relaxed text-neutral-600">{c.detalle}</p>
-            </li>
+            <div key={c.tipo} className="grid gap-2 border-t border-carbon/10 py-7 sm:grid-cols-[11rem_1fr] sm:gap-8">
+              <dt className="text-lg font-semibold text-marca-700">{c.tipo}</dt>
+              <dd>
+                <p className="text-xl font-semibold tracking-[-0.015em]">{c.regla}</p>
+                <p className="mt-2 text-[17px] leading-relaxed text-ceniza">{c.detalle}</p>
+              </dd>
+            </div>
           ))}
-        </ul>
+        </dl>
       </Seccion>
 
-      <Seccion etiqueta="Tus datos" titulo="Protegidos por diseño," destacado="no por promesa.">
-        <Tarjetas items={DATOS} />
+      <Seccion titulo="Tus datos, protegidos por diseño.">
+        <Lista items={DATOS} />
       </Seccion>
 
-      <Seccion
-        oscuro
-        etiqueta="Quién es quién"
-        titulo="Tú decides."
-        destacado="Nosotros cumplimos tu encargo."
-      >
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 p-7 sm:p-8">
-            <p className={cn(etiqueta, "text-marca-400")}>Responsable del tratamiento</p>
-            <h3 className="mt-5 text-2xl tracking-[-0.03em]">Tu empresa</h3>
-            <p className="mt-3 leading-relaxed text-white/60">
+      <Seccion oscuro titulo="Tú decides. Nosotros cumplimos tu encargo.">
+        <div className="grid gap-12 sm:grid-cols-2">
+          <div>
+            <p className="text-[15px] text-white/60">Responsable del tratamiento</p>
+            <h3 className="mt-2 text-[25px] font-semibold tracking-[-0.02em]">Tu empresa</h3>
+            <p className="mt-3 text-[17px] leading-relaxed text-white/70">
               Decides a quién llamar, con qué base jurídica y durante cuánto tiempo se guardan las conversaciones.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/10 p-7 sm:p-8">
-            <p className={cn(etiqueta, "text-marca-400")}>Encargado del tratamiento</p>
-            <h3 className="mt-5 text-2xl tracking-[-0.03em]">{MARCA.nombre}</h3>
-            <p className="mt-3 leading-relaxed text-white/60">
+          <div>
+            <p className="text-[15px] text-white/60">Encargado del tratamiento</p>
+            <h3 className="mt-2 text-[25px] font-semibold tracking-[-0.02em]">{MARCA.nombre}</h3>
+            <p className="mt-3 text-[17px] leading-relaxed text-white/70">
               Trata los datos solo para prestar el servicio, con un contrato de encargo y una lista cerrada de proveedores.
               Los detalles, en la{" "}
               <Link href="/privacidad" className="text-white underline underline-offset-4">

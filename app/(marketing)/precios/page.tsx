@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRightIcon, CheckIcon } from "lucide-react";
-import { CtaFinal, Hero, Pasos, Preguntas, Seccion, Tarjetas } from "@/components/landing/bloques";
-import { botonBorde, botonPrincipal, etiqueta } from "@/components/landing/estilos";
+import { CheckIcon } from "lucide-react";
+import { CtaFinal, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
+import { botonBorde, botonClaro } from "@/components/landing/estilos";
 import { MARCA } from "@/lib/marca";
 import { cn } from "@/lib/utils";
 
@@ -118,9 +118,8 @@ const PREGUNTAS: [string, string][] = [
 
 export default function PreciosPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Precios"
         titulo="Pagas por conversar."
         destacado="No por intentarlo."
         texto={
@@ -133,57 +132,50 @@ export default function PreciosPage() {
         secundaria={{ href: "#planes", texto: "Ver planes" }}
       />
 
-      <section id="planes" className="scroll-mt-24 px-6 pb-24 lg:pb-32">
-        <ul className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
+      <section id="planes" aria-label="Planes" className="scroll-mt-24 px-6 pb-20 lg:pb-28">
+        <ul className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-3">
           {PLANES.map((p) => (
             <li
               key={p.nombre}
               className={cn(
-                "flex flex-col rounded-3xl border p-7 sm:p-8",
-                p.destacado ? "border-tinta-950 bg-tinta-950 text-white" : "border-neutral-200 bg-white",
+                "flex flex-col rounded-[1.75rem] p-7 sm:p-8",
+                p.destacado ? "bg-tinta-950 text-white" : "border border-carbon/15 bg-white",
               )}
             >
-              <p className={cn(etiqueta, p.destacado ? "text-marca-400" : "text-marca-600")}>{p.nombre}</p>
-              <p className={cn("mt-4 min-h-12 leading-relaxed", p.destacado ? "text-white/65" : "text-neutral-600")}>{p.para}</p>
-              <p className="mt-8 text-4xl tracking-[-0.04em]">{p.precio}</p>
-              <p className={cn("mt-2 text-sm", p.destacado ? "text-white/55" : "text-neutral-500")}>{p.detallePrecio}</p>
-              <ul className="mt-8 flex flex-1 flex-col gap-3 text-[15px]">
+              <h2 className="text-[25px] font-semibold tracking-[-0.02em]">{p.nombre}</h2>
+              <p className={cn("mt-2 min-h-14 text-[17px] leading-relaxed", p.destacado ? "text-white/70" : "text-ceniza")}>{p.para}</p>
+              <p className="mt-8 text-[39px] leading-none font-semibold tracking-[-0.03em] [font-stretch:86%]">{p.precio}</p>
+              <p className={cn("mt-2 text-[15px]", p.destacado ? "text-white/60" : "text-ceniza")}>{p.detallePrecio}</p>
+              <ul className="mt-8 flex flex-1 flex-col gap-3 text-[16px]">
                 {p.incluye.map((i) => (
                   <li key={i} className="flex gap-3">
-                    <CheckIcon className={cn("mt-0.5 size-4 shrink-0", p.destacado ? "text-marca-400" : "text-marca-600")} />
-                    <span className={p.destacado ? "text-white/85" : "text-neutral-700"}>{i}</span>
+                    <CheckIcon className={cn("mt-1 size-4 shrink-0", p.destacado ? "text-marca-300" : "text-marca-600")} aria-hidden />
+                    <span className={p.destacado ? "text-white/90" : "text-carbon"}>{i}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                href={`/contacto?origen=/precios`}
-                className={cn(
-                  "mt-10 justify-center",
-                  p.destacado ? botonPrincipal : botonBorde,
-                )}
-              >
-                Pedir presupuesto <ArrowRightIcon className="size-4" />
+              <Link href="/contacto?origen=/precios" className={cn("mt-10 justify-center", p.destacado ? botonClaro : botonBorde)}>
+                Pedir presupuesto
               </Link>
             </li>
           ))}
         </ul>
       </section>
 
-      <Seccion etiqueta="Cómo se cobra" titulo="Un modelo sencillo." destacado="Sin letra pequeña.">
-        <Tarjetas items={MODELO} columnas={2} />
+      <Seccion titulo="Un modelo sencillo, sin letra pequeña.">
+        <Lista items={MODELO} />
       </Seccion>
 
       <Seccion
         oscuro
-        etiqueta="Lo que necesitas"
         titulo="Tres cosas tuyas."
         destacado="El resto lo ponemos nosotros."
         texto={<p>El agente de voz, el panel, la integración y el acompañamiento en el alta van incluidos.</p>}
       >
-        <Tarjetas items={NECESITAS} oscuro />
+        <Lista items={NECESITAS} oscuro columnas={1} />
       </Seccion>
 
-      <Seccion etiqueta="Puesta en marcha" titulo="De la primera conversación" destacado="a la primera cita.">
+      <Seccion titulo="De la primera conversación a la primera cita.">
         <Pasos items={ALTA} />
       </Seccion>
 

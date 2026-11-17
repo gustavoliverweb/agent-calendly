@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRightIcon } from "lucide-react";
 import { CtaFinal, Hero, Seccion } from "@/components/landing/bloques";
-import { etiqueta } from "@/components/landing/estilos";
 import { RECURSOS } from "@/lib/contenido/recursos";
 import { MARCA } from "@/lib/marca";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Recursos",
@@ -15,30 +12,31 @@ export const metadata: Metadata = {
 
 export default function RecursosPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Recursos"
-        titulo="Guías para sacarle partido."
-        destacado="Sin rodeos."
+        titulo="Guías para empezar con buen pie."
         texto={<p>Lo que conviene saber antes de lanzar tu primera campaña, explicado paso a paso.</p>}
         onda={false}
       />
 
-      <Seccion etiqueta="Guías" titulo="Empieza por aquí.">
-        <ul className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <Seccion apilada titulo="Empieza por aquí.">
+        <ul className="border-b border-carbon/10">
           {RECURSOS.map((r) => (
-            <li key={r.slug}>
+            <li key={r.slug} className="border-t border-carbon/10">
               <Link
                 href={`/recursos/${r.slug}`}
-                className="group flex h-full flex-col rounded-3xl border border-neutral-200 p-7 transition-colors hover:border-neutral-950 sm:p-8"
+                className="group grid gap-2 py-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16"
               >
-                <span className={cn(etiqueta, "flex items-center justify-between text-marca-600")}>
-                  {r.categoria}
-                  <ArrowUpRightIcon className="size-5 text-neutral-400 transition-colors group-hover:text-marca-600" />
+                <span className="text-[15px]">
+                  <span className="block text-marca-700">{r.categoria}</span>
+                  <span className="block text-ceniza">{r.lectura} min de lectura</span>
                 </span>
-                <span className="mt-8 text-2xl tracking-[-0.03em]">{r.titulo}</span>
-                <span className="mt-3 flex-1 leading-relaxed text-neutral-600">{r.resumen}</span>
-                <span className="mt-8 font-mono text-xs text-neutral-400">{r.lectura} min de lectura</span>
+                <span>
+                  <span className="block text-[31px] leading-tight font-semibold tracking-[-0.025em] underline decoration-marca-600/0 decoration-2 underline-offset-[6px] transition-colors [font-stretch:86%] group-hover:decoration-marca-600">
+                    {r.titulo}
+                  </span>
+                  <span className="mt-2 block max-w-2xl text-[17px] leading-relaxed text-ceniza">{r.resumen}</span>
+                </span>
               </Link>
             </li>
           ))}

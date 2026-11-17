@@ -30,9 +30,8 @@ const PREGUNTAS: [string, string][] = [
 
 export default function CalculadoraPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Calculadora de retorno"
         titulo="¿Cuántas citas hay en tus leads?"
         destacado="Haz la cuenta."
         texto={
@@ -44,7 +43,7 @@ export default function CalculadoraPage() {
         onda={false}
       />
 
-      <Seccion etiqueta="Tu estimación" titulo="Cambia los números." destacado="El resultado se actualiza solo.">
+      <Seccion titulo="Cambia los números." destacado="El resultado se actualiza solo.">
         <Calculadora />
       </Seccion>
 

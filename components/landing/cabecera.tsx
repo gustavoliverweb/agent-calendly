@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRightIcon, ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { enlaceDemo } from "@/lib/marca";
@@ -56,7 +56,7 @@ export function Cabecera() {
           "mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full border pr-2 pl-5 backdrop-blur-xl transition-colors duration-300",
           oscuro
             ? "border-white/10 bg-tinta-900/70 text-white"
-            : "border-black/5 bg-white/75 text-neutral-950 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)]",
+            : "border-black/5 bg-white/75 text-carbon shadow-[0_6px_24px_-14px_rgba(51,9,15,0.35)]",
         )}
       >
         <Link href="/" aria-label="Inicio">
@@ -64,9 +64,9 @@ export function Cabecera() {
         </Link>
         <nav
           aria-label="Secciones"
-          className={cn("hidden items-center gap-7 text-sm lg:flex", oscuro ? "text-white/65" : "text-neutral-600")}
+          className={cn("hidden items-center gap-7 text-[15px] lg:flex", oscuro ? "text-white/75" : "text-ceniza")}
         >
-          <Link href={SECCIONES[0].href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-neutral-950")}>
+          <Link href={SECCIONES[0].href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-carbon")}>
             {SECCIONES[0].texto}
           </Link>
           {/* Menú de soluciones: se abre al pasar el ratón o con el teclado (focus-within). */}
@@ -74,12 +74,12 @@ export function Cabecera() {
             <button
               type="button"
               aria-haspopup="true"
-              className={cn("inline-flex items-center gap-1 transition-colors", oscuro ? "hover:text-white" : "hover:text-neutral-950")}
+              className={cn("inline-flex items-center gap-1 transition-colors", oscuro ? "hover:text-white" : "hover:text-carbon")}
             >
               Soluciones <ChevronDownIcon className="size-3.5 transition-transform group-focus-within:rotate-180 group-hover:rotate-180" />
             </button>
             <div className="invisible absolute top-full left-1/2 z-50 w-64 -translate-x-1/2 pt-4 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              <ul className="rounded-2xl border border-black/5 bg-white p-2 text-neutral-700 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.35)]">
+              <ul className="rounded-2xl border border-black/5 bg-white p-2 text-carbon shadow-[0_20px_50px_-20px_rgba(51,9,15,0.4)]">
                 {SOLUCIONES.map((s) => (
                   <li key={s.slug}>
                     <Link href={`/soluciones/${s.slug}`} className="block rounded-xl px-3 py-2.5 hover:bg-marca-50 hover:text-marca-800">
@@ -91,7 +91,7 @@ export function Cabecera() {
             </div>
           </div>
           {SECCIONES.slice(1).map((s) => (
-            <Link key={s.href} href={s.href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-neutral-950")}>
+            <Link key={s.href} href={s.href} className={cn("transition-colors", oscuro ? "hover:text-white" : "hover:text-carbon")}>
               {s.texto}
             </Link>
           ))}
@@ -100,8 +100,8 @@ export function Cabecera() {
           <Link
             href="/login"
             className={cn(
-              "inline-flex h-10 items-center rounded-full px-3 text-sm transition-colors sm:px-4",
-              oscuro ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-neutral-700 hover:bg-black/5 hover:text-neutral-950",
+              "inline-flex h-10 items-center rounded-full px-3 text-[15px] transition-colors sm:px-4",
+              oscuro ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-carbon/80 hover:bg-black/5 hover:text-carbon",
             )}
           >
             Acceder
@@ -109,11 +109,13 @@ export function Cabecera() {
           <Link
             href={enlaceDemo}
             className={cn(
-              "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm transition-colors",
-              "bg-marca-600 text-white hover:bg-marca-700",
+              "inline-flex h-10 items-center rounded-full px-4 text-[15px] font-medium whitespace-nowrap transition-colors",
+              // Sobre granate, el rojo no contrasta: la acción pasa a blanco.
+              oscuro ? "bg-white text-tinta-950 hover:bg-marca-50" : "bg-marca-600 text-white hover:bg-marca-700",
             )}
           >
-            Hablemos <ArrowUpRightIcon className="size-3.5" />
+            <span className="sm:hidden">Demo</span>
+            <span className="hidden sm:inline">Solicitar demo</span>
           </Link>
         </div>
       </div>

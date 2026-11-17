@@ -15,10 +15,10 @@ export type Solucion = {
   menu: string;
   seo: { titulo: string; descripcion: string };
   hero: { etiqueta: string; titulo: string; destacado: string; texto: string };
-  problema: { titulo: string; destacado: string; items: [string, string][] };
-  pasos: { titulo: string; destacado: string; items: { clave: string; titulo: string; texto: string }[] };
+  problema: { titulo: string; destacado?: string; items: [string, string][] };
+  pasos: { titulo: string; destacado?: string; items: { clave: string; titulo: string; texto: string }[] };
   dialogo?: { titulo: string; texto: string; conversacion: { titulo: string; turnos: Turno[] } };
-  beneficios: { titulo: string; destacado: string; items: [string, string][] };
+  beneficios: { titulo: string; destacado?: string; items: [string, string][] };
   preguntas: [string, string][];
   cta: { titulo: string; destacado: string };
 };
@@ -59,8 +59,7 @@ export const SOLUCIONES: Solucion[] = [
       ],
     },
     pasos: {
-      titulo: "Así llena tu agenda",
-      destacado: "mientras atiendes la clínica.",
+      titulo: "Así llena tu agenda mientras atiendes la clínica.",
       items: [
         {
           clave: "Importa",
@@ -88,7 +87,7 @@ export const SOLUCIONES: Solucion[] = [
       titulo: "Una primera visita, agendada.",
       texto: "Un ejemplo con el guion de una clínica dental. El agente se presenta como asistente virtual desde la primera frase.",
       conversacion: {
-        titulo: "Clínica dental · lead de formulario web",
+        titulo: "Clínica dental, lead de formulario web",
         turnos: [
           {
             quien: "agente",
@@ -177,8 +176,7 @@ export const SOLUCIONES: Solucion[] = [
       ],
     },
     pasos: {
-      titulo: "Así llena la agenda de visitas",
-      destacado: "mientras tu equipo está fuera.",
+      titulo: "Así llena la agenda de visitas mientras tu equipo está fuera.",
       items: [
         {
           clave: "Importa",
@@ -206,7 +204,7 @@ export const SOLUCIONES: Solucion[] = [
       titulo: "Una valoración, agendada.",
       texto: "Un ejemplo con el guion de una agencia que capta propietarios. El agente se presenta como asistente virtual desde la primera frase.",
       conversacion: {
-        titulo: "Inmobiliaria · solicitud de valoración web",
+        titulo: "Inmobiliaria, solicitud de valoración web",
         turnos: [
           {
             quien: "agente",
@@ -295,8 +293,7 @@ export const SOLUCIONES: Solucion[] = [
       ],
     },
     pasos: {
-      titulo: "Así llena las sesiones informativas",
-      destacado: "sin ampliar admisiones.",
+      titulo: "Así llena las sesiones informativas sin ampliar admisiones.",
       items: [
         {
           clave: "Importa",
@@ -324,7 +321,7 @@ export const SOLUCIONES: Solucion[] = [
       titulo: "Una sesión informativa, agendada.",
       texto: "Un ejemplo con el guion de una academia de idiomas. El agente se presenta como asistente virtual desde la primera frase.",
       conversacion: {
-        titulo: "Academia de idiomas · formulario de un curso",
+        titulo: "Academia de idiomas, formulario de un curso",
         turnos: [
           {
             quien: "agente",
@@ -413,8 +410,7 @@ export const SOLUCIONES: Solucion[] = [
       ],
     },
     pasos: {
-      titulo: "Así trabaja",
-      destacado: "una lista de empresas.",
+      titulo: "Así trabaja una lista de empresas.",
       items: [
         {
           clave: "Importa",
@@ -442,7 +438,7 @@ export const SOLUCIONES: Solucion[] = [
       titulo: "Una centralita, una reunión.",
       texto: "Un ejemplo de llamada a una empresa: recepción, pase y reunión con la persona que decide.",
       conversacion: {
-        titulo: "Prospección · empresa de construcción",
+        titulo: "Prospección a una empresa de construcción",
         turnos: [
           {
             quien: "agente",
@@ -506,7 +502,7 @@ export const SOLUCIONES: Solucion[] = [
         "Ofrece a tus clientes un agente de voz que llama a sus leads y agenda citas, con tu marca y tu dominio. Cada cliente con su cuenta aislada y su uso para facturar.",
     },
     hero: {
-      etiqueta: "Para agencias · Marca blanca",
+      etiqueta: "Para agencias que quieren ofrecerlo con su marca",
       titulo: "Tu agente de voz con IA.",
       destacado: "Con tu marca.",
       texto:
@@ -531,8 +527,7 @@ export const SOLUCIONES: Solucion[] = [
       ],
     },
     pasos: {
-      titulo: "Así lanzas el servicio",
-      destacado: "con cada cliente.",
+      titulo: "Así lanzas el servicio con cada cliente.",
       items: [
         {
           clave: "Alta",

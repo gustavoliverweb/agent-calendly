@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CtaFinal, Dialogo, Hero, Pasos, Preguntas, Seccion, Tarjetas } from "@/components/landing/bloques";
-import { etiqueta, titular } from "@/components/landing/estilos";
-import { OndaPuntos } from "@/components/landing/onda-puntos";
+import { CtaFinal, Dialogo, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
 import { solucionPorSlug, SOLUCIONES } from "@/lib/contenido/soluciones";
-import { cn } from "@/lib/utils";
 
 /** Páginas por sector o caso de uso. El contenido está en lib/contenido/soluciones.ts. */
 
@@ -24,7 +21,7 @@ export default async function SolucionPage({ params }: PageProps<"/soluciones/[s
   const contacto = `/contacto?origen=${encodeURIComponent(`/soluciones/${s.slug}`)}&sector=${encodeURIComponent(s.sector)}`;
 
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
         etiqueta={s.hero.etiqueta}
         titulo={s.hero.titulo}
@@ -34,32 +31,22 @@ export default async function SolucionPage({ params }: PageProps<"/soluciones/[s
         secundaria={{ href: "#como-funciona", texto: "Ver cómo funciona" }}
       />
 
-      <Seccion etiqueta="El problema" titulo={s.problema.titulo} destacado={s.problema.destacado}>
-        <Tarjetas items={s.problema.items} />
+      <Seccion titulo={s.problema.titulo} destacado={s.problema.destacado}>
+        <Lista items={s.problema.items} />
       </Seccion>
 
-      <Seccion id="como-funciona" etiqueta="Cómo funciona" titulo={s.pasos.titulo} destacado={s.pasos.destacado}>
+      <Seccion id="como-funciona" titulo={s.pasos.titulo} destacado={s.pasos.destacado}>
         <Pasos items={s.pasos.items} />
       </Seccion>
 
       {s.dialogo && (
-        <section data-tema="oscuro" className="bg-tinta-950 px-6 py-24 text-white lg:py-32">
-          <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1.25fr]">
-            <div>
-              <p className={cn(etiqueta, "text-marca-400")}>Una llamada de ejemplo</p>
-              <h2 className={cn(titular, "mt-5 text-[clamp(2.1rem,4.2vw,3.6rem)] leading-[1.02]")}>{s.dialogo.titulo}</h2>
-              <p className="mt-6 max-w-md leading-relaxed text-white/60">{s.dialogo.texto}</p>
-              <div className="mt-12 hidden h-32 opacity-80 lg:block" aria-hidden>
-                <OndaPuntos color="253, 106, 110" columnas={36} puntosPorColumna={20} />
-              </div>
-            </div>
-            <Dialogo titulo={s.dialogo.conversacion.titulo} turnos={s.dialogo.conversacion.turnos} />
-          </div>
-        </section>
+        <Seccion oscuro titulo={s.dialogo.titulo} texto={<p>{s.dialogo.texto}</p>}>
+          <Dialogo titulo={s.dialogo.conversacion.titulo} turnos={s.dialogo.conversacion.turnos} />
+        </Seccion>
       )}
 
-      <Seccion etiqueta="Qué ganas" titulo={s.beneficios.titulo} destacado={s.beneficios.destacado}>
-        <Tarjetas items={s.beneficios.items} />
+      <Seccion titulo={s.beneficios.titulo} destacado={s.beneficios.destacado}>
+        <Lista items={s.beneficios.items} />
       </Seccion>
 
       <Preguntas items={s.preguntas} />

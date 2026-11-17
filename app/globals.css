@@ -5,11 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Paleta de la marca «Brasa»: rojo carmín para acción y acentos, negro cálido
- * («tinta») para las secciones oscuras y un coral para degradados puntuales.
- * Contraste (WCAG): blanco sobre marca-600 4,75:1 · marca-600 sobre blanco
- * 4,75:1 · marca-400 sobre tinta-950 6,98:1. Blanco sobre marca-500 no llega
- * a AA: los botones usan siempre marca-600 (hover marca-700).
+ * Paleta de la marca «Brasa»: rojo carmín solo para acciones y enlaces, y
+ * granate («tinta», el color de la brasa apagada) para las secciones oscuras
+ * de la web en lugar de negro. Contraste (WCAG): blanco sobre marca-600
+ * 4,75:1 · marca-600 sobre blanco 4,75:1 · blanco sobre tinta-950 18:1 ·
+ * marca-300 sobre tinta-950 9:1. Blanco sobre marca-500 no llega a AA: los
+ * botones usan siempre marca-600 (hover marca-700).
  */
 @theme {
   --color-marca-50: #fff1f1;
@@ -24,10 +25,14 @@
   --color-marca-900: #841624;
   --color-marca-950: #48060e;
 
-  --color-tinta-700: #3d2c30;
-  --color-tinta-800: #2a1e21;
-  --color-tinta-900: #1a1214;
-  --color-tinta-950: #0f0a0b;
+  --color-tinta-700: #74202d;
+  --color-tinta-800: #5a1622;
+  --color-tinta-900: #45101a;
+  --color-tinta-950: #33090f;
+
+  /* Texto de la web: casi negro cálido y gris ceniza para lo secundario. */
+  --color-carbon: #1c1517;
+  --color-ceniza: #6b6265;
 
   --color-coral-400: #ff8a5c;
   --color-coral-500: #ff6b3d;
@@ -161,27 +166,19 @@
     @apply font-sans;
   }
 }
-/* Landing: aparición al hacer scroll, sin JavaScript. Donde no hay soporte
-   (o con reduced-motion) el contenido se ve tal cual, sin animar. */
-@keyframes aparecer {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* Web pública: una sola familia (Bricolage Grotesque) con tamaño óptico
+   automático; los titulares usan además su eje de anchura (ver estilos.ts). */
+.web {
+  font-family: var(--font-web), ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+  color: var(--color-carbon);
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .aparecer {
-      animation: aparecer linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 55%;
-    }
-  }
+.web :focus-visible {
+  outline: 2px solid var(--color-marca-600);
+  outline-offset: 3px;
+}
+.web [data-tema="oscuro"] :focus-visible {
+  outline-color: #fff;
 }
 
 html {

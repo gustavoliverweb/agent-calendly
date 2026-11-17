@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { CtaFinal, Hero, Preguntas, Seccion } from "@/components/landing/bloques";
-import { etiqueta } from "@/components/landing/estilos";
 import { MARCA } from "@/lib/marca";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Integraciones",
@@ -93,9 +91,8 @@ const PREGUNTAS: [string, string][] = [
 
 export default function IntegracionesPage() {
   return (
-    <main className="bg-white text-neutral-950">
+    <main className="bg-white">
       <Hero
-        etiqueta="Integraciones"
         titulo="Se conecta a lo que ya usas."
         destacado="Sin programar nada."
         texto={
@@ -109,30 +106,26 @@ export default function IntegracionesPage() {
         onda={false}
       />
 
-      <Seccion etiqueta="Conexiones" titulo="Cuatro piezas." destacado="Todo lo demás lo ponemos nosotros.">
-        <ul className="flex flex-col gap-5">
+      <Seccion apilada titulo="Cuatro piezas." destacado="Todo lo demás lo ponemos nosotros.">
+        <ul className="border-b border-carbon/10">
           {INTEGRACIONES.map((i) => (
-            <li
-              key={i.nombre}
-              className="grid gap-8 rounded-3xl border border-neutral-200 p-7 sm:p-9 lg:grid-cols-[1fr_1.5fr] lg:gap-14"
-            >
+            <li key={i.nombre} className="grid gap-6 border-t border-carbon/10 py-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
               <div>
-                <p className={cn(etiqueta, "text-marca-600")}>{i.tipo}</p>
-                <h3 className="mt-5 text-3xl tracking-[-0.03em]">{i.nombre}</h3>
-                <p className="mt-3 text-lg leading-relaxed text-neutral-600">{i.resumen}</p>
+                <h3 className="text-[31px] leading-tight font-semibold tracking-[-0.025em] [font-stretch:86%]">{i.nombre}</h3>
+                <p className="mt-1 text-[15px] text-marca-700">{i.tipo}</p>
+                <p className="mt-4 text-[20px] leading-snug text-carbon">{i.resumen}</p>
               </div>
               <div>
-                <ol className="flex flex-col gap-3">
-                  {i.como.map((c, n) => (
-                    <li key={c} className="grid grid-cols-[2rem_1fr] leading-relaxed text-neutral-700">
-                      <span className="font-mono text-sm text-marca-500 tabular-nums">{String(n + 1).padStart(2, "0")}</span>
+                <ul className="flex flex-col gap-3 text-[17px] leading-relaxed text-ceniza">
+                  {i.como.map((c) => (
+                    <li key={c} className="flex gap-3">
+                      <span className="mt-[0.7em] size-1 shrink-0 rounded-full bg-marca-600" aria-hidden />
                       {c}
                     </li>
                   ))}
-                </ol>
-                <p className="mt-6 rounded-2xl bg-neutral-50 px-5 py-4 text-[15px] leading-relaxed text-neutral-600">
-                  <span className="text-neutral-950">Necesitas: </span>
-                  {i.necesitas}
+                </ul>
+                <p className="mt-6 rounded-xl bg-marca-50 px-5 py-4 text-[16px] leading-relaxed text-carbon">
+                  <strong className="font-semibold">Necesitas:</strong> {i.necesitas}
                 </p>
               </div>
             </li>
