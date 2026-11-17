@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, MenuIcon, XIcon } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
 import { enlaceDemo } from "@/lib/marca";
@@ -22,7 +22,32 @@ const SECCIONES = [
  */
 export function Cabecera() {
   const ref = useRef<HTMLElement>(null);
+  const botonMenu = useRef<HTMLButtonElement>(null);
+  const idMenu = useId();
   const [oscuro, setOscuro] = useState(false);
+  const [abierto, setAbierto] = useState(false);
+
+  // Menú móvil: Escape lo cierra y devuelve el foco al botón; un clic fuera, también.
+  useEffect(() => {
+    if (!abierto) return;
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAbierto(false);
+        botonMenu.current?.focus();
+      }
+    };
+    const fuera = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setAbierto(false);
+    };
+    document.addEventListener("keydown", tecla);
+    document.addEventListener("pointerdown", fuera);
+    return () => {
+      document.removeEventListener("keydown", tecla);
+      document.removeEventListener("pointerdown", fuera);
+    };
+  }, [abierto]);
+
+  const cerrar = () => setAbierto(false);
 
   useEffect(() => {
     let frame = 0;
@@ -100,7 +125,7 @@ export function Cabecera() {
           <Link
             href="/login"
             className={cn(
-              "inline-flex h-10 items-center rounded-full px-3 text-[15px] transition-colors sm:px-4",
+              "hidden h-10 items-center rounded-full px-4 text-[15px] transition-colors sm:inline-flex",
               oscuro ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-carbon/80 hover:bg-black/5 hover:text-carbon",
             )}
           >
@@ -114,11 +139,57 @@ export function Cabecera() {
               oscuro ? "bg-white text-tinta-950 hover:bg-marca-50" : "bg-marca-600 text-white hover:bg-marca-700",
             )}
           >
-            <span className="sm:hidden">Demo</span>
-            <span className="hidden sm:inline">Solicitar demo</span>
+            Solicitar demo
           </Link>
+          <button
+            ref={botonMenu}
+            type="button"
+            aria-expanded={abierto}
+            aria-controls={idMenu}
+            onClick={() => setAbierto((a) => !a)}
+            className={cn(
+              "inline-flex size-10 items-center justify-center rounded-full transition-colors lg:hidden",
+              oscuro ? "text-white hover:bg-white/10" : "text-carbon hover:bg-black/5",
+            )}
+          >
+            {abierto ? <XIcon className="size-5" aria-hidden /> : <MenuIcon className="size-5" aria-hidden />}
+            <span className="sr-only">{abierto ? "Cerrar menú" : "Abrir menú"}</span>
+          </button>
         </div>
       </div>
+
+      {abierto && (
+        <nav
+          id={idMenu}
+          aria-label="Menú"
+          className="animate-in fade-in slide-in-from-top-1 absolute inset-x-3 top-full mt-2 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-[1.75rem] border border-black/5 bg-white p-3 text-carbon shadow-[0_24px_60px_-24px_rgba(51,9,15,0.45)] duration-150 sm:inset-x-6 lg:hidden"
+        >
+          <ul className="flex flex-col">
+            {SECCIONES.map((s) => (
+              <li key={s.href}>
+                <Link href={s.href} onClick={cerrar} className="block rounded-2xl px-4 py-3 text-[19px] font-medium hover:bg-marca-50">
+                  {s.texto}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 px-4 text-[15px] text-ceniza">Soluciones</p>
+          <ul className="mt-1 grid sm:grid-cols-2">
+            {SOLUCIONES.map((s) => (
+              <li key={s.slug}>
+                <Link href={`/soluciones/${s.slug}`} onClick={cerrar} className="block rounded-2xl px-4 py-2.5 text-[17px] hover:bg-marca-50">
+                  {s.menu}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 border-t border-carbon/10 px-1 pt-3">
+            <Link href="/login" onClick={cerrar} className="block rounded-2xl px-3 py-3 text-[17px] hover:bg-marca-50">
+              Acceder al panel
+            </Link>
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
