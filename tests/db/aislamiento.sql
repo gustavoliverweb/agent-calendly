@@ -517,3 +517,103 @@ begin
   raise notice 'ok: la línea y los límites solo los cambia el proveedor';
   raise notice 'LIMITES OK';
 end $$;
+
+-- Uso y facturación (S6) -----------------------------------------------------------
+
+-- Empresa C, recién creada, para comprobar los números exactos.
+with c as (insert into public.empresas (nombre, slug) values ('Empresa C', 'test-aislamiento-c') returning id)
+select set_config('t.ec', (select id from c)::text, true);
+
+with c as (
+  insert into public.contactos (empresa_id, nombre, telefono, consentimiento)
+  values (current_setting('t.ec')::uuid, 'Contacto C', '+34600000003', true) returning id
+)
+select set_config('t.cc', (select id from c)::text, true);
+
+-- Este mes: una contestada con cita (luego cancelada), una al buzón, una prueba.
+-- Hace 40 días: una contestada de 5 minutos (otro mes).
+with l as (
+  insert into public.llamadas (contacto_id, estado, duracion_seg, finalizada_en, cita_agendada, clasificacion)
+  values (current_setting('t.cc')::uuid, 'completada', 90, now(), true, 'cita_agendada') returning id
+)
+select set_config('t.lc', (select id from l)::text, true);
+
+insert into public.llamadas (contacto_id, estado, duracion_seg, finalizada_en, clasificacion, es_prueba, creado_en)
+values (current_setting('t.cc')::uuid, 'completada', 30, now(), 'buzon', false, now()),
+       (current_setting('t.cc')::uuid, 'completada', 60, now(), null, true, now()),
+       (current_setting('t.cc')::uuid, 'completada', 300, now() - interval '40 days', null, false, now() - interval '40 days');
+
+insert into public.citas (contacto_id, llamada_id, calendly_event_uri, calendly_invitee_uri, inicio, estado)
+values (current_setting('t.cc')::uuid, current_setting('t.lc')::uuid, 'evt-uso', 'inv-uso-' || gen_random_uuid(), now(), 'cancelada');
+
+select set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+
+do $$
+declare
+  u record;
+  p record;
+begin
+  select * into u from public.uso_mensual(current_setting('t.ec')::uuid) limit 1;
+  if u.mes <> date_trunc('month', now() at time zone 'Europe/Madrid')::date
+     or u.llamadas <> 2 or u.contestadas <> 1 or u.citas <> 1 or u.citas_canceladas <> 1
+     or u.segundos <> 120 or u.pruebas <> 1 or u.segundos_pruebas <> 60 then
+    raise exception 'FALLO: uso del mes mal calculado (%)', row_to_json(u);
+  end if;
+  if (select count(*) from public.uso_mensual(current_setting('t.ec')::uuid, 3)) <> 3
+     or (select sum(segundos) from public.uso_mensual(current_setting('t.ec')::uuid)) <> 420 then
+    raise exception 'FALLO: los meses anteriores no salen o se mezclan';
+  end if;
+  select * into p from public.uso_plataforma(current_date) where empresa_id = current_setting('t.ec')::uuid;
+  if p.llamadas <> 2 or p.segundos <> 120 or p.segundos_pruebas <> 60 then
+    raise exception 'FALLO: uso de la plataforma mal calculado (%)', row_to_json(p);
+  end if;
+  if (select count(*) from public.llamadas_del_mes(current_setting('t.ec')::uuid, current_date)) <> 3 then
+    raise exception 'FALLO: el detalle del mes no tiene las 3 llamadas del mes';
+  end if;
+  raise notice 'ok: uso mensual, de la plataforma y detalle por mes';
+end $$;
+
+-- Sesión del usuario de A: no ve el uso de C ni el de la plataforma.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('t.ua'), 'role', 'authenticated')::text, true);
+
+do $$
+begin
+  if exists (select 1 from public.uso_mensual(current_setting('t.ec')::uuid))
+     or exists (select 1 from public.llamadas_del_mes(current_setting('t.ec')::uuid, current_date)) then
+    raise exception 'FALLO: un usuario ve el uso de otra empresa';
+  end if;
+  if not exists (select 1 from public.uso_mensual(current_setting('t.ea')::uuid)) then
+    raise exception 'FALLO: un usuario no ve el uso de su empresa';
+  end if;
+  raise notice 'ok: cada empresa ve solo su uso';
+end $$;
+
+do $$
+begin
+  perform public.uso_plataforma(current_date);
+  raise exception 'FALLO: un usuario lee el uso de la plataforma';
+exception when insufficient_privilege then
+  raise notice 'ok: el uso de la plataforma es solo del servidor';
+end $$;
+
+do $$
+begin
+  perform public.uso_periodo(current_setting('t.ec')::uuid, now() - interval '1 year', now());
+  raise exception 'FALLO: un usuario llama al agregado interno';
+exception when insufficient_privilege then
+  raise notice 'ok: el agregado interno es solo del servidor';
+end $$;
+
+do $$
+begin
+  update public.empresas set precio_minuto = 0 where id = current_setting('t.ea')::uuid;
+  raise exception 'FALLO: una empresa cambia su propia tarifa';
+exception when insufficient_privilege then
+  raise notice 'ok: la tarifa solo la cambia el proveedor';
+end $$;
+
+reset role;
+
+do $$ begin raise notice 'USO OK'; end $$;

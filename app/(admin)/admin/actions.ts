@@ -160,11 +160,17 @@ const lineaSchema = z.object({
     .transform((v) => v || null),
   limiteMinutos: z.number().int("Minutos: número entero").min(1, "Minutos: mínimo 1").max(1_000_000).nullable(),
   maxConcurrencia: z.number().int().min(1, "Llamadas simultáneas: mínimo 1").max(50, "Llamadas simultáneas: máximo 50"),
+  precioMinuto: z
+    .number("Tarifa: escribe un número, p. ej. 0,25")
+    .min(0, "Tarifa: no puede ser negativa")
+    .max(1000, "Tarifa: máximo 1.000 € por minuto")
+    .refine((v) => Math.abs(v * 10_000 - Math.round(v * 10_000)) < 1e-6, "Tarifa: como mucho 4 decimales")
+    .nullable(),
 });
 
 export type LineaLimites = z.input<typeof lineaSchema>;
 
-/** Asigna la línea (número importado en ElevenLabs) y los límites contratados de una empresa. */
+/** Asigna la línea (número importado en ElevenLabs), los límites contratados y la tarifa por minuto de una empresa. */
 export async function guardarLineaYLimites(datos: LineaLimites): Promise<{ error?: string }> {
   const admin = await requireAdminPlataforma();
   const parsed = lineaSchema.safeParse(datos);
@@ -178,17 +184,19 @@ export async function guardarLineaYLimites(datos: LineaLimites): Promise<{ error
       telefono_numero: d.phoneNumberId ? d.telefonoNumero : null,
       limite_minutos_mes: d.limiteMinutos,
       max_concurrencia_contratada: d.maxConcurrencia,
+      precio_minuto: d.precioMinuto,
     })
     .eq("id", d.empresaId);
   if (error?.code === UNIQUE_VIOLATION) return { error: "Ese número ya está asignado a otra empresa." };
   if (error) {
     log.error("guardar línea y límites", { code: error.code, message: error.message });
-    return { error: "No se han podido guardar la línea y los límites." };
+    return { error: "No se han podido guardar la línea, los límites y la tarifa." };
   }
   await auditar(admin.id, d.empresaId, "cambiar_linea_limites", "empresa", {
     linea: Boolean(d.phoneNumberId),
     limite_minutos_mes: d.limiteMinutos,
     max_concurrencia_contratada: d.maxConcurrencia,
+    precio_minuto: d.precioMinuto,
   });
   refresh();
   return {};

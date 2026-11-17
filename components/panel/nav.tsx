@@ -12,6 +12,7 @@ import {
   ScrollTextIcon,
   CalendarDaysIcon,
   PhoneCallIcon,
+  GaugeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const ITEMS = [
   { href: "/app/guion", label: "Guion", icon: ScrollTextIcon },
   { href: "/app/calendly", label: "Calendly", icon: CalendarDaysIcon },
   { href: "/app/telefono", label: "Teléfono", icon: PhoneCallIcon },
+  { href: "/app/uso", label: "Uso", icon: GaugeIcon },
   { href: "/app/equipo", label: "Equipo", icon: UserCogIcon },
   { href: "/app/configuracion", label: "Configuración", icon: SettingsIcon },
 ] as const;

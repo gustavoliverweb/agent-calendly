@@ -300,6 +300,7 @@ export type Database = {
           max_concurrencia_contratada: number
           nombre: string
           phone_number_id: string | null
+          precio_minuto: number | null
           slug: string
           telefono_numero: string | null
           zona_horaria: string
@@ -314,6 +315,7 @@ export type Database = {
           max_concurrencia_contratada?: number
           nombre: string
           phone_number_id?: string | null
+          precio_minuto?: number | null
           slug: string
           telefono_numero?: string | null
           zona_horaria?: string
@@ -328,6 +330,7 @@ export type Database = {
           max_concurrencia_contratada?: number
           nombre?: string
           phone_number_id?: string | null
+          precio_minuto?: number | null
           slug?: string
           telefono_numero?: string | null
           zona_horaria?: string
@@ -873,6 +876,19 @@ export type Database = {
       }
       llamadas_activas: { Args: { p_empresa_id: string }; Returns: number }
       llamadas_activas_global: { Args: never; Returns: number }
+      llamadas_del_mes: {
+        Args: { p_empresa_id: string; p_mes: string }
+        Returns: {
+          cita_agendada: boolean
+          clasificacion: string
+          creado_en: string
+          duracion_seg: number
+          es_prueba: boolean
+          estado: Database["public"]["Enums"]["llamada_estado"]
+          id: string
+          lote_id: string
+        }[]
+      }
       marcar_no_llamar: {
         Args: { p_contacto_id: string; p_origen?: string }
         Returns: undefined
@@ -914,6 +930,49 @@ export type Database = {
           segundos_30d: number
           slug: string
           telefono_numero: string
+        }[]
+      }
+      uso_mensual: {
+        Args: { p_empresa_id: string; p_meses?: number }
+        Returns: {
+          citas: number
+          citas_canceladas: number
+          contestadas: number
+          llamadas: number
+          mes: string
+          pruebas: number
+          segundos: number
+          segundos_pruebas: number
+        }[]
+      }
+      uso_periodo: {
+        Args: { p_desde: string; p_empresa_id: string; p_hasta: string }
+        Returns: {
+          citas: number
+          citas_canceladas: number
+          contestadas: number
+          llamadas: number
+          pruebas: number
+          segundos: number
+          segundos_pruebas: number
+        }[]
+      }
+      uso_plataforma: {
+        Args: { p_mes: string }
+        Returns: {
+          citas: number
+          citas_canceladas: number
+          contestadas: number
+          empresa_id: string
+          estado: string
+          limite_minutos_mes: number
+          llamadas: number
+          nombre: string
+          precio_minuto: number
+          pruebas: number
+          segundos: number
+          segundos_pruebas: number
+          slug: string
         }[]
       }
       usuario_por_email: { Args: { p_email: string }; Returns: string }

@@ -33,7 +33,7 @@ export const metadata: Metadata = { title: "Resumen" };
 
 const entero = new Intl.NumberFormat("es-ES");
 const porcentaje = new Intl.NumberFormat("es-ES", { style: "percent", maximumFractionDigits: 0 });
-const dolares = new Intl.NumberFormat("es-ES", { style: "currency", currency: "USD" });
+const euros = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
 const hora = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit" });
 
 export default function ResumenPage() {
@@ -111,10 +111,10 @@ async function Indicadores() {
     { titulo: "Conversión", hoy: conversion(hoy), semana: conversion(semana), ayuda: "Citas / llamadas contestadas" },
     { titulo: "Minutos", hoy: entero.format(Math.round(hoy.minutos)), semana: entero.format(Math.round(semana.minutos)) },
     {
-      titulo: "Coste estimado",
-      hoy: dolares.format(hoy.coste),
-      semana: dolares.format(semana.coste),
-      ayuda: "Minutos × tarifa por minuto (COSTE_MINUTO_ESTIMADO)",
+      titulo: "Importe estimado",
+      hoy: hoy.importe == null ? "—" : euros.format(hoy.importe),
+      semana: semana.importe == null ? "—" : euros.format(semana.importe),
+      ayuda: "Minutos × tarifa por minuto de tu contrato. El detalle mensual está en Uso",
     },
   ];
 

@@ -56,6 +56,7 @@ services:
         sync: false
       - key: CRON_SECRET
         sync: false
+      # USD/min que cobra ElevenLabs al proveedor: estimación de coste en /admin.
       - key: COSTE_MINUTO_ESTIMADO
         value: "0.12"
       # true cuando Supabase Auth tenga SMTP propio; si no, el panel muestra el enlace de invitación.

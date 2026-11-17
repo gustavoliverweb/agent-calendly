@@ -94,8 +94,8 @@ async function AvisoSinGuion() {
   if (data?.limite_minutos_mes && Number(minutos ?? 0) >= data.limite_minutos_mes) {
     pasos.push({
       texto: "ha alcanzado el límite de minutos de este mes y no sale ninguna llamada más",
-      href: "/app/telefono",
-      enlace: "Teléfono",
+      href: "/app/uso",
+      enlace: "Uso",
     });
   }
   if (!pasos.length) return null;

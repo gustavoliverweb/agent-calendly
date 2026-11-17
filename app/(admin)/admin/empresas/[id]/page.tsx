@@ -38,9 +38,10 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = createAdminClient();
-  const [{ data: resumen }, { data: miembros, error }] = await Promise.all([
+  const [{ data: resumen }, { data: miembros, error }, { data: tarifa }] = await Promise.all([
     supabase.rpc("resumen_empresas"),
     supabase.rpc("equipo_empresa", { p_empresa_id: id }),
+    supabase.from("empresas").select("precio_minuto").eq("id", id).maybeSingle(),
   ]);
   const empresa = resumen?.find((e) => e.id === id);
   if (!empresa) notFound();
@@ -95,6 +96,7 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
           telefonoNumero: empresa.telefono_numero,
           limiteMinutos: empresa.limite_minutos_mes,
           maxConcurrencia: empresa.max_concurrencia_contratada,
+          precioMinuto: tarifa?.precio_minuto == null ? null : Number(tarifa.precio_minuto),
         }}
         numeros={numeros}
         minutosMes={Number(empresa.minutos_mes)}

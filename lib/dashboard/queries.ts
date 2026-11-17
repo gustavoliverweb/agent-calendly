@@ -1,9 +1,9 @@
 import "server-only";
-import { appEnv, isConfigured } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { madridAUtc, partesMadrid } from "@/lib/time/madrid";
+import { importe } from "@/lib/uso/calculo";
 
 /** Sin latido del despacho en este tiempo, la tarea programada no está corriendo. */
 export const LATIDO_MAX_MS = 5 * 60_000;
@@ -14,7 +14,8 @@ export type Kpis = {
   contestadas: number;
   citas: number;
   minutos: number;
-  coste: number;
+  /** Minutos × tarifa de la empresa (EUR); null si el proveedor no le ha puesto tarifa. */
+  importe: number | null;
 };
 
 /** 00:00 de Madrid de hace `dias` días. */
@@ -27,7 +28,8 @@ function inicioDia(ahora: Date, dias: number): Date {
 export async function leerKpis(ahora: Date): Promise<{ hoy: Kpis; semana: Kpis }> {
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const costeMinuto = isConfigured(appEnv) ? appEnv().COSTE_MINUTO_ESTIMADO : 0.12;
+  const { data: emp } = await supabase.from("empresas").select("precio_minuto").eq("id", empresa.id).maybeSingle();
+  const precio = emp?.precio_minuto == null ? null : Number(emp.precio_minuto);
   const leer = async (desde: Date): Promise<Kpis> => {
     const { data, error } = await supabase.rpc("kpis_llamadas", {
       p_empresa_id: empresa.id,
@@ -36,7 +38,7 @@ export async function leerKpis(ahora: Date): Promise<{ hoy: Kpis; semana: Kpis }
     if (error) throw new Error(`kpis: ${error.message}`);
     const k = data[0] ?? { llamadas: 0, contestadas: 0, citas: 0, segundos: 0 };
     const minutos = Number(k.segundos) / 60;
-    return { llamadas: k.llamadas, contestadas: k.contestadas, citas: k.citas, minutos, coste: minutos * costeMinuto };
+    return { llamadas: k.llamadas, contestadas: k.contestadas, citas: k.citas, minutos, importe: importe(minutos, precio) };
   };
   const [hoy, semana] = await Promise.all([leer(inicioDia(ahora, 0)), leer(inicioDia(ahora, 6))]);
   return { hoy, semana };

@@ -5,6 +5,7 @@ import { NuevaEmpresa } from "@/components/admin/nueva-empresa";
 import { ConcurrenciaGlobal } from "@/components/admin/linea-limites";
 import { PageHeader } from "@/components/panel/page-header";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAdminPlataforma } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -41,7 +42,12 @@ async function Empresas() {
   return (
     <>
       <PageHeader title="Empresas" description="Clientes de la plataforma. Uso de los últimos 30 días.">
-        <NuevaEmpresa />
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/uso" className={buttonVariants({ variant: "outline" })}>
+            Uso y facturación
+          </Link>
+          <NuevaEmpresa />
+        </div>
       </PageHeader>
       {global?.[0] && (
         <div className="mb-6 rounded-xl border p-4">

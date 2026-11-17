@@ -50,13 +50,21 @@ Cifra los tokens de Calendly de todas las empresas. No se puede rotar sin más: 
 
 1. La empresa envía los datos de su troncal SIP (operador, número, servidor/dominio, usuario, contraseña) por un canal seguro (no por email en claro).
 2. ElevenLabs → **Phone numbers → Import number → SIP trunk**.
-3. `/admin` → empresa → **Línea y límites**: elegir el número y guardar. La empresa ve «Activa» en su sección Teléfono.
+3. `/admin` → empresa → **Línea, límites y tarifa**: elegir el número y guardar. La empresa ve «Activa» en su sección Teléfono.
 4. Lanzar una llamada de prueba a un teléfono propio desde la ficha de un contacto.
 
 ## Límites de uso
 
 - **Concurrencia global** (`/admin`, arriba): las conversaciones simultáneas del plan de ElevenLabs. Si se supera, ElevenLabs cobra tarifa «burst»; la app no lanza más de esas.
 - **Por empresa** (ficha en `/admin`): llamadas simultáneas contratadas (la empresa puede configurar menos) y minutos al mes. Al llegar al límite de minutos no sale ninguna llamada (tampoco pruebas) hasta el mes siguiente, y la empresa lo ve en el panel. Las llamadas en curso al alcanzarlo terminan normalmente.
+
+## Facturar el uso del mes
+
+1. Fijar la **tarifa por minuto** (EUR) de cada empresa en su ficha de `/admin` (**Línea, límites y tarifa**). Sin tarifa, la empresa solo ve minutos y su importe no suma en el total.
+2. A principio de mes, `/admin` → **Uso y facturación** → mes anterior → **CSV para facturar**: una fila por empresa con llamadas, contestadas, citas (y cuántas se cancelaron), minutos de llamadas y de pruebas, límite, tarifa, importe estimado y coste estimado de ElevenLabs (`COSTE_MINUTO_ESTIMADO`, USD).
+3. Si una empresa pide el justificante, **Detalle** descarga sus llamadas del mes (fecha, tipo, estado, resultado, duración, cita) sin nombres ni teléfonos. La empresa puede descargar el mismo CSV desde su sección **Uso**.
+
+Criterios: mes natural en la zona horaria de la empresa; los minutos son la suma de segundos de conversación / 60 (sin redondear cada llamada al minuto) e incluyen las pruebas en el navegador, igual que el límite mensual. El CSV usa «;» y coma decimal (Excel en español).
 
 ## Calendly desconectado en una empresa
 

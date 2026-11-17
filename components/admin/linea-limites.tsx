@@ -20,7 +20,13 @@ export function LineaLimites({
   minutosMes,
 }: {
   empresaId: string;
-  inicial: { phoneNumberId: string | null; telefonoNumero: string | null; limiteMinutos: number | null; maxConcurrencia: number };
+  inicial: {
+    phoneNumberId: string | null;
+    telefonoNumero: string | null;
+    limiteMinutos: number | null;
+    maxConcurrencia: number;
+    precioMinuto: number | null;
+  };
   /** Null: no se pudo leer la lista de ElevenLabs (se escribe el id a mano). */
   numeros: NumeroDisponible[] | null;
   minutosMes: number;
@@ -29,6 +35,7 @@ export function LineaLimites({
   const [telefonoNumero, setTelefonoNumero] = useState(inicial.telefonoNumero ?? "");
   const [limite, setLimite] = useState(inicial.limiteMinutos?.toString() ?? "");
   const [concurrencia, setConcurrencia] = useState(inicial.maxConcurrencia.toString());
+  const [precio, setPrecio] = useState(inicial.precioMinuto?.toString().replace(".", ",") ?? "");
   const [pending, startTransition] = useTransition();
 
   function elegirNumero(id: string) {
@@ -44,16 +51,18 @@ export function LineaLimites({
         telefonoNumero,
         limiteMinutos: limite.trim() ? Number(limite) : null,
         maxConcurrencia: Number(concurrencia),
+        // Admite coma decimal ("0,25").
+        precioMinuto: precio.trim() ? Number(precio.trim().replace(",", ".")) : null,
       });
       if (r.error) toast.error(r.error);
-      else toast.success("Línea y límites guardados");
+      else toast.success("Línea, límites y tarifa guardados");
     });
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Línea y límites</CardTitle>
+        <CardTitle>Línea, límites y tarifa</CardTitle>
         <CardDescription>
           La línea es el número SIP de la empresa importado en ElevenLabs (Phone numbers). Sin línea, la empresa puede
           preparar todo y probar en el navegador, pero no llamar por teléfono.
@@ -123,6 +132,19 @@ export function LineaLimites({
               />
               <p className="text-xs text-muted-foreground">
                 Este mes lleva {minutosMes.toLocaleString("es-ES")} min. Al llegar al límite no sale ninguna llamada más.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="precio">Tarifa por minuto (EUR)</Label>
+              <Input
+                id="precio"
+                inputMode="decimal"
+                placeholder="Sin tarifa"
+                value={precio}
+                onChange={(e) => setPrecio(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Lo que paga la empresa por minuto. Con ella ve un importe estimado en su panel y sale en el CSV de facturación.
               </p>
             </div>
           </div>
