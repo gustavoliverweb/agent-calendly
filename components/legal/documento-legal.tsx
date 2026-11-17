@@ -49,7 +49,7 @@ export function DocumentoLegal({ ruta, titulo, children }: { ruta: RutaLegal; ti
                 className={cn(
                   "inline-flex h-9 items-center rounded-full border px-4 text-sm transition-colors",
                   d.href === ruta
-                    ? "border-neutral-950 bg-neutral-950 text-white"
+                    ? "border-marca-600 bg-marca-600 text-white"
                     : "border-neutral-300 text-neutral-700 hover:border-neutral-950 hover:text-neutral-950",
                 )}
               >

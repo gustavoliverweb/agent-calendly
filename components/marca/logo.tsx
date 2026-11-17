@@ -20,7 +20,7 @@ export function Simbolo({ className }: { className?: string }) {
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <Simbolo />
+      <Simbolo className="text-marca-600" />
       <span className="text-[13px] font-medium tracking-[0.28em] uppercase">{MARCA.nombre}</span>
     </span>
   );

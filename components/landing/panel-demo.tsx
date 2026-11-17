@@ -40,7 +40,7 @@ export function PanelDemo() {
           <p className="font-mono text-[10px] tracking-[0.18em] text-neutral-400 uppercase">412 / 600</p>
         </div>
         <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-neutral-100">
-          <div className="w-[52%] bg-neutral-950" />
+          <div className="w-[52%] bg-marca-600" />
           <div className="w-[9%] bg-neutral-500" />
           <div className="w-[8%] bg-neutral-300" />
         </div>
@@ -48,7 +48,7 @@ export function PanelDemo() {
       <ul className="mt-3 divide-y divide-neutral-100">
         {LLAMADAS.map((l) => (
           <li key={l.nombre} className="flex items-center gap-3 px-5 py-3">
-            <span className={cn("size-1.5 rounded-full", l.activo ? "animate-pulse bg-neutral-950" : "bg-neutral-300")} />
+            <span className={cn("size-1.5 rounded-full", l.activo ? "animate-pulse bg-marca-600" : "bg-neutral-300")} />
             <span className="text-sm text-neutral-950">{l.nombre}</span>
             <span className={cn("text-sm", l.fuerte ? "text-neutral-950" : "text-neutral-500")}>· {l.estado}</span>
             <span className="ml-auto font-mono text-[10px] tracking-[0.14em] text-neutral-400 uppercase">{l.detalle}</span>

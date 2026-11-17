@@ -129,7 +129,7 @@ export function LlamadaDemo() {
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 font-mono text-[11px] tracking-[0.18em] text-white/50 uppercase">
           <span className="flex items-center gap-2">
-            <span className={cn("size-1.5 rounded-full bg-white", !terminado && "animate-pulse")} aria-hidden />
+            <span className={cn("size-1.5 rounded-full bg-marca-500", !terminado && "animate-pulse")} aria-hidden />
             {caso.contexto}
           </span>
           <span className="hidden sm:inline">{terminado ? "Llamada finalizada" : "En curso"}</span>

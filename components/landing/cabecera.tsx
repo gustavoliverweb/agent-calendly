@@ -54,7 +54,7 @@ export function Cabecera() {
         className={cn(
           "mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 rounded-full border pr-2 pl-5 backdrop-blur-xl transition-colors duration-300",
           oscuro
-            ? "border-white/10 bg-neutral-900/70 text-white"
+            ? "border-white/10 bg-tinta-900/70 text-white"
             : "border-black/5 bg-white/75 text-neutral-950 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)]",
         )}
       >
@@ -85,7 +85,7 @@ export function Cabecera() {
             href={enlaceDemo}
             className={cn(
               "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm transition-colors",
-              oscuro ? "bg-white text-neutral-950 hover:bg-neutral-200" : "bg-neutral-950 text-white hover:bg-neutral-800",
+              "bg-marca-600 text-white hover:bg-marca-700",
             )}
           >
             Hablemos <ArrowUpRightIcon className="size-3.5" />

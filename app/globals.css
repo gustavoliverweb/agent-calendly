@@ -4,6 +4,35 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Paleta de la marca «Brasa»: rojo carmín para acción y acentos, negro cálido
+ * («tinta») para las secciones oscuras y un coral para degradados puntuales.
+ * Contraste (WCAG): blanco sobre marca-600 4,75:1 · marca-600 sobre blanco
+ * 4,75:1 · marca-400 sobre tinta-950 6,98:1. Blanco sobre marca-500 no llega
+ * a AA: los botones usan siempre marca-600 (hover marca-700).
+ */
+@theme {
+  --color-marca-50: #fff1f1;
+  --color-marca-100: #ffe1e1;
+  --color-marca-200: #ffc7c8;
+  --color-marca-300: #ffa0a2;
+  --color-marca-400: #fd6a6e;
+  --color-marca-500: #f43f46;
+  --color-marca-600: #e11d2e;
+  --color-marca-700: #be1325;
+  --color-marca-800: #9e1424;
+  --color-marca-900: #841624;
+  --color-marca-950: #48060e;
+
+  --color-tinta-700: #3d2c30;
+  --color-tinta-800: #2a1e21;
+  --color-tinta-900: #1a1214;
+  --color-tinta-950: #0f0a0b;
+
+  --color-coral-400: #ff8a5c;
+  --color-coral-500: #ff6b3d;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -55,8 +84,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #e11d2e;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -66,7 +95,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #fd6a6e;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -75,8 +104,8 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #e11d2e;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -90,8 +119,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #e11d2e;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -101,7 +130,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: #f43f46;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -109,8 +138,8 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #e11d2e;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -118,6 +147,10 @@
 }
 
 @layer base {
+  ::selection {
+    background-color: var(--color-marca-100);
+    color: var(--color-marca-950);
+  }
   * {
     @apply border-border outline-ring/50;
   }
