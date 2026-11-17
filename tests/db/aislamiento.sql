@@ -681,3 +681,63 @@ exception when check_violation then
   raise notice 'ok: color en #rrggbb';
   raise notice 'MARCA OK';
 end $$;
+
+-- Modo B2B (S6c) -------------------------------------------------------------------
+
+select set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+
+-- Sin habilitar por el proveedor, no se puede elegir B2B (tampoco con service role).
+do $$
+begin
+  update public.configuracion set tipo_campana = 'b2b' where empresa_id = current_setting('t.ec')::uuid;
+  raise exception 'FALLO: se eligió B2B sin que el proveedor lo habilitara';
+exception when raise_exception then
+  if sqlerrm <> 'b2b_no_habilitado' then raise; end if;
+  raise notice 'ok: B2B solo con la empresa habilitada';
+end $$;
+
+update public.empresas set b2b_habilitado = true where id = current_setting('t.ec')::uuid;
+update public.configuracion set tipo_campana = 'b2b' where empresa_id = current_setting('t.ec')::uuid;
+
+do $$
+begin
+  if public.motivo_campana('comercial', false, null, null) <> 'sin_consentimiento'
+     or public.motivo_campana('comercial', true, null, null) is not null
+     or public.motivo_campana('no_comercial', false, null, null) is not null
+     or public.motivo_campana('b2b', false, 'Acme', 'web corporativa') is not null
+     or public.motivo_campana('b2b', true, 'Acme', '  ') <> 'sin_datos_b2b'
+     or public.motivo_campana('b2b', true, null, 'web') <> 'sin_datos_b2b' then
+    raise exception 'FALLO: reglas por tipo de campaña';
+  end if;
+  raise notice 'ok: reglas de consentimiento y datos B2B';
+end $$;
+
+-- Lote B2B: el contacto sin consentimiento pero con empresa y origen entra;
+-- uno sin origen se omite.
+with c as (
+  insert into public.contactos (empresa_id, nombre, telefono, organizacion, origen_datos)
+  values (current_setting('t.ec')::uuid, 'Recepción Acme', '+34910000001', 'Acme SL', 'web corporativa'),
+         (current_setting('t.ec')::uuid, 'Beta', '+34910000002', 'Beta SA', null)
+  returning id, telefono
+)
+select set_config('t.b2b_ok', (select id from c where telefono = '+34910000001')::text, true),
+       set_config('t.b2b_sin', (select id from c where telefono = '+34910000002')::text, true);
+
+do $$
+declare
+  v_lote uuid;
+begin
+  v_lote := public.crear_lote(current_setting('t.ec')::uuid,
+    array[current_setting('t.b2b_ok')::uuid, current_setting('t.b2b_sin')::uuid], 'lote b2b');
+  if (select estado from public.lote_items where lote_id = v_lote and contacto_id = current_setting('t.b2b_ok')::uuid) <> 'en_cola'
+     or (select motivo_omision from public.lote_items where lote_id = v_lote and contacto_id = current_setting('t.b2b_sin')::uuid) <> 'sin_datos_b2b' then
+    raise exception 'FALLO: el lote B2B no aplicó la regla de datos B2B';
+  end if;
+  raise notice 'ok: lote B2B sin consentimiento previo pero con empresa y origen';
+end $$;
+
+-- Quitar la habilitación no impide guardar otros ajustes de una empresa ya en B2B.
+update public.empresas set b2b_habilitado = false where id = current_setting('t.ec')::uuid;
+update public.configuracion set max_reintentos = max_reintentos where empresa_id = current_setting('t.ec')::uuid;
+
+do $$ begin raise notice 'B2B OK'; end $$;

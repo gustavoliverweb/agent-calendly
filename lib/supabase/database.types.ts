@@ -179,7 +179,7 @@ export type Database = {
           retencion_transcripciones_dias: number
           retencion_webhooks_dias: number
           timeout_llamada_min: number
-          tipo_campana: Database["public"]["Enums"]["tipo_campana"]
+          tipo_campana: string
         }
         Insert: {
           actualizado_en?: string
@@ -194,7 +194,7 @@ export type Database = {
           retencion_transcripciones_dias?: number
           retencion_webhooks_dias?: number
           timeout_llamada_min?: number
-          tipo_campana?: Database["public"]["Enums"]["tipo_campana"]
+          tipo_campana?: string
         }
         Update: {
           actualizado_en?: string
@@ -209,7 +209,7 @@ export type Database = {
           retencion_transcripciones_dias?: number
           retencion_webhooks_dias?: number
           timeout_llamada_min?: number
-          tipo_campana?: Database["public"]["Enums"]["tipo_campana"]
+          tipo_campana?: string
         }
         Relationships: [
           {
@@ -224,6 +224,7 @@ export type Database = {
       contactos: {
         Row: {
           actualizado_en: string
+          cargo: string | null
           consentimiento: boolean
           consentimiento_fecha: string | null
           consentimiento_origen: string | null
@@ -236,13 +237,18 @@ export type Database = {
           no_llamar_en: string | null
           nombre: string
           notas: string | null
+          organizacion: string | null
+          origen_datos: string | null
           requiere_seguimiento: boolean
+          sector: string | null
           seguimiento_motivo: string | null
           telefono: string
           ultimo_intento_en: string | null
+          web: string | null
         }
         Insert: {
           actualizado_en?: string
+          cargo?: string | null
           consentimiento?: boolean
           consentimiento_fecha?: string | null
           consentimiento_origen?: string | null
@@ -255,13 +261,18 @@ export type Database = {
           no_llamar_en?: string | null
           nombre: string
           notas?: string | null
+          organizacion?: string | null
+          origen_datos?: string | null
           requiere_seguimiento?: boolean
+          sector?: string | null
           seguimiento_motivo?: string | null
           telefono: string
           ultimo_intento_en?: string | null
+          web?: string | null
         }
         Update: {
           actualizado_en?: string
+          cargo?: string | null
           consentimiento?: boolean
           consentimiento_fecha?: string | null
           consentimiento_origen?: string | null
@@ -274,10 +285,14 @@ export type Database = {
           no_llamar_en?: string | null
           nombre?: string
           notas?: string | null
+          organizacion?: string | null
+          origen_datos?: string | null
           requiere_seguimiento?: boolean
+          sector?: string | null
           seguimiento_motivo?: string | null
           telefono?: string
           ultimo_intento_en?: string | null
+          web?: string | null
         }
         Relationships: [
           {
@@ -333,6 +348,7 @@ export type Database = {
       empresas: {
         Row: {
           actualizado_en: string
+          b2b_habilitado: boolean
           creado_en: string
           estado: string
           guion_activo_id: string | null
@@ -357,6 +373,7 @@ export type Database = {
         }
         Insert: {
           actualizado_en?: string
+          b2b_habilitado?: boolean
           creado_en?: string
           estado?: string
           guion_activo_id?: string | null
@@ -381,6 +398,7 @@ export type Database = {
         }
         Update: {
           actualizado_en?: string
+          b2b_habilitado?: boolean
           creado_en?: string
           estado?: string
           guion_activo_id?: string | null
@@ -962,6 +980,15 @@ export type Database = {
         Returns: undefined
       }
       minutos_mes: { Args: { p_empresa_id: string }; Returns: number }
+      motivo_campana: {
+        Args: {
+          p_consentimiento: boolean
+          p_organizacion: string
+          p_origen: string
+          p_tipo: string
+        }
+        Returns: string
+      }
       purgar_datos_antiguos: { Args: never; Returns: Json }
       reclamar_renovacion_calendly: {
         Args: { p_empresa_id: string }
@@ -1069,7 +1096,6 @@ export type Database = {
         | "omitido"
         | "fallido"
       miembro_rol: "propietario" | "operador"
-      tipo_campana: "comercial" | "no_comercial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1223,7 +1249,6 @@ export const Constants = {
         "fallido",
       ],
       miembro_rol: ["propietario", "operador"],
-      tipo_campana: ["comercial", "no_comercial"],
     },
   },
 } as const

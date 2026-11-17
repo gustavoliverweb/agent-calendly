@@ -2,6 +2,13 @@ import { z } from "zod";
 import { normalizePhone } from "./phone";
 import { clean, parseFecha } from "./parse";
 
+const textoOpcional = (max: number, etiqueta: string) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => clean(v))
+    .pipe(z.string().max(max, `${etiqueta}: máximo ${max} caracteres`).nullable());
+
 /** Formulario de alta/edición de un contacto (FormData → datos de BD). */
 export const contactoFormSchema = z
   .object({
@@ -38,6 +45,12 @@ export const contactoFormSchema = z
       }),
     consentimiento_origen: z.string().optional().transform((v) => clean(v)),
     notas: z.string().optional().transform((v) => (v ?? "").trim() || null),
+    // Llamadas a empresas (B2B).
+    organizacion: textoOpcional(200, "Empresa"),
+    cargo: textoOpcional(120, "Cargo"),
+    sector: textoOpcional(120, "Sector"),
+    web: textoOpcional(300, "Web"),
+    origen_datos: textoOpcional(300, "Origen de los datos"),
   })
   .transform((d) => ({
     ...d,

@@ -54,6 +54,9 @@ async function Ficha({ params }: Pick<PageProps<"/app/contactos/[id]">, "params"
             <h1 className="text-2xl font-semibold tracking-tight">{contacto.nombre}</h1>
             <EstadoBadge estado={contacto.estado} />
           </div>
+          {(contacto.organizacion || contacto.cargo) && (
+            <p className="mt-1 text-sm">{[contacto.cargo, contacto.organizacion].filter(Boolean).join(" · ")}</p>
+          )}
           <p className="mt-1 text-sm text-muted-foreground tabular-nums">
             {formatPhone(contacto.telefono)} · {contacto.intentos} intentos sin respuesta
             {contacto.requiere_seguimiento && ` · requiere seguimiento${contacto.seguimiento_motivo ? `: ${contacto.seguimiento_motivo}` : ""}`}
@@ -81,6 +84,11 @@ async function Ficha({ params }: Pick<PageProps<"/app/contactos/[id]">, "params"
                 consentimiento_fecha: contacto.consentimiento_fecha,
                 consentimiento_origen: contacto.consentimiento_origen,
                 notas: contacto.notas,
+                organizacion: contacto.organizacion,
+                cargo: contacto.cargo,
+                sector: contacto.sector,
+                web: contacto.web,
+                origen_datos: contacto.origen_datos,
               }}
             />
           </CardContent>

@@ -8,6 +8,7 @@ import { LineaLimites, type NumeroDisponible } from "@/components/admin/linea-li
 import { listarNumeros } from "@/lib/elevenlabs/client";
 import { elevenLabsAgenteEnv, isConfigured, renderEnv } from "@/lib/env";
 import { Dominios } from "@/components/admin/dominios";
+import { ModoB2b } from "@/components/admin/modo-b2b";
 import { origenEmpresa } from "@/lib/dominio/contexto";
 import { destinoCname } from "@/lib/dominio/render";
 import { Equipo } from "@/components/equipo/equipo";
@@ -44,7 +45,7 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
   const [{ data: resumen }, { data: miembros, error }, { data: tarifa }, { data: dominios }, direccion] = await Promise.all([
     supabase.rpc("resumen_empresas"),
     supabase.rpc("equipo_empresa", { p_empresa_id: id }),
-    supabase.from("empresas").select("precio_minuto").eq("id", id).maybeSingle(),
+    supabase.from("empresas").select("precio_minuto, b2b_habilitado, configuracion (tipo_campana)").eq("id", id).maybeSingle(),
     supabase.from("dominios_empresa").select("id, dominio, estado, detalle, comprobado_en").eq("empresa_id", id).order("creado_en"),
     origenEmpresa(id),
   ]);
@@ -105,6 +106,12 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
         }}
         numeros={numeros}
         minutosMes={Number(empresa.minutos_mes)}
+      />
+
+      <ModoB2b
+        empresaId={empresa.id}
+        habilitado={tarifa?.b2b_habilitado ?? false}
+        enUso={tarifa?.configuracion?.tipo_campana === "b2b"}
       />
 
       <Dominios

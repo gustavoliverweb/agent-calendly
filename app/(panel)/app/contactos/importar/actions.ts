@@ -8,7 +8,7 @@ import { CAMPOS } from "@/lib/contacts/csv";
 import { MAX_FILAS, resumir, validarFilas, type FilaValidada, type Resumen } from "@/lib/contacts/import";
 import { normalizePhone } from "@/lib/contacts/phone";
 import { createClient } from "@/lib/supabase/server";
-import type { TablesUpdate } from "@/lib/supabase/database.types";
+import type { Tables, TablesUpdate } from "@/lib/supabase/database.types";
 import { log } from "@/lib/log";
 import { registrarAuditoria } from "@/lib/auditoria";
 
@@ -107,11 +107,15 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
     let completados = 0;
     if (modoDuplicados === "completar") {
       const duplicados = validadas.filter((f) => f.estado === "duplicado_en_bd");
-      const actuales = new Map<string, { id: string; email: string | null; notas: string | null; consentimiento: boolean }>();
+      type Actual = Pick<
+        Tables<"contactos">,
+        "id" | "email" | "notas" | "consentimiento" | "organizacion" | "cargo" | "sector" | "web" | "origen_datos"
+      >;
+      const actuales = new Map<string, Actual>();
       for (let i = 0; i < duplicados.length; i += 300) {
         const { data, error } = await supabase
           .from("contactos")
-          .select("id, telefono, email, notas, consentimiento")
+          .select("id, telefono, email, notas, consentimiento, organizacion, cargo, sector, web, origen_datos")
           .eq("empresa_id", empresa.id)
           .in("telefono", duplicados.slice(i, i + 300).map((f) => f.contacto.telefono!));
         if (error) throw new Error(error.message);
@@ -123,6 +127,9 @@ export async function importarContactos(input: unknown): Promise<ResultadoImport
         const cambios: TablesUpdate<"contactos"> = {};
         if (!actual.email && f.contacto.email) cambios.email = f.contacto.email;
         if (!actual.notas && f.contacto.notas) cambios.notas = f.contacto.notas;
+        for (const campo of ["organizacion", "cargo", "sector", "web", "origen_datos"] as const) {
+          if (!actual[campo] && f.contacto[campo]) cambios[campo] = f.contacto[campo];
+        }
         if (!actual.consentimiento && f.contacto.consentimiento) {
           cambios.consentimiento = true;
           cambios.consentimiento_fecha = f.contacto.consentimiento_fecha ?? ahora;

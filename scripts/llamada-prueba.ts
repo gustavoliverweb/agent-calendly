@@ -72,11 +72,18 @@ async function crear(busqueda: string) {
     process.exit(1);
   }
   // Igual que renderPrimerMensaje() de lib/guion/guion.ts.
-  const valores = { nombre: contacto.nombre, negocio: guion.negocio_nombre, agente: guion.nombre_agente };
-  const primerMensaje = guion.primer_mensaje.replace(
-    /\{\s*(nombre|negocio|agente)\s*\}/g,
-    (_: string, k: keyof typeof valores) => valores[k].trim(),
-  );
+  const valores = {
+    nombre: contacto.nombre,
+    negocio: guion.negocio_nombre,
+    agente: guion.nombre_agente,
+    empresa: contacto.organizacion ?? "",
+    cargo: contacto.cargo ?? "",
+  };
+  const primerMensaje = guion.primer_mensaje
+    .replace(/\{\s*(nombre|negocio|agente|empresa|cargo)\s*\}/g, (_: string, k: keyof typeof valores) => valores[k].trim())
+    .replace(/\s+([,.?!])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   const variables: [string, string][] = [
     ["nombre", contacto.nombre],
@@ -90,6 +97,11 @@ async function crear(busqueda: string) {
     ["llamada_id", llamadaId],
     ["contacto_id", contacto.id],
     ["telefono", contacto.telefono],
+    // Este script prueba el modo particular; el modo B2B, con «Probar en el navegador» (sección Guion).
+    ["modo_llamada", "b2c"],
+    ["empresa_contacto", contacto.organizacion ?? ""],
+    ["cargo_contacto", contacto.cargo ?? ""],
+    ["instrucciones_modo", `Llamas a un particular: ${contacto.nombre}.`],
   ];
   const ancho = Math.max(...variables.map(([k]) => k.length));
 
@@ -126,10 +138,18 @@ async function cerrar(llamadaId: string | undefined) {
   console.log(`Llamada ${llamadaId} cerrada como fallida.`);
 }
 
-type Contacto = { id: string; nombre: string; telefono: string; email: string | null; estado: string };
+type Contacto = {
+  id: string;
+  nombre: string;
+  telefono: string;
+  email: string | null;
+  estado: string;
+  organizacion: string | null;
+  cargo: string | null;
+};
 
 async function buscarContacto(busqueda: string): Promise<Contacto> {
-  const consulta = supabase.from("contactos").select("id, nombre, telefono, email, estado");
+  const consulta = supabase.from("contactos").select("id, nombre, telefono, email, estado, organizacion, cargo");
   const valor = busqueda.trim();
   const { data, error } = UUID.test(valor)
     ? await consulta.eq("id", valor)

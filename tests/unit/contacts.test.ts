@@ -125,6 +125,7 @@ describe("criterio de aceptación 1: CSV de 50 contactos", () => {
       telefono_invalido: 3,
       falta_nombre: 1,
       sinConsentimiento: 8,
+      sinDatosB2b: 40,
     });
   });
 });

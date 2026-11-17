@@ -32,6 +32,9 @@ export async function guardarConfiguracion(datos: ConfiguracionForm): Promise<Gu
     .from("configuracion")
     .update({ ...parsed.data, actualizado_por: user.id })
     .eq("empresa_id", empresa.id);
+  if (error?.message === "b2b_no_habilitado") {
+    return { error: "Las campañas B2B aún no están activadas para tu cuenta. Contacta con nosotros." };
+  }
   if (error) {
     log.error("guardar configuración", { code: error.code, message: error.message });
     return { error: "No se ha podido guardar la configuración." };

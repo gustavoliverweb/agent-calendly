@@ -9,6 +9,11 @@ export const CAMPOS = [
   "consentimiento_fecha",
   "consentimiento_origen",
   "notas",
+  "organizacion",
+  "cargo",
+  "sector",
+  "web",
+  "origen_datos",
 ] as const;
 
 export type Campo = (typeof CAMPOS)[number];
@@ -22,6 +27,11 @@ export const ETIQUETAS: Record<Campo, string> = {
   consentimiento_fecha: "Fecha de consentimiento",
   consentimiento_origen: "Origen del consentimiento",
   notas: "Notas",
+  organizacion: "Empresa",
+  cargo: "Cargo",
+  sector: "Sector",
+  web: "Web",
+  origen_datos: "Origen de los datos (B2B)",
 };
 
 const ALIAS: Record<Campo, string[]> = {
@@ -32,6 +42,11 @@ const ALIAS: Record<Campo, string[]> = {
   consentimiento_fecha: ["fecha consentimiento", "fecha de consentimiento", "consentimiento fecha", "consent date", "fecha"],
   consentimiento_origen: ["origen", "origen consentimiento", "origen del consentimiento", "fuente"],
   notas: ["notas", "nota", "observaciones", "comentarios", "notes"],
+  organizacion: ["empresa", "compania", "organizacion", "razon social", "company", "cuenta", "nombre empresa"],
+  cargo: ["cargo", "puesto", "posicion", "job title", "title", "rol"],
+  sector: ["sector", "industria", "actividad", "industry"],
+  web: ["web", "sitio web", "pagina web", "website", "url", "dominio"],
+  origen_datos: ["origen de los datos", "origen de los datos (b2b)", "origen datos", "fuente de los datos", "fuente datos", "procedencia"],
 };
 
 export function normalizeHeader(header: string): string {

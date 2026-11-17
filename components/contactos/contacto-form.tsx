@@ -18,6 +18,11 @@ export type ContactoValores = {
   consentimiento_fecha: string | null;
   consentimiento_origen: string | null;
   notas: string | null;
+  organizacion: string | null;
+  cargo: string | null;
+  sector: string | null;
+  web: string | null;
+  origen_datos: string | null;
 };
 
 /** ISO → 'dd/mm/aaaa' en hora de Madrid. */
@@ -73,6 +78,40 @@ export function ContactoForm({
           <Input id="email" name="email" type="email" defaultValue={valores?.email ?? ""} />
         </div>
       </div>
+
+      <fieldset className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+        <legend className="px-1 text-sm font-medium">Empresa (llamadas B2B)</legend>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="organizacion">Empresa</Label>
+          <Input id="organizacion" name="organizacion" maxLength={200} defaultValue={valores?.organizacion ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="cargo">Cargo</Label>
+          <Input id="cargo" name="cargo" maxLength={120} placeholder="Gerente, director de compras…" defaultValue={valores?.cargo ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="sector">Sector</Label>
+          <Input id="sector" name="sector" maxLength={120} defaultValue={valores?.sector ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="web">Web</Label>
+          <Input id="web" name="web" maxLength={300} placeholder="empresa.com" defaultValue={valores?.web ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <Label htmlFor="origen_datos">Origen de los datos</Label>
+          <Input
+            id="origen_datos"
+            name="origen_datos"
+            maxLength={300}
+            placeholder="Web corporativa, directorio sectorial, feria…"
+            defaultValue={valores?.origen_datos ?? ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            En campañas B2B, la empresa y el origen son obligatorios: documentan el interés legítimo. El teléfono puede ser
+            la centralita.
+          </p>
+        </div>
+      </fieldset>
 
       <fieldset className="flex flex-col gap-3 rounded-lg border p-3">
         <legend className="px-1 text-sm font-medium">Base legal para llamar</legend>

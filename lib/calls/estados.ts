@@ -28,6 +28,8 @@ export const ETIQUETA_CLASIFICACION: Record<Clasificacion, string> = {
   no_llamar: "Pidió no llamar",
   sin_respuesta: "Sin respuesta",
   buzon: "Buzón de voz",
+  pasado_a_otra_persona: "Pasado a otra persona",
+  decisor_no_disponible: "Decisor no disponible",
   otro: "Sin resultado concreto",
 };
 

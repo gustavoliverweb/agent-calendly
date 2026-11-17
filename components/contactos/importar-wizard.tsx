@@ -64,6 +64,30 @@ function csvDeRechazadas(filas: Pick<FilaValidada, "linea" | "estado" | "origina
   );
 }
 
+/** Plantilla con todas las columnas y dos filas de ejemplo (particular y empresa). */
+function plantillaCsv() {
+  const ejemplo = (v: Partial<Record<(typeof CAMPOS)[number], string>>) => Object.fromEntries(CAMPOS.map((c) => [ETIQUETAS[c], v[c] ?? ""]));
+  return generarCsv([
+    ejemplo({
+      nombre: "Laura Gómez",
+      telefono: "600 11 22 33",
+      email: "laura@example.com",
+      consentimiento: "sí",
+      consentimiento_fecha: "15/10/2026",
+      consentimiento_origen: "Formulario web",
+    }),
+    ejemplo({
+      nombre: "Pedro Ruiz",
+      telefono: "910 00 00 00",
+      organizacion: "Construcciones Ruiz SL",
+      cargo: "Gerente",
+      sector: "Construcción",
+      web: "construccionesruiz.example",
+      origen_datos: "Web corporativa",
+    }),
+  ]);
+}
+
 export function ImportarWizard() {
   const [paso, setPaso] = useState<Paso>("subir");
   const [archivo, setArchivo] = useState<string>("");
@@ -156,7 +180,8 @@ export function ImportarWizard() {
             <FileUpIcon className="size-8 text-muted-foreground" />
             <span className="font-medium">Arrastra un CSV o pulsa para elegirlo</span>
             <span className="text-sm text-muted-foreground">
-              Separado por comas o punto y coma. Columnas: nombre, teléfono, email, consentimiento… (máx. {MAX_FILAS} filas)
+              Separado por comas o punto y coma. Columnas: nombre, teléfono, email, consentimiento… y, para llamadas a
+              empresas, empresa, cargo, sector, web y origen de los datos (máx. {MAX_FILAS} filas)
             </span>
             <input
               ref={inputRef}
@@ -169,6 +194,11 @@ export function ImportarWizard() {
               }}
             />
           </label>
+          <div>
+            <Button type="button" variant="outline" size="sm" onClick={() => descargar("plantilla-contactos.csv", plantillaCsv())}>
+              Descargar plantilla
+            </Button>
+          </div>
           {errorAlert}
         </CardContent>
       </Card>
@@ -258,6 +288,15 @@ export function ImportarWizard() {
             ))}
           </div>
 
+          {resumen.sinDatosB2b > 0 && (mapeo.organizacion || mapeo.origen_datos) && (
+            <Alert>
+              <AlertDescription>
+                {resumen.sinDatosB2b} contactos válidos no tienen empresa u origen de los datos. Se importarán, pero si la
+                campaña es B2B no se les podrá llamar hasta completarlos.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {resumen.sinConsentimiento > 0 && (
             <Alert>
               <AlertDescription>
@@ -314,7 +353,7 @@ export function ImportarWizard() {
               </label>
               <label className="flex items-center gap-2">
                 <input type="radio" name="modo" checked={modo === "completar"} onChange={() => setModo("completar")} />
-                Completar solo los datos que les falten (email, notas, consentimiento)
+                Completar solo los datos que les falten (email, notas, consentimiento y datos de empresa)
               </label>
             </fieldset>
           )}

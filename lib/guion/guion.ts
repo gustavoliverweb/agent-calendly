@@ -18,6 +18,8 @@ export const MARCADORES = {
   nombre: "nombre de la persona a la que se llama",
   negocio: "nombre del negocio",
   agente: "nombre del agente",
+  empresa: "empresa del contacto (llamadas B2B)",
+  cargo: "cargo del contacto (llamadas B2B)",
 } as const;
 
 export const APARTADOS = [
@@ -135,12 +137,19 @@ export function montarGuion(g: Montable): string {
   return partes.join("\n\n");
 }
 
-/** Primer mensaje con los marcadores sustituidos, para una llamada concreta. */
+/**
+ * Primer mensaje con los marcadores sustituidos, para una llamada concreta.
+ * {empresa} y {cargo} quedan vacíos si el contacto no los tiene.
+ */
 export function renderPrimerMensaje(
   plantilla: string,
-  valores: { nombre: string; negocio: string; agente: string },
+  valores: { nombre: string; negocio: string; agente: string; empresa?: string | null; cargo?: string | null },
 ): string {
-  return plantilla.replace(/\{\s*(nombre|negocio|agente)\s*\}/g, (_, k: keyof typeof valores) => valores[k].trim());
+  return plantilla
+    .replace(/\{\s*(nombre|negocio|agente|empresa|cargo)\s*\}/g, (_, k: keyof typeof valores) => (valores[k] ?? "").trim())
+    .replace(/\s+([,.?!])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 export type GuionLlamada = {
@@ -156,15 +165,21 @@ export type GuionLlamada = {
  * ElevenLabs usa {{negocio}}, {{nombre_agente}}, {{guion_negocio}} y el
  * primer mensaje es {{primer_mensaje}}.
  */
-export function variablesGuion(guion: GuionLlamada, nombreContacto: string) {
+export function variablesGuion(
+  guion: GuionLlamada,
+  contacto: string | { nombre: string; organizacion?: string | null; cargo?: string | null },
+) {
+  const c = typeof contacto === "string" ? { nombre: contacto } : contacto;
   return {
     negocio: guion.negocio_nombre,
     nombre_agente: guion.nombre_agente,
     guion_negocio: guion.texto,
     primer_mensaje: renderPrimerMensaje(guion.primer_mensaje, {
-      nombre: nombreContacto,
+      nombre: c.nombre,
       negocio: guion.negocio_nombre,
       agente: guion.nombre_agente,
+      empresa: "organizacion" in c ? c.organizacion : null,
+      cargo: "cargo" in c ? c.cargo : null,
     }),
   };
 }

@@ -9,7 +9,9 @@ import { lineaDeEmpresa } from "@/lib/telefono";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fechaMadrid, partesMadrid } from "@/lib/time/madrid";
+import { instruccionesModo, type ModoLlamada } from "@/lib/guion/modo";
 import { leerConfiguracion } from "./config";
+import { motivoCampana } from "./config-form";
 import { procesarEventosPendientes } from "./post-call";
 import { describirFranjas, estaEnFranja } from "./window";
 
@@ -23,6 +25,7 @@ export type MotivoRechazo =
   | "no_encontrado"
   | "no_llamar"
   | "sin_consentimiento"
+  | "sin_datos_b2b"
   | "fuera_de_franja"
   | "concurrencia"
   | "llamada_activa"
@@ -67,7 +70,7 @@ export async function lanzarLlamada(opciones: {
 
   const { data: contacto } = await supabase
     .from("contactos")
-    .select("id, nombre, telefono, email, estado, consentimiento")
+    .select("id, nombre, telefono, email, estado, consentimiento, organizacion, cargo, origen_datos")
     .eq("id", opciones.contactoId)
     .eq("empresa_id", opciones.empresaId)
     .maybeSingle();
@@ -75,11 +78,19 @@ export async function lanzarLlamada(opciones: {
   if (contacto.estado === "no_llamar") {
     return { ok: false, motivo: "no_llamar", mensaje: "El contacto ha pedido no ser llamado." };
   }
-  if (config.tipo_campana === "comercial" && !contacto.consentimiento) {
+  const motivoCamp = motivoCampana(config.tipo_campana, contacto);
+  if (motivoCamp === "sin_consentimiento") {
     return {
       ok: false,
-      motivo: "sin_consentimiento",
+      motivo: motivoCamp,
       mensaje: "Sin consentimiento registrado no se puede hacer una llamada comercial.",
+    };
+  }
+  if (motivoCamp === "sin_datos_b2b") {
+    return {
+      ok: false,
+      motivo: motivoCamp,
+      mensaje: "En una campaña B2B el contacto necesita su empresa y el origen de sus datos (edítalo en su ficha).",
     };
   }
   const linea = await lineaDeEmpresa(opciones.empresaId);
@@ -153,7 +164,14 @@ export async function lanzarLlamada(opciones: {
   return { ok: true, llamadaId, conversationId: r.conversationId };
 }
 
-type ContactoLlamada = { id: string; nombre: string; telefono: string; email: string | null };
+type ContactoLlamada = {
+  id: string;
+  nombre: string;
+  telefono: string;
+  email: string | null;
+  organizacion?: string | null;
+  cargo?: string | null;
+};
 
 /**
  * Variables dinámicas de una conversación: las del contacto y la llamada
@@ -165,8 +183,10 @@ export function variablesLlamada(opciones: {
   contacto: ContactoLlamada;
   guion: GuionLlamada;
   ahora: Date;
+  /** b2b si la campaña de la empresa es B2B (llamadas a empresas). */
+  modo: ModoLlamada;
 }): VariablesDinamicas {
-  const { llamadaId, contacto, guion, ahora } = opciones;
+  const { llamadaId, contacto, guion, ahora, modo } = opciones;
   return {
     nombre: contacto.nombre,
     llamada_id: llamadaId,
@@ -175,7 +195,12 @@ export function variablesLlamada(opciones: {
     email: contacto.email ?? "",
     tiene_email: Boolean(contacto.email),
     ahora_madrid: ahoraEnTexto(ahora),
-    ...variablesGuion(guion, contacto.nombre),
+    // Siempre presentes (vacías si no aplican): ElevenLabs falla si el prompt usa una variable que no llega.
+    modo_llamada: modo,
+    empresa_contacto: contacto.organizacion ?? "",
+    cargo_contacto: contacto.cargo ?? "",
+    instrucciones_modo: instruccionesModo(modo, contacto),
+    ...variablesGuion(guion, contacto),
   };
 }
 
@@ -196,13 +221,13 @@ export async function iniciarConversacion(opciones: {
 
   let conversacion;
   try {
-    const guion = await guionDeLlamada(supabase, llamadaId);
+    const [guion, extra] = await Promise.all([guionDeLlamada(supabase, llamadaId), datosModo(llamadaId)]);
     // crear_llamada y el motor de lotes no crean llamadas sin guion.
     if (!guion) throw new Error("la llamada no tiene guion");
     conversacion = await llamadaSaliente(
       opciones.phoneNumberId,
       contacto.telefono,
-      variablesLlamada({ llamadaId, contacto, guion, ahora }),
+      variablesLlamada({ llamadaId, contacto: { ...contacto, ...extra.contacto }, guion, ahora, modo: extra.modo }),
       { vozId: guion.voz_id },
     );
   } catch (e) {
@@ -231,6 +256,24 @@ export async function iniciarConversacion(opciones: {
   });
 
   return { ok: true, conversationId: conversacion.conversationId };
+}
+
+/** Modo de la campaña de la empresa y datos B2B del contacto de una llamada. */
+export async function datosModo(
+  llamadaId: string,
+): Promise<{ modo: ModoLlamada; contacto: { organizacion: string | null; cargo: string | null } }> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("llamadas")
+    .select("empresa_id, contactos (organizacion, cargo)")
+    .eq("id", llamadaId)
+    .single();
+  if (error || !data) throw new Error(`llamada no encontrada: ${error?.message}`);
+  const config = await leerConfiguracion(supabase, data.empresa_id);
+  return {
+    modo: config.tipo_campana === "b2b" ? "b2b" : "b2c",
+    contacto: { organizacion: data.contactos?.organizacion ?? null, cargo: data.contactos?.cargo ?? null },
+  };
 }
 
 async function precalentarCalendly(llamadaId: string) {

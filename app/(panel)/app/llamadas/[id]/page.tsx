@@ -25,6 +25,11 @@ const DATOS: Record<string, string> = {
   momento_rellamada: "Cuándo rellamar",
   pide_no_llamar: "Pide no ser llamado",
   email_confirmado: "Email confirmado",
+  hablo_con_decisor: "Habló con quien decide",
+  nombre_contacto: "Persona indicada",
+  cargo_contacto: "Cargo",
+  telefono_directo: "Teléfono directo",
+  mejor_momento: "Mejor momento para llamar",
 };
 
 export default function LlamadaPage({ params }: PageProps<"/app/llamadas/[id]">) {

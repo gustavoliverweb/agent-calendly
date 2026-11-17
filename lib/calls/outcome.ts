@@ -12,6 +12,8 @@ export type Clasificacion =
   | "no_llamar"
   | "sin_respuesta"
   | "buzon"
+  | "pasado_a_otra_persona"
+  | "decisor_no_disponible"
   | "otro";
 
 /** Lo que el agente recoge en "data collection" (IDs configurados en ElevenLabs). */
@@ -21,6 +23,12 @@ export type DatosRecogidos = {
   pide_rellamada?: boolean;
   momento_rellamada?: string;
   pide_no_llamar?: boolean;
+  // Llamadas B2B (plan SaaS §5).
+  hablo_con_decisor?: boolean;
+  nombre_contacto?: string;
+  cargo_contacto?: string;
+  telefono_directo?: string;
+  mejor_momento?: string;
 };
 
 export type EventoLlamada =
@@ -74,7 +82,10 @@ const ESTADOS_REINTENTABLES: ContactoEstado[] = ["pendiente", "llamado", "no_con
  * 2. se reservó cita → cita_agendada
  * 3. no le interesa → no_interesado
  * 4. no contestó / buzón → intentos+1; agotados los reintentos → no_contesta
- * 5. habló sin resultado → llamado (+ seguimiento si pidió rellamada)
+ * 5. B2B: no habló con quien decide → seguimiento con lo que dieron
+ *    (pasado a otra persona si dieron un nombre o un teléfono directo; si no,
+ *    decisor no disponible)
+ * 6. habló sin resultado → llamado (+ seguimiento si pidió rellamada)
  */
 export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
   const estadoLlamada: LlamadaEstado =
@@ -127,6 +138,19 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
 
   // Si ya tenía cita de antes (llamada de seguimiento), no se le baja de estado.
   const estado: ContactoEstado = ctx.contactoEstado === "cita_agendada" ? "cita_agendada" : "llamado";
+
+  if (datos.hablo_con_decisor === false) {
+    const pasado = Boolean(datos.nombre_contacto || datos.telefono_directo);
+    return {
+      llamada: { estado: estadoLlamada, clasificacion: pasado ? "pasado_a_otra_persona" : "decisor_no_disponible" },
+      contacto: {
+        tipo: "actualizar",
+        campos: { estado, intentos: 0, requiere_seguimiento: true, seguimiento_motivo: motivoB2b(pasado, datos) },
+      },
+      sinRespuesta: false,
+      reintentosAgotados: false,
+    };
+  }
   if (datos.pide_rellamada) {
     const momento = datos.momento_rellamada?.trim();
     return {
@@ -150,6 +174,17 @@ export function decidirResultado(ev: EventoLlamada, ctx: Contexto): Decision {
     sinRespuesta: false,
     reintentosAgotados: false,
   };
+}
+
+/** "pase: Ana López (gerente) · tel. +34… · mejor momento: martes" (máx. 200). */
+function motivoB2b(pasado: boolean, d: DatosRecogidos): string {
+  const persona = [d.nombre_contacto, d.cargo_contacto ? `(${d.cargo_contacto})` : null].filter(Boolean).join(" ");
+  const partes = [
+    pasado ? `pase${persona ? `: ${persona}` : ""}` : "decisor no disponible",
+    d.telefono_directo ? `tel. ${d.telefono_directo}` : null,
+    d.mejor_momento ? `mejor momento: ${d.mejor_momento}` : null,
+  ].filter(Boolean);
+  return partes.join(" · ").slice(0, 200);
 }
 
 export type CambioItem = {
@@ -209,6 +244,11 @@ export function leerDatosRecogidos(resultados: unknown): DatosRecogidos {
     pide_rellamada: aBooleano(valor("pide_rellamada")),
     momento_rellamada: aTexto(valor("momento_rellamada")),
     pide_no_llamar: aBooleano(valor("pide_no_llamar")),
+    hablo_con_decisor: aBooleano(valor("hablo_con_decisor")),
+    nombre_contacto: aTexto(valor("nombre_contacto"))?.slice(0, 120),
+    cargo_contacto: aTexto(valor("cargo_contacto"))?.slice(0, 120),
+    telefono_directo: aTexto(valor("telefono_directo"))?.slice(0, 40),
+    mejor_momento: aTexto(valor("mejor_momento"))?.slice(0, 120),
   };
 }
 

@@ -45,8 +45,16 @@ export type FilaValidada = {
     consentimiento_fecha: string | null;
     consentimiento_origen: string | null;
     notas: string | null;
+    organizacion: string | null;
+    cargo: string | null;
+    sector: string | null;
+    web: string | null;
+    origen_datos: string | null;
   };
 };
+
+/** Recorta al tope de la BD: un valor largo no debe tumbar el lote entero. */
+const recortar = (v: string | undefined, max: number) => clean(v)?.slice(0, max) ?? null;
 
 /**
  * Valida y normaliza filas de importación. Se usa igual en el navegador
@@ -94,12 +102,22 @@ export function validarFilas(filas: FilaEntrada[], existentes: ReadonlySet<strin
         consentimiento_fecha: consentimiento ? fecha : null,
         consentimiento_origen: clean(original.consentimiento_origen),
         notas: clean(original.notas),
+        organizacion: recortar(original.organizacion, 200),
+        cargo: recortar(original.cargo, 120),
+        sector: recortar(original.sector, 120),
+        web: recortar(original.web, 300),
+        origen_datos: recortar(original.origen_datos, 300),
       },
     };
   });
 }
 
-export type Resumen = Record<EstadoFila, number> & { total: number; sinConsentimiento: number };
+export type Resumen = Record<EstadoFila, number> & {
+  total: number;
+  sinConsentimiento: number;
+  /** Válidos sin empresa u origen de los datos: no se les puede llamar en una campaña B2B. */
+  sinDatosB2b: number;
+};
 
 export function resumir(filas: FilaValidada[]): Resumen {
   const r: Resumen = {
@@ -110,10 +128,12 @@ export function resumir(filas: FilaValidada[]): Resumen {
     duplicado_en_archivo: 0,
     duplicado_en_bd: 0,
     sinConsentimiento: 0,
+    sinDatosB2b: 0,
   };
   for (const f of filas) {
     r[f.estado]++;
     if (f.estado === "valido" && f.avisos.includes("sin_consentimiento")) r.sinConsentimiento++;
+    if (f.estado === "valido" && (!f.contacto.organizacion || !f.contacto.origen_datos)) r.sinDatosB2b++;
   }
   return r;
 }

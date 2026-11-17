@@ -29,7 +29,7 @@ async function Formulario() {
   const supabase = await createClient();
   const [config, { data: emp }] = await Promise.all([
     leerConfiguracion(supabase, empresa.id),
-    supabase.from("empresas").select("max_concurrencia_contratada").eq("id", empresa.id).single(),
+    supabase.from("empresas").select("max_concurrencia_contratada, b2b_habilitado").eq("id", empresa.id).single(),
   ]);
   const inicial = {
     max_concurrencia: config.max_concurrencia,
@@ -51,6 +51,7 @@ async function Formulario() {
         key={JSON.stringify(inicial)}
         inicial={inicial}
         maxContratada={emp?.max_concurrencia_contratada ?? 1}
+        b2bHabilitado={emp?.b2b_habilitado ?? false}
       />
     </div>
   );

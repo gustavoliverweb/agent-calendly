@@ -42,6 +42,7 @@ export const MOTIVO_ITEM: Record<string, string> = {
   no_llamar: "Pidió no ser llamado",
   cita_agendada: "Ya tiene cita",
   sin_consentimiento: "Sin consentimiento",
+  sin_datos_b2b: "Sin empresa u origen de los datos (B2B)",
   en_otro_lote: "Ya está en otro lote activo",
   lote_cancelado: "Lote cancelado",
   no_contesta: "No contesta (sin más reintentos)",

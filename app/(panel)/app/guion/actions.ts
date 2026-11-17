@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
-import { variablesLlamada } from "@/lib/calls/launch";
+import { datosModo, variablesLlamada } from "@/lib/calls/launch";
 import { urlFirmadaConversacion } from "@/lib/elevenlabs/client";
 import { getEmpresaActual } from "@/lib/empresa";
 import { guionFormSchema, montarGuion, type GuionForm } from "@/lib/guion/guion";
@@ -138,7 +138,7 @@ export async function iniciarPrueba(guionId: string, contactoId: string): Promis
     supabase.from("guiones").select(COLUMNAS_GUION_LLAMADA).eq("id", guionId).eq("empresa_id", empresa.id).maybeSingle(),
     supabase
       .from("contactos")
-      .select("id, nombre, telefono, email")
+      .select("id, nombre, telefono, email, organizacion, cargo")
       .eq("id", contactoId)
       .eq("empresa_id", empresa.id)
       .maybeSingle(),
@@ -158,6 +158,7 @@ export async function iniciarPrueba(guionId: string, contactoId: string): Promis
     return { error: mensaje || "No se ha podido preparar la prueba." };
   }
 
+  const { modo } = await datosModo(llamadaId);
   let signedUrl: string;
   try {
     signedUrl = await urlFirmadaConversacion();
@@ -178,7 +179,7 @@ export async function iniciarPrueba(guionId: string, contactoId: string): Promis
   return {
     llamadaId,
     signedUrl,
-    variables: variablesLlamada({ llamadaId, contacto, guion, ahora: new Date() }),
+    variables: variablesLlamada({ llamadaId, contacto, guion, ahora: new Date(), modo }),
     vozId: guion.voz_id,
   };
 }

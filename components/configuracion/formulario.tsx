@@ -19,7 +19,16 @@ type Valores = Omit<ConfiguracionForm, "franjas" | "festivos"> & { franjas: Fran
 
 const fechaLarga = new Intl.DateTimeFormat("es-ES", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
-export function FormularioConfiguracion({ inicial, maxContratada }: { inicial: Valores; maxContratada: number }) {
+export function FormularioConfiguracion({
+  inicial,
+  maxContratada,
+  b2bHabilitado,
+}: {
+  inicial: Valores;
+  maxContratada: number;
+  /** El proveedor permite campañas B2B a esta empresa. */
+  b2bHabilitado: boolean;
+}) {
   const [v, setV] = useState<Valores>(inicial);
   const [festivo, setFestivo] = useState("");
   const [pending, startTransition] = useTransition();
@@ -253,33 +262,45 @@ export function FormularioConfiguracion({ inicial, maxContratada }: { inicial: V
           <CardTitle>Tipo de campaña</CardTitle>
           <CardDescription>Decisión legal: cambiarla afecta a quién se puede llamar.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de campaña">
+        <CardContent className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Tipo de campaña">
           {(
             [
               ["comercial", "Comercial", "Solo se llama a contactos con consentimiento registrado."],
               ["no_comercial", "No comercial", "Relación previa con el contacto (p. ej. clientes). No exige consentimiento."],
+              [
+                "b2b",
+                "A empresas (B2B)",
+                b2bHabilitado || inicial.tipo_campana === "b2b"
+                  ? "Llamadas a otras empresas por interés legítimo. Exige la empresa del contacto y el origen de sus datos; el agente pide que le pasen con la persona indicada."
+                  : "Llamadas a otras empresas. Disponible cuando lo activemos para tu cuenta, tras la revisión legal.",
+              ],
             ] as const
-          ).map(([valor, titulo, texto]) => (
-            <label
-              key={valor}
-              className={cn(
-                "flex cursor-pointer gap-3 rounded-lg border p-3 text-sm transition-colors",
-                v.tipo_campana === valor ? "border-primary bg-muted/50" : "hover:bg-muted/30",
-              )}
-            >
-              <input
-                type="radio"
-                name="tipo_campana"
-                className="mt-0.5 accent-primary"
-                checked={v.tipo_campana === valor}
-                onChange={() => set("tipo_campana", valor)}
-              />
-              <span>
-                <span className="font-medium">{titulo}</span>
-                <span className="mt-0.5 block text-muted-foreground">{texto}</span>
-              </span>
-            </label>
-          ))}
+          ).map(([valor, titulo, texto]) => {
+            const bloqueado = valor === "b2b" && !b2bHabilitado && inicial.tipo_campana !== "b2b";
+            return (
+              <label
+                key={valor}
+                className={cn(
+                  "flex gap-3 rounded-lg border p-3 text-sm transition-colors",
+                  bloqueado ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                  v.tipo_campana === valor ? "border-primary bg-muted/50" : !bloqueado && "hover:bg-muted/30",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="tipo_campana"
+                  className="mt-0.5 accent-primary"
+                  checked={v.tipo_campana === valor}
+                  disabled={bloqueado}
+                  onChange={() => set("tipo_campana", valor)}
+                />
+                <span>
+                  <span className="font-medium">{titulo}</span>
+                  <span className="mt-0.5 block text-muted-foreground">{texto}</span>
+                </span>
+              </label>
+            );
+          })}
         </CardContent>
       </Card>
 

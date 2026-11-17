@@ -138,6 +138,11 @@ export function TablaContactos({ contactos }: { contactos: ContactoFila[] }) {
                   {c.requiere_seguimiento && (
                     <span className="ml-2 text-xs text-amber-700 dark:text-amber-300">• seguimiento</span>
                   )}
+                  {(c.organizacion || c.cargo) && (
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {[c.cargo, c.organizacion].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="tabular-nums whitespace-nowrap">{formatPhone(c.telefono)}</TableCell>
                 <TableCell className="hidden text-muted-foreground lg:table-cell">{c.email ?? "—"}</TableCell>

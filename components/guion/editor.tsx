@@ -95,6 +95,8 @@ export function EditorGuion({
     nombre: "Laura",
     negocio: form.negocio_nombre || "{negocio}",
     agente: form.nombre_agente || "{agente}",
+    empresa: "Construcciones Ruiz",
+    cargo: "gerente",
   });
 
   const set = <K extends keyof GuionForm>(k: K, valor: GuionForm[K]) => setForm((f) => ({ ...f, [k]: valor }));
@@ -198,7 +200,7 @@ export function EditorGuion({
                 </ul>
               ) : (
                 <p className="rounded-lg bg-muted/60 p-3 text-sm">
-                  <span className="text-muted-foreground">Así sonaría si llamara a Laura: </span>
+                  <span className="text-muted-foreground">Así sonaría si llamara a Laura (gerente de Construcciones Ruiz): </span>
                   {saludo}
                 </p>
               )}

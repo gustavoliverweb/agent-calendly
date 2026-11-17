@@ -37,7 +37,7 @@ export async function listarContactos(f: FiltrosContactos) {
   let query = supabase
     .from("contactos")
     .select(
-      "id, nombre, telefono, email, estado, consentimiento, intentos, ultimo_intento_en, requiere_seguimiento, creado_en",
+      "id, nombre, telefono, email, estado, consentimiento, intentos, ultimo_intento_en, requiere_seguimiento, creado_en, organizacion, cargo",
       { count: "exact" },
     )
     .eq("empresa_id", empresa.id)
@@ -50,7 +50,7 @@ export async function listarContactos(f: FiltrosContactos) {
 
   const q = escaparBusqueda(f.q);
   if (q) {
-    const condiciones = [`nombre.ilike.*${q}*`, `email.ilike.*${q}*`];
+    const condiciones = [`nombre.ilike.*${q}*`, `email.ilike.*${q}*`, `organizacion.ilike.*${q}*`];
     const digitos = q.replace(/\D/g, "");
     if (digitos.length >= 3) condiciones.push(`telefono.ilike.*${digitos}*`);
     query = query.or(condiciones.join(","));

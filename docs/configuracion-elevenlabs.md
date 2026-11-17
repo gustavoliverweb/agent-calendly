@@ -43,6 +43,10 @@ Sin línea, la empresa puede preparar todo y probar el agente en el navegador; l
 | `primer_mensaje` | `Hola, ¿hablo con María?…` | First message, ya montado |
 | `guion_negocio` | texto de varios apartados | Datos del negocio: a qué se dedica, motivo, oferta, cita, preguntas, objeciones y límites |
 | `ahora_madrid` | `viernes 23 de octubre de 2026, 11:15` | Interpretar "mañana", "el jueves"… |
+| `modo_llamada` | `b2c` / `b2b` | `b2b` si la campaña de la empresa es «A empresas (B2B)» |
+| `empresa_contacto` | `Construcciones Ruiz SL` o vacío | Empresa del contacto (B2B) |
+| `cargo_contacto` | `Gerente` o vacío | Cargo de la persona a la que se quiere llegar (B2B) |
+| `instrucciones_modo` | varias líneas | Reglas fijas según el modo: con B2B, cómo tratar a recepción, volver a presentarse si le pasan con otra persona, qué anotar si no está quien decide (`lib/guion/modo.ts`) |
 
 Las mismas para las llamadas por teléfono y para **Probar en el navegador** (sección Guion del panel). En el tester web de ElevenLabs hay que dar valores de prueba a todas: `pnpm llamada-prueba` las imprime.
 
@@ -76,6 +80,11 @@ La app lee estos identificadores exactos. Si no existen, la llamada se clasifica
 | `momento_rellamada` | string | Cuándo pidió que le llamen ("el jueves por la tarde") |
 | `pide_no_llamar` | boolean | ¿Pidió no volver a ser llamado? |
 | `email_confirmado` | string | Email que confirmó durante la llamada |
+| `hablo_con_decisor` | boolean | B2B: ¿llegó a hablar con la persona indicada o con quien decide? (false si solo habló con recepción u otra persona). Vacío en llamadas a particulares |
+| `nombre_contacto` | string | B2B: nombre de la persona a la que remitieron, si se lo dieron |
+| `cargo_contacto` | string | B2B: cargo de esa persona |
+| `telefono_directo` | string | B2B: teléfono directo o extensión que le dieron |
+| `mejor_momento` | string | B2B: cuándo es mejor volver a llamar a quien decide |
 
 Criterio de evaluación recomendado: `cita_agendada` — "¿Se reservó con éxito una cita mediante la tool agendar?" (solo informativo; la app usa lo que guardó la tool).
 
@@ -87,7 +96,8 @@ La primera regla que se cumple gana (plan §7.2):
 2. Se reservó cita → **cita agendada**.
 3. `interes = no` → **no interesado**.
 4. No contestó, ocupado, buzón o nadie habló → suma un intento; agotados `1 + max_reintentos` → **no contesta**.
-5. Habló sin resultado → **llamado**; si pidió rellamada, queda marcado para seguimiento con el momento indicado.
+5. B2B, `hablo_con_decisor = false` → **pasado a otra persona** (si dieron un nombre o un teléfono directo) o **decisor no disponible**; el contacto queda en seguimiento con esos datos ("pase: Ana López (gerente) · tel. … · mejor momento: …").
+6. Habló sin resultado → **llamado**; si pidió rellamada, queda marcado para seguimiento con el momento indicado.
 
 ## Ajustes recomendados del agente
 

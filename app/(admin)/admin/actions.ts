@@ -306,3 +306,29 @@ export async function quitarDominio(id: string): Promise<{ error?: string }> {
   refresh();
   return {};
 }
+
+// --- Modo B2B -------------------------------------------------------------------
+
+/**
+ * Permite (o no) campañas B2B a una empresa. Al retirarlo, si la empresa
+ * estaba en B2B pasa a comercial (la opción más restrictiva): sus lotes
+ * siguen, pero ya exigen consentimiento.
+ */
+export async function cambiarB2b(empresaId: string, habilitado: boolean): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  if (!z.uuid().safeParse(empresaId).success) return { error: "Empresa no válida." };
+  const supabase = createAdminClient();
+  if (!habilitado) {
+    const { error } = await supabase
+      .from("configuracion")
+      .update({ tipo_campana: "comercial" })
+      .eq("empresa_id", empresaId)
+      .eq("tipo_campana", "b2b");
+    if (error) return { error: "No se ha podido cambiar el tipo de campaña de la empresa." };
+  }
+  const { error } = await supabase.from("empresas").update({ b2b_habilitado: habilitado === true }).eq("id", empresaId);
+  if (error) return { error: "No se ha podido guardar." };
+  await auditar(admin.id, empresaId, habilitado ? "habilitar_b2b" : "deshabilitar_b2b", "empresa");
+  refresh();
+  return {};
+}
