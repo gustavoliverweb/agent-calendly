@@ -84,14 +84,9 @@ Si la empresa quiere entrar por su dominio, sigue el runbook → [Dominio propio
 ## 6. Suspender o dar de baja
 
 - **Suspender** (ficha en `/admin`): la empresa no puede hacer ninguna llamada, pero sigue pudiendo consultar su panel y descargar su uso. **Reactivar** la deja como estaba.
-- **Baja definitiva**: con el contrato de encargo terminado, exporta lo que la empresa necesite (sus contactos salen en CSV desde Contactos → Exportar, y el uso desde Uso) y borra sus datos. Hoy no hay botón de borrado de empresa, así que se hace desde Supabase → SQL Editor:
-
-  1. Borra antes sus conversaciones en ElevenLabs (runbook → [Derecho de supresión](runbook.md#derecho-de-supresión-rgpd)) y quita su dominio de Render.
-  2. Ejecuta:
-
-     ```sql
-     delete from public.empresas where slug = 'identificador-de-la-empresa';
-     ```
-
-     El borrado en cascada elimina su configuración, miembros, contactos, llamadas, citas, lotes, guiones, conexión de Calendly, dominios y auditoría.
-  3. Los usuarios no se borran, porque pueden pertenecer a otra empresa. Si alguno ya no pertenece a ninguna, bórralo en Supabase → Authentication → Users.
+- **Baja definitiva** (ficha en `/admin` → Baja definitiva): con el contrato de encargo terminado.
+  1. Antes: si aún no has facturado el mes, descarga su uso en `/admin/uso`. Si la empresa quiere sus contactos, que los exporte desde Contactos → Exportar.
+  2. Suspende la empresa. Solo entonces se activa **Borrar empresa**, y hay que escribir su identificador para confirmar. No deja borrar si tiene llamadas en curso, ni la empresa principal (usa el Calendly y la línea de entorno, y la siguiente empresa los heredaría).
+  3. La app desconecta su Calendly (borra el webhook y revoca el acceso), quita sus dominios de Render (si está la API configurada), borra sus conversaciones en ElevenLabs y sus imágenes de marca, y después borra la empresa. La cascada elimina su configuración, miembros, contactos, llamadas, citas, lotes, guiones, conexión de Calendly, dominios y auditoría.
+  4. Lo que no se haya podido limpiar fuera se muestra al terminar como pendiente (runbook → [Baja de una empresa](runbook.md#baja-de-una-empresa)).
+  5. Las cuentas de usuario no se borran, porque pueden pertenecer a otra empresa. Al terminar se listan las que se han quedado sin ninguna: si no se van a reutilizar, bórralas en Supabase → Authentication → Users.

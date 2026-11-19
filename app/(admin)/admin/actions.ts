@@ -14,6 +14,7 @@ import {
   type ResultadoInvitacion,
   type Rol,
 } from "@/lib/equipo";
+import { borrarEmpresa, type ResultadoBaja } from "@/lib/baja-empresa";
 import { olvidarDominios } from "@/lib/dominio/contexto";
 import { validarDominioPropio } from "@/lib/dominio/hosts";
 import { anadirDominioRender, borrarDominioRender, comprobarDns, RenderError, verificarDominioRender } from "@/lib/dominio/render";
@@ -102,6 +103,18 @@ export async function renombrarEmpresa(empresaId: string, nombre: string): Promi
   await auditar(admin.id, empresaId, "renombrar_empresa", "empresa");
   refresh();
   return {};
+}
+
+/**
+ * Baja definitiva. Solo con la empresa suspendida y escribiendo su
+ * identificador; los detalles y comprobaciones están en lib/baja-empresa.ts.
+ */
+export async function borrarEmpresaAdmin(empresaId: string, confirmacion: string): Promise<ResultadoBaja> {
+  const admin = await requireAdminPlataforma();
+  const datos = z.object({ empresaId: z.uuid(), confirmacion: z.string().max(100) }).safeParse({ empresaId, confirmacion });
+  if (!datos.success) return { error: "Datos no válidos" };
+  // Sin refresh(): la ficha ya no existe; el cliente vuelve a /admin.
+  return borrarEmpresa(datos.data.empresaId, datos.data.confirmacion, admin.id);
 }
 
 // Equipo de cualquier empresa. La ficha de /admin las enlaza con el id de la

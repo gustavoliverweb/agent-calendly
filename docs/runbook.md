@@ -117,6 +117,26 @@ curl -X DELETE https://api.elevenlabs.io/v1/convai/conversations/CONVERSATION_ID
 
 **La cita de Calendly no se toca**, porque es un evento real del calendario del negocio. Si el interesado pide borrarla, se cancela desde Calendly. Para borrar sus datos de invitado, Calendly solo ofrece la API de borrado de datos en el plan Enterprise; en otro plan, hay que pedírselo a su soporte.
 
+## Baja de una empresa
+
+Se hace desde la ficha de la empresa en `/admin` (guía de alta, punto 6). Cada baja queda en la auditoría de la plataforma, con `empresa_id` nulo para que no la borre la cascada, junto con lo borrado, el uso mensual agregado (sin datos personales, para facturar) y lo que quedó pendiente:
+
+```sql
+select creado_en, detalle->>'slug' as empresa, detalle->'borrados' as borrados,
+       detalle->'uso_mensual' as uso, detalle->'pendientes' as pendientes
+  from public.auditoria
+ where accion = 'borrar_empresa'
+ order by creado_en desc;
+```
+
+Pendientes posibles:
+
+- **`conversaciones`**: IDs que ElevenLabs no borró. Se borran como en [Derecho de supresión](#derecho-de-supresión-rgpd).
+- **`dominios`**: quítalos en Render → Settings → Custom Domains.
+- **`calendly: true`**: no se pudo revocar el acceso. Los avisos que siga enviando su webhook se ignoran (la empresa ya no existe), pero conviene pedir a la empresa que quite la app en Calendly → Integraciones.
+
+Si el borrado falla a mitad, se puede repetir: los pasos externos ya hechos no fallan la segunda vez.
+
 ## Retención de datos
 
 Cada noche, con la tarea programada, se borran:

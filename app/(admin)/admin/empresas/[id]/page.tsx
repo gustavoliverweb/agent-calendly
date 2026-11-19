@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { AccionesEmpresa } from "@/components/admin/acciones-empresa";
+import { BorrarEmpresa } from "@/components/admin/borrar-empresa";
+import { empresaPrincipalId } from "@/lib/empresa";
 import { LineaLimites, type NumeroDisponible } from "@/components/admin/linea-limites";
 import { listarNumeros } from "@/lib/elevenlabs/client";
 import { elevenLabsAgenteEnv, isConfigured, renderEnv } from "@/lib/env";
@@ -42,12 +44,13 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = createAdminClient();
-  const [{ data: resumen }, { data: miembros, error }, { data: tarifa }, { data: dominios }, direccion] = await Promise.all([
+  const [{ data: resumen }, { data: miembros, error }, { data: tarifa }, { data: dominios }, direccion, principal] = await Promise.all([
     supabase.rpc("resumen_empresas"),
     supabase.rpc("equipo_empresa", { p_empresa_id: id }),
     supabase.from("empresas").select("precio_minuto, b2b_habilitado, configuracion (tipo_campana)").eq("id", id).maybeSingle(),
     supabase.from("dominios_empresa").select("id, dominio, estado, detalle, comprobado_en").eq("empresa_id", id).order("creado_en"),
     origenEmpresa(id),
+    empresaPrincipalId(),
   ]);
   const empresa = resumen?.find((e) => e.id === id);
   if (!empresa) notFound();
@@ -142,6 +145,16 @@ async function Detalle({ params }: Pick<PageProps<"/admin/empresas/[id]">, "para
           }}
         />
       </section>
+
+      <BorrarEmpresa
+        empresaId={empresa.id}
+        nombre={empresa.nombre}
+        slug={empresa.slug}
+        estado={empresa.estado}
+        esPrincipal={empresa.id === principal}
+        contactos={empresa.contactos}
+        miembros={empresa.miembros}
+      />
     </div>
   );
 }
