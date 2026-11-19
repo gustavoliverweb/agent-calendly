@@ -9,7 +9,8 @@ import {
   type Contexto,
   type EventoLlamada,
 } from "@/lib/calls/outcome";
-import { webhookElevenLabsSchema } from "@/lib/calls/post-call";
+import { respaldoAplicable, webhookElevenLabsSchema } from "@/lib/calls/post-call";
+import { agendarSchema } from "@/lib/tools/agendar";
 import { contarItems } from "@/lib/lotes/estados";
 import { describirFranjas, estaEnFranja, franjasSchema, siguienteInicioFranja, type Calendario } from "@/lib/calls/window";
 
@@ -312,5 +313,37 @@ describe("esquema del webhook de ElevenLabs", () => {
       data: { conversation_id: "c1", failure_reason: "busy" },
     });
     expect(r.success).toBe(true);
+  });
+});
+
+describe("webhook localizado solo por llamada_id (pruebas en el navegador)", () => {
+  const telefono = { type: "post_call_transcription", data: { conversation_id: "conv_b", metadata: { phone_call: { call_result: "success" } } } };
+  const navegador = { type: "post_call_transcription", data: { conversation_id: "conv_b", metadata: {} } };
+
+  it("no se aplica a una llamada que ya tiene otra conversación", () => {
+    expect(respaldoAplicable({ conversation_id: "conv_a", es_prueba: false }, telefono)).toBe(false);
+    expect(respaldoAplicable({ conversation_id: "conv_a", es_prueba: true }, navegador)).toBe(false);
+  });
+
+  it("una llamada telefónica solo acepta el webhook de una llamada telefónica", () => {
+    expect(respaldoAplicable({ conversation_id: null, es_prueba: false }, navegador)).toBe(false);
+    expect(respaldoAplicable({ conversation_id: null, es_prueba: false }, telefono)).toBe(true);
+    expect(respaldoAplicable({ conversation_id: null, es_prueba: false }, { type: "call_initiation_failure", data: { conversation_id: "conv_b" } })).toBe(true);
+  });
+
+  it("una prueba sin conversación registrada acepta su webhook", () => {
+    expect(respaldoAplicable({ conversation_id: null, es_prueba: true }, navegador)).toBe(true);
+    expect(respaldoAplicable({ conversation_id: "conv_b", es_prueba: true }, navegador)).toBe(true);
+  });
+});
+
+describe("conversation_id de las tools", () => {
+  const base = { start_time: "2026-12-01T10:00:00Z", email: "a@b.es", llamada_id: "11111111-1111-4111-8111-111111111111" };
+
+  it("se lee si tiene forma de id y se ignora si no (agente sin configurar)", () => {
+    expect(agendarSchema.parse({ ...base, conversation_id: "conv_01abc-XYZ" }).conversation_id).toBe("conv_01abc-XYZ");
+    expect(agendarSchema.parse({ ...base, conversation_id: "{{system__conversation_id}}" }).conversation_id).toBeUndefined();
+    expect(agendarSchema.parse({ ...base, conversation_id: "" }).conversation_id).toBeUndefined();
+    expect(agendarSchema.parse(base).conversation_id).toBeUndefined();
   });
 });

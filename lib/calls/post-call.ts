@@ -59,7 +59,24 @@ export type ResultadoPostLlamada =
   | { resultado: "llamada_desconocida" | "ignorado" };
 
 const COLUMNAS_LLAMADA =
-  "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id, lote_id, empresa_id";
+  "id, contacto_id, estado, clasificacion, cita_agendada, finalizada_en, conversation_id, lote_id, empresa_id, es_prueba";
+
+/**
+ * Si un webhook localizado solo por la variable llamada_id puede aplicarse a
+ * esa llamada. En las pruebas en el navegador las variables las envía el
+ * navegador del usuario, así que llamada_id no es de fiar por sí solo:
+ * - si la llamada ya tiene otra conversación, no;
+ * - una llamada telefónica solo acepta un webhook de una llamada telefónica
+ *   (metadata.phone_call), nunca el de una conversación en el navegador.
+ */
+export function respaldoAplicable(
+  llamada: { conversation_id: string | null; es_prueba: boolean },
+  w: Pick<WebhookElevenLabs, "type" | "data">,
+): boolean {
+  if (llamada.conversation_id && llamada.conversation_id !== w.data.conversation_id) return false;
+  if (!llamada.es_prueba && w.type === "post_call_transcription" && !w.data.metadata?.phone_call) return false;
+  return true;
+}
 
 export type LlamadaAbierta = {
   id: string;
@@ -100,6 +117,13 @@ export async function procesarWebhookElevenLabs(w: WebhookElevenLabs): Promise<R
   const llamadaIdVar = d.conversation_initiation_client_data?.dynamic_variables?.llamada_id;
   if (!llamada && typeof llamadaIdVar === "string" && z.uuid().safeParse(llamadaIdVar).success) {
     ({ data: llamada } = await supabase.from("llamadas").select(COLUMNAS_LLAMADA).eq("id", llamadaIdVar).maybeSingle());
+    if (llamada && !respaldoAplicable(llamada, w)) {
+      log.warn("webhook elevenlabs: llamada_id no corresponde a esta conversación", {
+        llamada_id: llamada.id,
+        conversation_id: d.conversation_id,
+      });
+      return { resultado: "llamada_desconocida" };
+    }
   }
   if (!llamada) return { resultado: "llamada_desconocida" };
   await aplicarEvento(llamada, w);

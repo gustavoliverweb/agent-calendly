@@ -2,8 +2,9 @@ import "server-only";
 import { z } from "zod";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { conversationIdTool } from "./llamada";
 
-export const noLlamarSchema = z.object({ llamada_id: z.uuid() });
+export const noLlamarSchema = z.object({ llamada_id: z.uuid(), conversation_id: conversationIdTool });
 
 const MENSAJE = "Entendido. No volveremos a llamarle. Despídete amablemente sin insistir.";
 

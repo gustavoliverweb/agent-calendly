@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import { conexionCalendly, type ConexionCalendly } from "@/lib/calendly/conexion";
 import { empresaPrincipalId } from "@/lib/empresa";
 import { log } from "@/lib/log";
@@ -45,4 +46,27 @@ export async function marcarSeguimiento(llamadaId: string, motivo: string) {
     .update({ requiere_seguimiento: true, seguimiento_motivo: motivo })
     .eq("id", llamada.contacto_id);
   if (error) log.error("no se pudo marcar seguimiento", { llamada_id: llamadaId, motivo, code: error.code });
+}
+
+/**
+ * `conversation_id` de la tool: ElevenLabs lo rellena con system__conversation_id,
+ * que el navegador no puede cambiar (al contrario que llamada_id en las pruebas
+ * en el navegador). Si falta o no tiene forma de id, se ignora: así las tools
+ * siguen funcionando mientras el agente no lo envíe.
+ */
+export const conversationIdTool = z.preprocess(
+  (v) => (typeof v === "string" && /^[\w-]{1,100}$/.test(v) ? v : undefined),
+  z.string().optional(),
+);
+
+/**
+ * True si la llamada ya está asociada a otra conversación: la tool viene de
+ * una conversación que no es la suya y no debe tocarla.
+ */
+export async function esDeOtraConversacion(llamadaId: string, conversationId: string | undefined): Promise<boolean> {
+  if (!conversationId) return false;
+  const { data } = await createAdminClient().from("llamadas").select("conversation_id").eq("id", llamadaId).maybeSingle();
+  const otra = Boolean(data?.conversation_id && data.conversation_id !== conversationId);
+  if (otra) log.warn("tool: llamada_id de otra conversación", { llamada_id: llamadaId, conversation_id: conversationId });
+  return otra;
 }

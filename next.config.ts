@@ -28,7 +28,8 @@ const csp = [
   `connect-src 'self' ${elevenLabs}${supabase ? ` ${supabase} ${supabase.replace(/^http/, "ws")}` : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  // Conectar Calendly: la confirmación es un formulario que redirige a su pantalla de autorización.
+  "form-action 'self' https://calendly.com https://*.calendly.com",
   "frame-ancestors 'none'",
 ].join("; ");
 

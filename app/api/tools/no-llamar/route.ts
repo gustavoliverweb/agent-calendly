@@ -1,4 +1,5 @@
 import { leerPeticionTool, respuestaTool } from "@/lib/tools/http";
+import { esDeOtraConversacion } from "@/lib/tools/llamada";
 import { excluirDesdeLlamada, noLlamarSchema } from "@/lib/tools/no-llamar";
 
 /** Tool del agente: "no me llaméis más". Exclusión inmediata y permanente. */
@@ -8,6 +9,13 @@ export async function POST(req: Request) {
   if (peticion instanceof Response) return peticion;
   if ("invalido" in peticion) {
     // Sin llamada_id no se puede excluir aquí; lo hará el análisis post-llamada.
+    return respuestaTool("no_llamar", inicio, {
+      ok: true,
+      mensaje: "Entendido. No volveremos a llamarle. Despídete amablemente sin insistir.",
+    });
+  }
+  if (await esDeOtraConversacion(peticion.datos.llamada_id, peticion.datos.conversation_id)) {
+    // No es su llamada: no se excluye a nadie, pero el agente responde igual (nunca insiste).
     return respuestaTool("no_llamar", inicio, {
       ok: true,
       mensaje: "Entendido. No volveremos a llamarle. Despídete amablemente sin insistir.",

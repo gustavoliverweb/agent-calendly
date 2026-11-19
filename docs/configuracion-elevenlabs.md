@@ -56,9 +56,11 @@ Cabecera `Authorization: Bearer <TOOLS_SECRET>` (guardada como secreto en Eleven
 
 | Tool | URL | Parámetros |
 |---|---|---|
-| `disponibilidad` | `https://<dominio>/api/tools/disponibilidad` | `desde`, `hasta` (opcionales, `AAAA-MM-DD`), `llamada_id` ← variable dinámica |
-| `agendar` | `https://<dominio>/api/tools/agendar` | `start_time` (el exacto de un hueco), `nombre`, `email`, `llamada_id` ← variable dinámica |
-| `no_llamar` | `https://<dominio>/api/tools/no-llamar` | `llamada_id` ← variable dinámica |
+| `disponibilidad` | `https://<dominio>/api/tools/disponibilidad` | `desde`, `hasta` (opcionales, `AAAA-MM-DD`), `llamada_id` ← variable dinámica, `conversation_id` ← `system__conversation_id` |
+| `agendar` | `https://<dominio>/api/tools/agendar` | `start_time` (el exacto de un hueco), `nombre`, `email`, `llamada_id` ← variable dinámica, `conversation_id` ← `system__conversation_id` |
+| `no_llamar` | `https://<dominio>/api/tools/no-llamar` | `llamada_id` ← variable dinámica, `conversation_id` ← `system__conversation_id` |
+
+**`conversation_id`** (recomendado): en cada tool, un parámetro de tipo *dynamic variable* con el valor `system__conversation_id`. En las pruebas en el navegador, las variables como `llamada_id` las envía el navegador del usuario y se podrían cambiar; la variable de sistema la pone ElevenLabs. Con ella, una tool que llega con el `llamada_id` de otra conversación no consulta ni reserva nada, ni excluye a nadie. Sin el parámetro, las tools funcionan igual, pero sin esa comprobación.
 
 Detalle de respuestas y errores: [configuracion-calendly.md](configuracion-calendly.md#tools-para-elevenlabs-fase-4).
 

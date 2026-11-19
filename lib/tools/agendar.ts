@@ -8,7 +8,7 @@ import { formatearHueco } from "@/lib/calendly/format-es";
 import { isValidEmail } from "@/lib/contacts/parse";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { conexionParaTool, marcarSeguimiento } from "./llamada";
+import { conexionParaTool, conversationIdTool, marcarSeguimiento } from "./llamada";
 
 const texto = z.preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string());
 
@@ -19,6 +19,7 @@ export const agendarSchema = z.object({
   // Llega como variable dinámica; el teléfono fiable es el del contacto en BD.
   telefono: texto.optional(),
   llamada_id: z.uuid(),
+  conversation_id: conversationIdTool,
 });
 
 export type RespuestaAgendar =

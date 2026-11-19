@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { conversationIdTool } from "./llamada";
 import { calcularRango, obtenerDisponibilidad } from "@/lib/calendly/availability";
 import { CalendlyError } from "@/lib/calendly/client";
 import type { ConexionCalendly } from "@/lib/calendly/conexion";
@@ -13,6 +14,7 @@ export const disponibilidadSchema = z.object({
   desde: z.preprocess(vacioComoNada, z.string().optional()),
   hasta: z.preprocess(vacioComoNada, z.string().optional()),
   llamada_id: z.preprocess(vacioComoNada, z.uuid().optional()),
+  conversation_id: conversationIdTool,
 });
 
 export type RespuestaDisponibilidad = {

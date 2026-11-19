@@ -8,7 +8,7 @@ import {
   validarDominioPropio,
 } from "@/lib/dominio/hosts";
 import { estiloMarca, textoSobre } from "@/lib/dominio/estilo";
-import { firmarPuente, verificarPuente, VIGENCIA_PUENTE_MS } from "@/lib/calendly/puente";
+import { consumirPuente, firmarPuente, verificarPuente, VIGENCIA_PUENTE_MS } from "@/lib/calendly/puente";
 import { formatoImagen, marcaFormSchema } from "@/lib/dominio/marca-form";
 
 const env = { APP_URL: "https://agent-calendly.onrender.com", PLATFORM_HOSTS: "admin.cadencia.test, otro.test", BASE_DOMAIN: "cadencia.app" };
@@ -87,6 +87,14 @@ describe("puente de Calendly OAuth", () => {
     expect(verificarPuente(`${cambiado}.${sello}`, clave, 2_000)).toBeNull();
     expect(verificarPuente(`${cuerpo}`, clave, 2_000)).toBeNull();
     expect(verificarPuente(null, clave)).toBeNull();
+  });
+
+  it("cada token solo sirve una vez hasta que caduca", () => {
+    const t = firmarPuente(datos, clave, 1_000);
+    const caduca = 1_000 + VIGENCIA_PUENTE_MS;
+    expect(consumirPuente(t, caduca, 2_000)).toBe(true);
+    expect(consumirPuente(t, caduca, 3_000)).toBe(false);
+    expect(consumirPuente(firmarPuente(datos, clave, 1_500), caduca + 500, 3_000)).toBe(true);
   });
 });
 

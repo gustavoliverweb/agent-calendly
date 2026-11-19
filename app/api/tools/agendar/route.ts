@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { agendarCita, agendarSchema } from "@/lib/tools/agendar";
 import { leerPeticionTool, respuestaTool } from "@/lib/tools/http";
-import { marcarEnCurso } from "@/lib/tools/llamada";
+import { esDeOtraConversacion, marcarEnCurso } from "@/lib/tools/llamada";
 
 /** Tool del agente: reserva el hueco elegido en Calendly. */
 export async function POST(req: Request) {
@@ -19,7 +19,14 @@ export async function POST(req: Request) {
     });
   }
 
-  const { llamada_id } = peticion.datos;
+  const { llamada_id, conversation_id } = peticion.datos;
+  if (await esDeOtraConversacion(llamada_id, conversation_id)) {
+    return respuestaTool("agendar", inicio, {
+      ok: false,
+      error: "llamada_no_encontrada",
+      mensaje: "No he podido reservar ahora. Ofrece que le volvamos a llamar para cerrar la cita.",
+    });
+  }
   after(() => marcarEnCurso(llamada_id));
   const respuesta = await agendarCita(peticion.datos);
   return respuestaTool("agendar", inicio, respuesta, { llamada_id });

@@ -47,3 +47,18 @@ export function verificarPuente(token: string | null, encryptionKey: string, aho
     return null;
   }
 }
+
+/**
+ * Marca un token como usado: cada enlace sirve para empezar una sola conexión.
+ * En memoria de la instancia (Render ejecuta una); el token caduca igualmente
+ * a los pocos minutos. Devuelve false si ya se había usado.
+ */
+const usados = new Map<string, number>();
+
+export function consumirPuente(token: string, caduca: number, ahora = Date.now()): boolean {
+  for (const [t, x] of usados) if (x <= ahora) usados.delete(t);
+  const sello = token.split(".")[1] ?? token;
+  if (usados.has(sello)) return false;
+  usados.set(sello, caduca);
+  return true;
+}
