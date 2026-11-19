@@ -97,9 +97,37 @@ export async function invitarAEmpresa(empresaId: string, email: string, rol: Rol
 }
 
 /**
+ * Si el propietario de una empresa puede generar un enlace de acceso para
+ * ese miembro. Sin correo, el enlace inicia sesión como el usuario, así que
+ * solo se permite para cuentas que no tienen nada fuera de esta empresa: un
+ * usuario de otra empresa o un administrador de la plataforma recupera su
+ * acceso él mismo o con el proveedor. Si no, un propietario podría invitar a
+ * cualquier cuenta existente y entrar como ella.
+ */
+export async function accesoPermitidoAPropietario(empresaId: string, usuarioId: string): Promise<{ error?: string }> {
+  const admin = createAdminClient();
+  const [otras, plataforma] = await Promise.all([
+    admin.from("miembros").select("empresa_id", { count: "exact", head: true }).eq("usuario_id", usuarioId).neq("empresa_id", empresaId),
+    admin.from("admins_plataforma").select("usuario_id", { count: "exact", head: true }).eq("usuario_id", usuarioId),
+  ]);
+  if (otras.error || plataforma.error) {
+    log.error("acceso: comprobar cuentas", { code: otras.error?.code ?? plataforma.error?.code });
+    return { error: "No se ha podido generar el enlace. Inténtalo de nuevo." };
+  }
+  if ((otras.count ?? 0) > 0 || (plataforma.count ?? 0) > 0) {
+    return {
+      error:
+        "Esta persona también usa la plataforma con otra empresa, así que no puedes generarle un enlace de acceso. Que recupere su contraseña desde la pantalla de acceso o lo pida al proveedor.",
+    };
+  }
+  return {};
+}
+
+/**
  * Enlace para que un miembro elija (o restablezca) su contraseña: la
  * invitación caducó o se perdió, o la olvidó y no hay correo propio para
- * "recuperar contraseña".
+ * "recuperar contraseña". Si lo pide un propietario, antes hay que pasar
+ * por accesoPermitidoAPropietario.
  */
 export async function nuevoAcceso(empresaId: string, usuarioId: string): Promise<ResultadoEnlace> {
   const admin = createAdminClient();

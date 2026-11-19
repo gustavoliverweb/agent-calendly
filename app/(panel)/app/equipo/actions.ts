@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 import { getEmpresaActual } from "@/lib/empresa";
 import {
+  accesoPermitidoAPropietario,
   cambiarRolMiembro,
   emailSchema,
   invitarAEmpresa,
@@ -83,5 +84,7 @@ export async function generarAcceso(usuarioId: string): Promise<ResultadoEnlace>
   const quien = await comoPropietario();
   if (!quien) return NO_PROPIETARIO;
   if (!z.uuid().safeParse(usuarioId).success) return { error: "Datos no válidos" };
+  const permitido = await accesoPermitidoAPropietario(quien.empresa.id, usuarioId);
+  if (permitido.error) return { error: permitido.error };
   return nuevoAcceso(quien.empresa.id, usuarioId);
 }

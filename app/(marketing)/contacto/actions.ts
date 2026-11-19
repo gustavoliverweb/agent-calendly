@@ -10,6 +10,11 @@ export type EnvioState = { ok?: boolean; error?: string };
 
 /** 5 solicitudes por IP cada 10 minutos. */
 const limitar = crearLimitador({ max: 5, ventanaMs: 10 * 60_000 });
+/**
+ * Tope total por instancia: la IP sale de X-Forwarded-For, que el cliente
+ * puede rellenar. Con esto, aunque falsee la IP, no puede llenar la tabla.
+ */
+const limitarTotal = crearLimitador({ max: 60, ventanaMs: 60 * 60_000 });
 
 /**
  * Formulario de contacto de la web. Sin proveedor de email, la solicitud
@@ -21,7 +26,9 @@ export async function enviarSolicitud(_prev: EnvioState, formData: FormData): Pr
 
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "desconocida";
-  if (!limitar(ip)) return { error: "Has enviado varias solicitudes seguidas. Espera unos minutos y vuelve a intentarlo." };
+  if (!limitar(ip) || !limitarTotal("todas")) {
+    return { error: "Has enviado varias solicitudes seguidas. Espera unos minutos y vuelve a intentarlo." };
+  }
 
   const parsed = solicitudSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };

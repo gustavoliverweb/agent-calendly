@@ -69,6 +69,16 @@ describe("crearLimitador", () => {
     expect(limitar("b", 20)).toBe(true);
     expect(limitar("a", 1000)).toBe(true);
   });
+
+  it("inundarlo con claves nuevas no desbloquea a quien ya está bloqueado", () => {
+    const limitar = crearLimitador({ max: 2, ventanaMs: 60_000 });
+    ["a", "a", "a"].forEach((k) => limitar(k, 0));
+    expect(limitar("a", 1)).toBe(false);
+    for (let i = 0; i < 6000; i++) limitar(`ip-${i}`, 2);
+    expect(limitar("a", 3)).toBe(false);
+    // Las claves nuevas siguen funcionando.
+    expect(limitar("nueva", 4)).toBe(true);
+  });
 });
 
 describe("rutaInterna (redirección tras login)", () => {

@@ -70,10 +70,20 @@ Para cambiar el secreto: `select vault.update_secret((select id from vault.secre
 
 ```bash
 curl -X POST https://TU-DOMINIO/api/cron/despachar -H "Authorization: Bearer $CRON_SECRET"
-# {"lanzadas":0,"fallidas":0,"reconciliadas":0,"lotesCerrados":0,"parado":"fuera_de_franja"}
+# {"lanzadas":0,"fallidas":0,"reconciliadas":0,"lotesCerrados":0,"paradas":{"<id de empresa>":"fuera_de_franja"}}
 ```
 
-`parado` indica por qué no se ha lanzado nada: `pausa_global`, `fuera_de_franja` o `sin_configurar` (faltan las claves de ElevenLabs).
+Una pasada recorre todas las empresas activas. `paradas` dice, por empresa, por qué no se lanzó nada:
+
+| Motivo | Significado |
+|---|---|
+| `pausa_global` | La empresa tiene la pausa global activada |
+| `fuera_de_franja` | Fuera de su horario de llamadas o es festivo |
+| `sin_guion` | No tiene un guion activo |
+| `sin_linea` | No tiene línea asignada ni puede usar la de entorno |
+| `sin_configurar` | Faltan las claves de ElevenLabs en el servidor |
+
+Si una empresa no aparece en `paradas`, su pasada se hizo con normalidad (aunque no tuviera nada en cola). Una vez al día la respuesta incluye además `purga`, con lo que borró la retención.
 
 ## Reglas de los lotes
 
