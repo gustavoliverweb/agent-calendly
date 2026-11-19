@@ -1,7 +1,9 @@
 import "server-only";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
+import type { Tables } from "@/lib/supabase/database.types";
 import { isContactoEstado, type ContactoEstado } from "./estados";
+import { COLUMNAS_EXPORTACION, MAX_EXPORTACION, type ContactoExportable } from "./exportar";
 
 export const POR_PAGINA = 50;
 
@@ -31,19 +33,16 @@ function escaparBusqueda(q: string) {
   return q.replace(/[,()*%\\:"']/g, " ").trim();
 }
 
-export async function listarContactos(f: FiltrosContactos) {
-  const empresa = await getEmpresaActual();
-  const supabase = await createClient();
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Consulta de contactos de la empresa con los filtros del listado aplicados. */
+function consultaFiltrada(supabase: Supabase, empresaId: string, columnas: string, f: Omit<FiltrosContactos, "pagina">) {
   let query = supabase
     .from("contactos")
-    .select(
-      "id, nombre, telefono, email, estado, consentimiento, intentos, ultimo_intento_en, requiere_seguimiento, creado_en, organizacion, cargo",
-      { count: "exact" },
-    )
-    .eq("empresa_id", empresa.id)
+    .select(columnas, { count: "exact" })
+    .eq("empresa_id", empresaId)
     .order("creado_en", { ascending: false })
-    .order("id")
-    .range((f.pagina - 1) * POR_PAGINA, f.pagina * POR_PAGINA - 1);
+    .order("id");
 
   if (f.estados.length) query = query.in("estado", f.estados);
   if (f.seguimiento) query = query.eq("requiere_seguimiento", true);
@@ -55,10 +54,61 @@ export async function listarContactos(f: FiltrosContactos) {
     if (digitos.length >= 3) condiciones.push(`telefono.ilike.*${digitos}*`);
     query = query.or(condiciones.join(","));
   }
+  return query;
+}
 
-  const { data, count, error } = await query;
+const COLUMNAS_LISTADO =
+  "id, nombre, telefono, email, estado, consentimiento, intentos, ultimo_intento_en, requiere_seguimiento, creado_en, organizacion, cargo";
+
+export async function listarContactos(f: FiltrosContactos) {
+  const empresa = await getEmpresaActual();
+  const supabase = await createClient();
+  const { data, count, error } = await consultaFiltrada(supabase, empresa.id, COLUMNAS_LISTADO, f)
+    .range((f.pagina - 1) * POR_PAGINA, f.pagina * POR_PAGINA - 1)
+    .overrideTypes<ContactoListado[], { merge: false }>();
   if (error) throw new Error(`No se pudieron cargar los contactos: ${error.message}`);
   return { contactos: data, total: count ?? 0 };
+}
+
+type ContactoListado = Pick<
+  Tables<"contactos">,
+  | "id"
+  | "nombre"
+  | "telefono"
+  | "email"
+  | "estado"
+  | "consentimiento"
+  | "intentos"
+  | "ultimo_intento_en"
+  | "requiere_seguimiento"
+  | "creado_en"
+  | "organizacion"
+  | "cargo"
+>;
+
+/**
+ * Todos los contactos que cumplen los filtros, para exportar. Lee por páginas
+ * de 1000 (el máximo de PostgREST) hasta MAX_EXPORTACION; `truncado` indica
+ * que había más.
+ */
+export async function contactosParaExportar(
+  supabase: Supabase,
+  empresaId: string,
+  f: Omit<FiltrosContactos, "pagina">,
+): Promise<{ contactos: ContactoExportable[]; total: number; truncado: boolean }> {
+  const PAGINA = 1000;
+  const contactos: ContactoExportable[] = [];
+  let total = 0;
+  for (let desde = 0; desde < MAX_EXPORTACION; desde += PAGINA) {
+    const { data, count, error } = await consultaFiltrada(supabase, empresaId, COLUMNAS_EXPORTACION, f)
+      .range(desde, Math.min(desde + PAGINA, MAX_EXPORTACION) - 1)
+      .overrideTypes<ContactoExportable[], { merge: false }>();
+    if (error) throw new Error(`No se pudieron leer los contactos: ${error.message}`);
+    total = count ?? total;
+    contactos.push(...data);
+    if (data.length < PAGINA) break;
+  }
+  return { contactos, total, truncado: total > contactos.length };
 }
 
 export type ContactoFila = Awaited<ReturnType<typeof listarContactos>>["contactos"][number];

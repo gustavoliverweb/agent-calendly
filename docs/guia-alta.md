@@ -84,7 +84,7 @@ Si la empresa quiere entrar por su dominio, sigue el runbook → [Dominio propio
 ## 6. Suspender o dar de baja
 
 - **Suspender** (ficha en `/admin`): la empresa no puede hacer ninguna llamada, pero sigue pudiendo consultar su panel y descargar su uso. **Reactivar** la deja como estaba.
-- **Baja definitiva**: con el contrato de encargo terminado, exporta lo que la empresa necesite y borra sus datos. Hoy no hay botón de borrado de empresa, así que se hace desde Supabase → SQL Editor:
+- **Baja definitiva**: con el contrato de encargo terminado, exporta lo que la empresa necesite (sus contactos salen en CSV desde Contactos → Exportar, y el uso desde Uso) y borra sus datos. Hoy no hay botón de borrado de empresa, así que se hace desde Supabase → SQL Editor:
 
   1. Borra antes sus conversaciones en ElevenLabs (runbook → [Derecho de supresión](runbook.md#derecho-de-supresión-rgpd)) y quita su dominio de Render.
   2. Ejecuta:

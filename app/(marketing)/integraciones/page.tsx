@@ -54,6 +54,7 @@ const INTEGRACIONES: Integracion[] = [
       "El panel reconoce las columnas habituales (nombre, teléfono, email, consentimiento…) aunque se llamen distinto.",
       "Revisas la vista previa: teléfonos no válidos, duplicados y contactos sin consentimiento, antes de importar.",
       "Hasta 5.000 contactos por archivo. Para campañas a empresas, hay una plantilla descargable.",
+      "Y de vuelta: exporta tus contactos, con el resultado de las llamadas, para llevarlos a tu CRM.",
     ],
     necesitas: "Un archivo CSV con al menos nombre y teléfono. La guía de la lista de contactos explica el resto.",
   },
@@ -77,7 +78,7 @@ const PREGUNTAS: [string, string][] = [
   ],
   [
     "¿Se conecta con mi CRM?",
-    "Hoy los contactos entran por CSV, que cualquier CRM sabe exportar. Si necesitas una integración directa, cuéntanos cuál usas: nos ayuda a decidir las siguientes.",
+    "Hoy los contactos entran y salen por CSV, que cualquier CRM sabe importar y exportar. Si necesitas una integración directa, cuéntanos cuál usas: nos ayuda a decidir las siguientes.",
   ],
   [
     "¿Necesito cambiar de operador de teléfono?",

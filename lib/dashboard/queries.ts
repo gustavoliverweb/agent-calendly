@@ -4,6 +4,9 @@ import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { madridAUtc, partesMadrid } from "@/lib/time/madrid";
 import { importe } from "@/lib/uso/calculo";
+import { conexionCalendly } from "@/lib/calendly/conexion";
+import { lineaDeEmpresa } from "@/lib/telefono";
+import type { EstadoPrimerosPasos } from "./primeros-pasos";
 
 /** Sin latido del despacho en este tiempo, la tarea programada no está corriendo. */
 export const LATIDO_MAX_MS = 5 * 60_000;
@@ -155,4 +158,36 @@ export async function ultimoDespacho(): Promise<Date | null> {
   const supabase = await createClient();
   const { data } = await supabase.from("latidos").select("en").eq("nombre", "despacho").maybeSingle();
   return data ? new Date(data.en) : null;
+}
+
+/** Datos para la tarjeta «Primeros pasos» del Resumen. */
+export async function leerPrimerosPasos(): Promise<EstadoPrimerosPasos> {
+  const empresa = await getEmpresaActual();
+  const supabase = await createClient();
+  const contar = (tabla: "contactos" | "lotes") =>
+    supabase.from(tabla).select("id", { count: "exact", head: true }).eq("empresa_id", empresa.id);
+
+  const [emp, config, prueba, contactos, lotes, calendly, linea] = await Promise.all([
+    supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).single(),
+    supabase.from("configuracion").select("actualizado_por").eq("empresa_id", empresa.id).single(),
+    supabase
+      .from("llamadas")
+      .select("id", { count: "exact", head: true })
+      .eq("empresa_id", empresa.id)
+      .eq("es_prueba", true),
+    contar("contactos"),
+    contar("lotes"),
+    conexionCalendly(empresa.id).catch(() => null),
+    lineaDeEmpresa(empresa.id),
+  ]);
+
+  return {
+    guionActivo: emp.data?.guion_activo_id != null,
+    hayPrueba: (prueba.count ?? 0) > 0,
+    calendly: calendly?.origen ?? null,
+    configuracionRevisada: config.data?.actualizado_por != null,
+    contactos: contactos.count ?? 0,
+    linea: linea != null,
+    lotes: lotes.count ?? 0,
+  };
 }

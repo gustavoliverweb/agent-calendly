@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
-import { CheckCircle2Icon, CircleAlertIcon, CircleDashedIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  ChevronRightIcon,
+  CircleAlertIcon,
+  CircleDashedIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { PageHeader } from "@/components/panel/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +18,13 @@ import {
   LATIDO_MAX_MS,
   leerAvisos,
   leerKpis,
+  leerPrimerosPasos,
   llamadasEnCurso,
   seguimientos,
   ultimoDespacho,
   type Kpis,
 } from "@/lib/dashboard/queries";
+import { construirPasos } from "@/lib/dashboard/primeros-pasos";
 import { getEmpresaActual } from "@/lib/empresa";
 import { createClient } from "@/lib/supabase/server";
 import { conexionCalendly } from "@/lib/calendly/conexion";
@@ -43,6 +51,9 @@ export default function ResumenPage() {
       <div className="flex flex-col gap-6">
         <Suspense fallback={null}>
           <Avisos />
+        </Suspense>
+        <Suspense fallback={null}>
+          <PrimerosPasos />
         </Suspense>
         <Suspense fallback={<div className="h-56 animate-pulse rounded-xl bg-muted" />}>
           <Indicadores />
@@ -91,6 +102,74 @@ async function Avisos() {
         </li>
       ))}
     </ul>
+  );
+}
+
+async function PrimerosPasos() {
+  const [empresa, estado] = await Promise.all([getEmpresaActual(), leerPrimerosPasos()]);
+  const pasos = construirPasos(estado);
+  const hechos = pasos.filter((p) => p.hecho).length;
+  if (hechos === pasos.length) return null;
+  const esPropietario = empresa.rol === "propietario";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3">
+          Primeros pasos
+          <span className="text-sm font-normal text-muted-foreground tabular-nums">
+            {hechos} de {pasos.length}
+          </span>
+        </CardTitle>
+        <div
+          className="h-1.5 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label="Progreso de los primeros pasos"
+          aria-valuemin={0}
+          aria-valuemax={pasos.length}
+          aria-valuenow={hechos}
+        >
+          <div className="h-full rounded-full bg-primary" style={{ width: `${(hechos / pasos.length) * 100}%` }} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ol className="grid gap-x-6 sm:grid-cols-2">
+          {pasos.map((p) => {
+            const enlace = p.href && !p.hecho && (esPropietario || !p.soloPropietario) ? p.href : undefined;
+            const contenido = (
+              <>
+                {p.hecho ? (
+                  <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-green-600" aria-label="Hecho" />
+                ) : (
+                  <CircleDashedIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-label="Pendiente" />
+                )}
+                <span className="flex flex-col">
+                  <span className={p.hecho ? "text-muted-foreground line-through" : "font-medium"}>{p.titulo}</span>
+                  {!p.hecho && (
+                    <span className="text-xs text-muted-foreground">
+                      {p.descripcion}
+                      {p.soloPropietario && !esPropietario ? " Lo hace el propietario de la empresa." : ""}
+                    </span>
+                  )}
+                </span>
+                {enlace && <ChevronRightIcon className="mt-0.5 ml-auto size-4 shrink-0 text-muted-foreground" />}
+              </>
+            );
+            return (
+              <li key={p.id} className="border-b py-2.5 text-sm last:border-b-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0">
+                {enlace ? (
+                  <Link href={enlace} className="-mx-2 flex items-start gap-3 rounded-md px-2 hover:bg-muted/60">
+                    {contenido}
+                  </Link>
+                ) : (
+                  <div className="flex items-start gap-3">{contenido}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </CardContent>
+    </Card>
   );
 }
 
