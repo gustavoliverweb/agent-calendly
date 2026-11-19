@@ -1,5 +1,5 @@
 import "server-only";
-import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
+import { elevenLabsAgenteEnv, variablesIncompletas } from "@/lib/env";
 import { ElevenLabsError, obtenerConversacion } from "@/lib/elevenlabs/client";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,6 +21,8 @@ export type ResumenDespacho = {
   purga?: unknown;
   /** Empresas en las que no se lanzó nada y por qué (clave: id de empresa). */
   paradas?: Record<string, MotivoParada>;
+  /** Con "sin_configurar": qué variables de ElevenLabs faltan o no son válidas (solo nombres). */
+  variablesIncompletas?: string;
 };
 
 /** Tras un error de la API, cuándo se vuelve a probar. */
@@ -53,7 +55,12 @@ export async function despachar(ahora = new Date()): Promise<ResumenDespacho> {
       .select("id, guion_activo_id")
       .eq("estado", "activa");
     if (error) throw new Error(`empresas: ${error.message}`);
-    const configurado = isConfigured(elevenLabsAgenteEnv);
+    const incompletas = variablesIncompletas(elevenLabsAgenteEnv);
+    const configurado = incompletas === null;
+    if (incompletas) {
+      resumen.variablesIncompletas = incompletas;
+      log.warn("despacho sin configurar", { variables: incompletas });
+    }
     // Sin reparto (error al calcularlo) la BD sigue aplicando el límite global.
     const cuota = await cuotaPorEmpresa().catch((e) => {
       log.warn("reparto de concurrencia no disponible", { error: e instanceof Error ? e.message : String(e) });

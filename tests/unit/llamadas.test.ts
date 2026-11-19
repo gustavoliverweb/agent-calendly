@@ -347,3 +347,15 @@ describe("conversation_id de las tools", () => {
     expect(agendarSchema.parse(base).conversation_id).toBeUndefined();
   });
 });
+
+describe("variablesIncompletas (diagnóstico del motor)", () => {
+  it("devuelve solo los nombres de las variables que fallan", async () => {
+    const { variablesIncompletas } = await import("@/lib/env");
+    expect(variablesIncompletas(() => ({}))).toBeNull();
+    expect(
+      variablesIncompletas(() => {
+        throw new Error("Configuración incompleta (ElevenLabs (agente)): revisa ELEVENLABS_API_KEY, ELEVENLABS_API_BASE");
+      }),
+    ).toBe("ELEVENLABS_API_KEY, ELEVENLABS_API_BASE");
+  });
+});

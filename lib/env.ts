@@ -121,6 +121,20 @@ export const calendlyOAuthEnv = loader("Calendly OAuth", calendlyOAuthSchema);
 export const appEnv = loader("App", appSchema);
 export const renderEnv = loader("Render", renderSchema);
 
+/**
+ * Nombres (nunca valores) de las variables de un grupo que no pasan la
+ * validación, o null si está completo. Para diagnosticar desde los avisos.
+ */
+export function variablesIncompletas(load: () => unknown): string | null {
+  try {
+    load();
+    return null;
+  } catch (e) {
+    const m = e instanceof Error ? e.message.match(/revisa (.+)$/) : null;
+    return m ? m[1] : "desconocidas";
+  }
+}
+
 /** Indica si un grupo de variables está completo, sin lanzar error. */
 export function isConfigured(load: () => unknown): boolean {
   try {
