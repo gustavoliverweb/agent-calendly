@@ -123,7 +123,27 @@ export function EditorMarca({
   );
 }
 
-function ImagenMarca({ tipo, titulo, url, editable, ayuda }: { tipo: TipoImagen; titulo: string; url: string | null; editable: boolean; ayuda: string }) {
+type AccionesImagen = {
+  subir: (fd: FormData) => Promise<{ error?: string }>;
+  quitar: (tipo: TipoImagen) => Promise<{ error?: string }>;
+};
+
+/** Subir o quitar el logo o el favicon. Por defecto, de la empresa actual; /admin pasa las de la plataforma. */
+export function ImagenMarca({
+  tipo,
+  titulo,
+  url,
+  editable,
+  ayuda,
+  acciones = { subir: subirImagenMarca, quitar: quitarImagenMarca },
+}: {
+  tipo: TipoImagen;
+  titulo: string;
+  url: string | null;
+  editable: boolean;
+  ayuda: string;
+  acciones?: AccionesImagen;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
 
@@ -132,7 +152,7 @@ function ImagenMarca({ tipo, titulo, url, editable, ayuda }: { tipo: TipoImagen;
     fd.set("tipo", tipo);
     fd.set("archivo", archivo);
     startTransition(async () => {
-      const r = await subirImagenMarca(fd);
+      const r = await acciones.subir(fd);
       if (r.error) toast.error(r.error);
       else toast.success(`${titulo} actualizado`);
       if (input.current) input.current.value = "";
@@ -171,7 +191,7 @@ function ImagenMarca({ tipo, titulo, url, editable, ayuda }: { tipo: TipoImagen;
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
-                    const r = await quitarImagenMarca(tipo);
+                    const r = await acciones.quitar(tipo);
                     if (r.error) toast.error(r.error);
                   })
                 }

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PaginaAcceso, metadataAcceso } from "@/components/marca/pagina-acceso";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
 export const generateMetadata = () => metadataAcceso("Sin acceso");
 
@@ -15,9 +15,13 @@ export default function SinEmpresaPage() {
         {(ctx) => (
           <>
             <p className="text-sm text-neutral-500">
-              {ctx.tipo === "empresa"
-                ? `Pide a quien gestiona ${ctx.empresa.marca.nombre} que te invite${ctx.empresa.legal.email ? ` o escribe a ${ctx.empresa.legal.email}` : ""}.`
-                : `Pide a quien gestiona tu empresa que te invite de nuevo, o escríbenos a ${MARCA.email}.`}
+              {ctx.tipo === "empresa" ? (
+                `Pide a quien gestiona ${ctx.empresa.marca.nombre} que te invite${ctx.empresa.legal.email ? ` o escribe a ${ctx.empresa.legal.email}` : ""}.`
+              ) : (
+                <>
+                  Pide a quien gestiona tu empresa que te invite de nuevo, o escríbenos a <EmailPlataforma />.
+                </>
+              )}
             </p>
             <form action="/auth/salir" method="post" className="mt-8">
               <button type="submit" className="text-sm underline underline-offset-4 hover:text-neutral-600">
@@ -29,4 +33,8 @@ export default function SinEmpresaPage() {
       </PaginaAcceso>
     </Suspense>
   );
+}
+
+async function EmailPlataforma() {
+  return <>{(await marcaPlataforma()).email}</>;
 }

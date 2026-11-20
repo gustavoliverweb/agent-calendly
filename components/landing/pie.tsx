@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { DOCUMENTOS_LEGALES } from "@/components/legal/documento-legal";
 import { Logo } from "@/components/marca/logo";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 import { RECURSOS } from "@/lib/contenido/recursos";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
-import { enlaceDemo, MARCA } from "@/lib/marca";
+import { enlaceDemo } from "@/lib/marca";
 
-export function Pie() {
+export async function Pie() {
+  const marca = await marcaPlataforma();
   return (
     <footer data-tema="oscuro" className="border-t border-white/15 bg-tinta-950 px-6 pt-20 pb-10 text-white">
       <div className="mx-auto grid max-w-7xl gap-12 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
         <div>
-          <Logo />
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-white/70">{MARCA.descripcion}</p>
+          <Logo nombre={marca.nombre} logoUrl={marca.logoUrl} />
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-white/70">{marca.descripcion}</p>
         </div>
         <div>
           <p className="text-[15px] font-semibold text-white">Producto</p>
@@ -53,12 +55,12 @@ export function Pie() {
           <ul className="mt-4 flex flex-col gap-2.5 text-sm text-white/75">
             <li><Link href="/login" className="hover:text-white">Acceder al panel</Link></li>
             <li><Link href={enlaceDemo} className="hover:text-white">Solicitar una demo</Link></li>
-            <li><a href={`mailto:${MARCA.email}`} className="hover:text-white">{MARCA.email}</a></li>
+            <li><a href={`mailto:${marca.email}`} className="hover:text-white">{marca.email}</a></li>
           </ul>
         </div>
       </div>
       <div className="mx-auto mt-16 flex max-w-7xl flex-wrap justify-between gap-4 border-t border-white/10 pt-6 text-[14px] text-white/55">
-        <span>© {MARCA.nombre}</span>
+        <span>© {marca.nombre}</span>
         <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">
           {DOCUMENTOS_LEGALES.map((d) => (
             <Link key={d.href} href={d.href} className="hover:text-white">

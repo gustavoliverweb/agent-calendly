@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { DocumentoLegal, metadataLegal } from "@/components/legal/documento-legal";
 import { Dato, Revisar } from "@/components/legal/huecos";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata = metadataLegal("Aviso legal", `Titular y condiciones de uso del sitio web de ${MARCA.nombre}.`);
+export async function generateMetadata() {
+  const marca = await marcaPlataforma();
+  return metadataLegal("Aviso legal", `Titular y condiciones de uso del sitio web de ${marca.nombre}.`);
+}
 
-export default function AvisoLegal() {
+export default async function AvisoLegal() {
+  const marca = await marcaPlataforma();
   return (
     <DocumentoLegal ruta="/aviso-legal" titulo="Aviso legal">
       <h2>1. Titular del sitio web</h2>
       <p>
         En cumplimiento del artículo 10 de la Ley 34/2002, de servicios de la sociedad de la información y de comercio
-        electrónico (LSSI-CE), se informa de los datos del titular de este sitio web y del servicio {MARCA.nombre}:
+        electrónico (LSSI-CE), se informa de los datos del titular de este sitio web y del servicio {marca.nombre}:
       </p>
       <ul>
         <li>
@@ -33,7 +37,7 @@ export default function AvisoLegal() {
 
       <h2>2. Objeto</h2>
       <p>
-        Este sitio web presenta {MARCA.nombre}, un servicio que realiza llamadas salientes con un agente de voz basado en
+        Este sitio web presenta {marca.nombre}, un servicio que realiza llamadas salientes con un agente de voz basado en
         inteligencia artificial, conversa con los contactos que facilita el cliente y reserva citas en su calendario. El
         acceso al panel de control está limitado a los usuarios a los que el titular da de alta.
       </p>

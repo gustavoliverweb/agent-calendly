@@ -50,6 +50,12 @@ async function Empresas() {
           <Link href="/admin/uso" className={buttonVariants({ variant: "outline" })}>
             Uso y facturación
           </Link>
+          <Link href="/admin/voces" className={buttonVariants({ variant: "outline" })}>
+            Voces
+          </Link>
+          <Link href="/admin/marca" className={buttonVariants({ variant: "outline" })}>
+            Marca
+          </Link>
           <NuevaEmpresa />
         </div>
       </PageHeader>

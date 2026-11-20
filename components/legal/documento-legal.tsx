@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ACTUALIZACION_LEGAL, ETIQUETAS, huecosPendientes, legalEsBorrador, TEXTOS_REVISADOS } from "@/lib/legal";
+import { titularVigente } from "@/lib/legal-vigente";
 import { cn } from "@/lib/utils";
 
 export const DOCUMENTOS_LEGALES = [
@@ -13,8 +14,9 @@ export const DOCUMENTOS_LEGALES = [
 type RutaLegal = (typeof DOCUMENTOS_LEGALES)[number]["href"];
 
 /** Metadatos comunes: sin indexar mientras el texto sea un borrador. */
-export function metadataLegal(title: string, description: string): Metadata {
-  return { title, description, ...(legalEsBorrador() ? { robots: { index: false, follow: false } } : {}) };
+export async function metadataLegal(title: string, description: string): Promise<Metadata> {
+  const borrador = legalEsBorrador(await titularVigente());
+  return { title, description, ...(borrador ? { robots: { index: false, follow: false } } : {}) };
 }
 
 // Tipografía del cuerpo sin plugin: los documentos son HTML semántico plano.
@@ -30,8 +32,9 @@ export const cuerpoLegal = cn(
   "[&_td]:border-b [&_td]:border-neutral-200 [&_td]:py-3 [&_td]:pr-4 [&_td]:align-top",
 );
 
-export function DocumentoLegal({ ruta, titulo, children }: { ruta: RutaLegal; titulo: string; children: ReactNode }) {
-  const pendientes = huecosPendientes();
+export async function DocumentoLegal({ ruta, titulo, children }: { ruta: RutaLegal; titulo: string; children: ReactNode }) {
+  const titular = await titularVigente();
+  const pendientes = huecosPendientes(titular);
 
   return (
     <main className="flex-1 bg-white px-6 pt-20 pb-24 text-neutral-950 sm:pt-28 lg:pb-36">
@@ -60,7 +63,7 @@ export function DocumentoLegal({ ruta, titulo, children }: { ruta: RutaLegal; ti
           <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] leading-[1] font-semibold tracking-[-0.03em] text-balance">{titulo}</h1>
           <p className="mt-6 text-sm text-neutral-500">Última actualización: {ACTUALIZACION_LEGAL}</p>
 
-          {legalEsBorrador() && (
+          {legalEsBorrador(titular) && (
             <div role="note" className="mt-10 rounded-2xl border border-dashed border-amber-500 bg-amber-50 p-5 text-sm text-amber-950">
               <p className="font-medium">Borrador: esta página no se indexa hasta completarla.</p>
               {pendientes.length > 0 && (

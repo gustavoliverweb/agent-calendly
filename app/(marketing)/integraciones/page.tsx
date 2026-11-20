@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import { CtaFinal, Hero, Preguntas, Seccion } from "@/components/landing/bloques";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata: Metadata = {
-  title: "Integraciones",
-  description: `Con qué se conecta ${MARCA.nombre}: tu Calendly para reservar citas, la línea SIP de tu operador para llamar desde tu número y archivos CSV para traer tus contactos desde Excel o tu CRM.`,
-  alternates: { canonical: "/integraciones" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Integraciones",
+    description: `Con qué se conecta ${marca.nombre}: tu Calendly para reservar citas, la línea SIP de tu operador para llamar desde tu número y archivos CSV para traer tus contactos desde Excel o tu CRM.`,
+    alternates: { canonical: "/integraciones" },
+  };
+}
 
 type Integracion = {
   nombre: string;

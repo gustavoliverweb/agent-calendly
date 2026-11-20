@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CtaFinal, Hero, Lista, Preguntas, Seccion } from "@/components/landing/bloques";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata: Metadata = {
-  title: "Seguridad y RGPD",
-  description: `Cómo ${MARCA.nombre} cumple el RGPD y la normativa de llamadas comerciales: agente identificado como IA, consentimiento registrado, lista de exclusión, datos en la UE y aislamiento por empresa.`,
-  alternates: { canonical: "/seguridad" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Seguridad y RGPD",
+    description: `Cómo ${marca.nombre} cumple el RGPD y la normativa de llamadas comerciales: agente identificado como IA, consentimiento registrado, lista de exclusión, datos en la UE y aislamiento por empresa.`,
+    alternates: { canonical: "/seguridad" },
+  };
+}
 
 const LLAMADA: [string, string][] = [
   [
@@ -93,7 +96,8 @@ const PREGUNTAS: [string, string][] = [
   ],
 ];
 
-export default function SeguridadPage() {
+export default async function SeguridadPage() {
+  const marca = await marcaPlataforma();
   return (
     <main className="bg-white">
       <Hero
@@ -101,7 +105,7 @@ export default function SeguridadPage() {
         destacado="Respeta a quien no."
         texto={
           <p>
-            {MARCA.nombre} está pensado para cumplir desde la primera llamada: el agente se identifica como IA, solo llama a
+            {marca.nombre} está pensado para cumplir desde la primera llamada: el agente se identifica como IA, solo llama a
             quien puede llamar, en tu horario, y cualquier persona puede pedir que no la llamen más.
           </p>
         }
@@ -150,7 +154,7 @@ export default function SeguridadPage() {
           </div>
           <div>
             <p className="text-[15px] text-white/60">Encargado del tratamiento</p>
-            <h3 className="mt-2 text-[25px] font-semibold tracking-[-0.02em]">{MARCA.nombre}</h3>
+            <h3 className="mt-2 text-[25px] font-semibold tracking-[-0.02em]">{marca.nombre}</h3>
             <p className="mt-3 text-[17px] leading-relaxed text-white/70">
               Trata los datos solo para prestar el servicio, con un contrato de encargo y una lista cerrada de proveedores.
               Los detalles, en la{" "}

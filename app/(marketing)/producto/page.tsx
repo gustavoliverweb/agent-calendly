@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CtaFinal, Dialogo, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata: Metadata = {
-  title: "Producto",
-  description: `Qué hace ${MARCA.nombre}: un agente de voz con IA que llama a tus contactos, conversa con tu guion y reserva la cita en tu Calendly, con un panel para contactos, lotes, llamadas y uso.`,
-  alternates: { canonical: "/producto" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Producto",
+    description: `Qué hace ${marca.nombre}: un agente de voz con IA que llama a tus contactos, conversa con tu guion y reserva la cita en tu Calendly, con un panel para contactos, lotes, llamadas y uso.`,
+    alternates: { canonical: "/producto" },
+  };
+}
 
 /** Lo que hace el agente durante la llamada (las herramientas que usa). */
 const EN_LLAMADA = [
@@ -139,7 +142,8 @@ const PREGUNTAS: [string, string][] = [
   ],
 ];
 
-export default function ProductoPage() {
+export default async function ProductoPage() {
+  const marca = await marcaPlataforma();
   return (
     <main className="bg-white">
       <Hero
@@ -147,7 +151,7 @@ export default function ProductoPage() {
         destacado="Tú solo miras el panel."
         texto={
           <p>
-            {MARCA.nombre} es un agente de voz con inteligencia artificial que llama a tus contactos, les habla con tu guion y
+            {marca.nombre} es un agente de voz con inteligencia artificial que llama a tus contactos, les habla con tu guion y
             reserva la cita en tu Calendly. Todo lo que pasa queda en un panel pensado para equipos pequeños.
           </p>
         }

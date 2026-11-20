@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CtaFinal, Hero, Seccion } from "@/components/landing/bloques";
 import { RECURSOS } from "@/lib/contenido/recursos";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata: Metadata = {
-  title: "Recursos",
-  description: `Guías prácticas para empezar con ${MARCA.nombre}: qué necesitas, cómo escribir el guion del agente y cómo preparar tu lista de contactos.`,
-  alternates: { canonical: "/recursos" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Recursos",
+    description: `Guías prácticas para empezar con ${marca.nombre}: qué necesitas, cómo escribir el guion del agente y cómo preparar tu lista de contactos.`,
+    alternates: { canonical: "/recursos" },
+  };
+}
 
 export default function RecursosPage() {
   return (

@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { Calculadora } from "@/components/landing/calculadora";
 import { CtaFinal, Hero, Preguntas, Seccion } from "@/components/landing/bloques";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata: Metadata = {
-  title: "Calculadora de retorno",
-  description: `Estima cuántas citas, clientes y minutos de conversación saldrían de tus leads con ${MARCA.nombre}, con tus propios números.`,
-  alternates: { canonical: "/calculadora" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Calculadora de retorno",
+    description: `Estima cuántas citas, clientes y minutos de conversación saldrían de tus leads con ${marca.nombre}, con tus propios números.`,
+    alternates: { canonical: "/calculadora" },
+  };
+}
 
 const PREGUNTAS: [string, string][] = [
   [

@@ -2,7 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { log } from "@/lib/log";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
+import { urlImagenMarca } from "./imagen";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dominioBase, esHostPlataforma, normalizarHost, slugDeSubdominio } from "./hosts";
 
@@ -17,6 +18,8 @@ export type Marca = {
   color: string | null;
   logoUrl: string | null;
   faviconUrl: string | null;
+  /** Es la marca de la plataforma (su logo lleva el símbolo de la web). */
+  plataforma?: true;
 };
 
 export type DatosLegalesEmpresa = {
@@ -42,7 +45,13 @@ export type ContextoDominio =
   /** Host que no es de la plataforma ni está dado de alta: 404. */
   | { tipo: "desconocido"; host: string };
 
-export const MARCA_PLATAFORMA: Marca = { nombre: MARCA.nombre, color: null, logoUrl: null, faviconUrl: null };
+export { urlImagenMarca };
+
+/** La marca de la plataforma con la forma de la de una empresa (acceso, logo). */
+export async function marcaDePlataforma(): Promise<Marca> {
+  const m = await marcaPlataforma();
+  return { nombre: m.nombre, color: null, logoUrl: m.logoUrl, faviconUrl: m.faviconUrl, plataforma: true };
+}
 
 export const COLUMNAS_MARCA =
   "id, nombre, slug, estado, marca_nombre, marca_color, marca_logo, marca_favicon, legal_razon_social, legal_nif, legal_domicilio, legal_registro, legal_email" as const;
@@ -64,12 +73,6 @@ type FilaMarca = {
 };
 
 /** URL pública de una imagen del bucket "marca". */
-export function urlImagenMarca(ruta: string | null): string | null {
-  if (!ruta) return null;
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  return base ? `${base}/storage/v1/object/public/marca/${ruta.split("/").map(encodeURIComponent).join("/")}` : null;
-}
-
 export function empresaDeFila(f: FilaMarca): EmpresaDominio {
   return {
     id: f.id,
@@ -153,7 +156,7 @@ export const contextoDominio = cache(async (): Promise<ContextoDominio> => {
 /** Marca del dominio actual: la de su empresa o la de la plataforma. */
 export async function marcaDelDominio(): Promise<Marca> {
   const ctx = await contextoDominio();
-  return ctx.tipo === "empresa" ? ctx.empresa.marca : MARCA_PLATAFORMA;
+  return ctx.tipo === "empresa" ? ctx.empresa.marca : marcaDePlataforma();
 }
 
 /**

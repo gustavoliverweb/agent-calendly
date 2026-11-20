@@ -84,7 +84,7 @@ describe("guionFormSchema", () => {
   });
 
   it("rechaza voces fuera de la lista", () => {
-    expect(guionFormSchema.safeParse({ ...base, voz_id: "otra" }).success).toBe(false);
+    expect(guionFormSchema.safeParse({ ...base, voz_id: "no/válida" }).success).toBe(false);
   });
 
   it("limita el tamaño total del guion", () => {

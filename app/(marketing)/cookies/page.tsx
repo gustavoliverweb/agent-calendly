@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { DocumentoLegal, metadataLegal } from "@/components/legal/documento-legal";
 import { Dato } from "@/components/legal/huecos";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata = metadataLegal("Política de cookies", `Qué cookies usa el sitio web de ${MARCA.nombre}.`);
+export async function generateMetadata() {
+  const marca = await marcaPlataforma();
+  return metadataLegal("Política de cookies", `Qué cookies usa el sitio web de ${marca.nombre}.`);
+}
 
 export default function Cookies() {
   return (

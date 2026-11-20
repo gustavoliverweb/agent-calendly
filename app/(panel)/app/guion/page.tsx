@@ -5,6 +5,7 @@ import { EditorGuion, type VersionGuion } from "@/components/guion/editor";
 import { getEmpresaActual } from "@/lib/empresa";
 import { elevenLabsAgenteEnv, isConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { vocesOfrecidas } from "@/lib/voces";
 
 export const metadata: Metadata = { title: "Guion" };
 
@@ -28,7 +29,7 @@ export default function GuionPage() {
 async function Contenido() {
   const empresa = await getEmpresaActual();
   const supabase = await createClient();
-  const [{ data: emp }, { data: versiones }, { data: contactos }] = await Promise.all([
+  const [{ data: emp }, { data: versiones }, { data: contactos }, voces] = await Promise.all([
     supabase.from("empresas").select("guion_activo_id").eq("id", empresa.id).single(),
     supabase
       .from("guiones")
@@ -45,6 +46,7 @@ async function Contenido() {
       .neq("estado", "no_llamar")
       .order("creado_en", { ascending: false })
       .limit(200),
+    vocesOfrecidas(),
   ]);
 
   return (
@@ -54,6 +56,7 @@ async function Contenido() {
       puedeEditar={empresa.rol === "propietario"}
       contactos={contactos ?? []}
       pruebaDisponible={isConfigured(elevenLabsAgenteEnv)}
+      voces={voces}
     />
   );
 }

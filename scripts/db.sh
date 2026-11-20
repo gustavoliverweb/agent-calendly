@@ -36,7 +36,7 @@ case "${1:-}" in
   types)   pnpm exec supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && echo "Tipos regenerados" ;;
   test)
     shift
-    { echo "begin;"; for m in "$@"; do cat "$m"; done; cat tests/db/aislamiento.sql tests/db/baja-empresa.sql; echo "rollback;"; } \
+    { echo "begin;"; for m in "$@"; do cat "$m"; done; cat tests/db/aislamiento.sql tests/db/baja-empresa.sql tests/db/voces.sql tests/db/marca-plataforma.sql; echo "rollback;"; } \
       | psql "$URL" -v ON_ERROR_STOP=1 -q 2>&1 | redact | grep -E "NOTICE|ERROR|FALLO" ;;
   *) echo "Uso: scripts/db.sh status|dry-run|push|types|test"; exit 1 ;;
 esac

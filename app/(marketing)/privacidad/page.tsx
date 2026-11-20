@@ -2,12 +2,15 @@ import Link from "next/link";
 import { DocumentoLegal, metadataLegal } from "@/components/legal/documento-legal";
 import { Dato, Revisar } from "@/components/legal/huecos";
 import { TITULAR } from "@/lib/legal";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 
-export const metadata = metadataLegal(
+export async function generateMetadata() {
+  const marca = await marcaPlataforma();
+  return metadataLegal(
   "Política de privacidad",
-  `Cómo trata ${MARCA.nombre} los datos personales de quienes visitan la web, usan el panel o reciben una llamada.`,
+  `Cómo trata ${marca.nombre} los datos personales de quienes visitan la web, usan el panel o reciben una llamada.`,
 );
+}
 
 export default function Privacidad() {
   return (

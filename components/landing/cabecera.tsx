@@ -20,7 +20,7 @@ const SECCIONES = [
  * Cabecera flotante en píldora translúcida. Sobre una sección marcada con
  * data-tema="oscuro" pasa a cristal oscuro para no perder contraste.
  */
-export function Cabecera() {
+export function Cabecera({ nombre, logoUrl }: { nombre: string; logoUrl: string | null }) {
   const ref = useRef<HTMLElement>(null);
   const botonMenu = useRef<HTMLButtonElement>(null);
   const idMenu = useId();
@@ -85,7 +85,7 @@ export function Cabecera() {
         )}
       >
         <Link href="/" aria-label="Inicio">
-          <Logo />
+          <Logo nombre={nombre} logoUrl={logoUrl} />
         </Link>
         <nav
           aria-label="Secciones"

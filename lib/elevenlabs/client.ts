@@ -160,3 +160,84 @@ export async function borrarConversacion(conversationId: string) {
     throw e;
   }
 }
+
+// --- Voces (catálogo de /admin/voces) ----------------------------------------
+
+export type VozElevenLabs = {
+  voiceId: string;
+  nombre: string;
+  categoria: string | null;
+  descripcion: string | null;
+  etiquetas: Record<string, string>;
+  /** Idiomas verificados (p. ej. "es (castellano)"). */
+  idiomas: string[];
+  muestraUrl: string | null;
+};
+
+type VozApi = {
+  voice_id: string;
+  name?: string | null;
+  category?: string | null;
+  description?: string | null;
+  labels?: Record<string, string> | null;
+  preview_url?: string | null;
+  verified_languages?: { language: string; accent?: string | null; preview_url?: string | null }[] | null;
+};
+
+/** Muestra en castellano si la voz la tiene; si no, la general. */
+function muestraDe(v: VozApi): string | null {
+  const es = v.verified_languages?.find((l) => l.language === "es" && l.preview_url);
+  return es?.preview_url ?? v.preview_url ?? null;
+}
+
+function aVoz(v: VozApi): VozElevenLabs {
+  return {
+    voiceId: v.voice_id,
+    nombre: v.name ?? v.voice_id,
+    categoria: v.category ?? null,
+    descripcion: v.description ?? null,
+    etiquetas: v.labels ?? {},
+    idiomas: [...new Set((v.verified_languages ?? []).map((l) => (l.accent ? `${l.language} (${l.accent})` : l.language)))],
+    muestraUrl: muestraDe(v),
+  };
+}
+
+/** Voces de la cuenta del proveedor (las suyas y las guardadas de la biblioteca), de 100 en 100. */
+export async function buscarVoces(busqueda: string, pagina?: string): Promise<{ voces: VozElevenLabs[]; siguiente: string | null }> {
+  const params = new URLSearchParams({ page_size: "100", sort: "name", sort_direction: "asc", include_total_count: "false" });
+  if (busqueda.trim()) params.set("search", busqueda.trim().slice(0, 100));
+  if (pagina) params.set("next_page_token", pagina);
+  const r = await elevenFetch<{ voices?: VozApi[]; has_more?: boolean; next_page_token?: string | null }>(
+    `/v2/voices?${params}`,
+    { timeoutMs: 8000 },
+  );
+  return { voces: (r?.voices ?? []).map(aVoz), siguiente: r?.has_more ? (r.next_page_token ?? null) : null };
+}
+
+/** Una voz de la cuenta, o null si no existe. */
+export async function obtenerVoz(voiceId: string): Promise<VozElevenLabs | null> {
+  try {
+    return aVoz(await elevenFetch<VozApi>(`/v1/voices/${encodeURIComponent(voiceId)}`, { timeoutMs: 8000 }));
+  } catch (e) {
+    if (e instanceof ElevenLabsError && (e.status === 404 || e.status === 400)) return null;
+    throw e;
+  }
+}
+
+/**
+ * Si el agente permite cambiar la voz por conversación (Security → Overrides
+ * → Voice). Sin ese permiso, ElevenLabs rechaza las llamadas con otra voz.
+ * null: no se pudo saber.
+ */
+export async function overrideVozActivada(): Promise<boolean | null> {
+  const env = elevenLabsAgenteEnv();
+  try {
+    const r = await elevenFetch<{
+      platform_settings?: { overrides?: { conversation_config_override?: { tts?: { voice_id?: boolean } } } };
+    }>(`/v1/convai/agents/${encodeURIComponent(env.ELEVENLABS_AGENT_ID)}`, { timeoutMs: 8000 });
+    const v = r?.platform_settings?.overrides?.conversation_config_override?.tts?.voice_id;
+    return typeof v === "boolean" ? v : null;
+  } catch {
+    return null;
+  }
+}

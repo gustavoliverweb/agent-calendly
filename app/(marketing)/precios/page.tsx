@@ -3,14 +3,17 @@ import Link from "next/link";
 import { CheckIcon } from "lucide-react";
 import { CtaFinal, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
 import { botonBorde, botonClaro } from "@/components/landing/estilos";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Precios",
-  description: `Pagas por minuto de conversación, con un límite mensual que decides tú. Planes de ${MARCA.nombre} a medida de tu volumen de leads.`,
-  alternates: { canonical: "/precios" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Precios",
+    description: `Pagas por minuto de conversación, con un límite mensual que decides tú. Planes de ${marca.nombre} a medida de tu volumen de leads.`,
+    alternates: { canonical: "/precios" },
+  };
+}
 
 /*
  * Sin cifras hasta que el cliente fije sus tarifas: cada plan dice «A medida».

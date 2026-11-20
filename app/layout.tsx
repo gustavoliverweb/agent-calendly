@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 import "./globals.css";
 
 const inter = Inter({
@@ -14,14 +14,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: `${MARCA.nombre} · Agente de voz que agenda citas`,
-    template: `%s · ${MARCA.nombre}`,
-  },
-  description: MARCA.descripcion,
-  ...(process.env.APP_URL ? { metadataBase: new URL(process.env.APP_URL) } : {}),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: {
+      default: `${marca.nombre} · Agente de voz que agenda citas`,
+      template: `%s · ${marca.nombre}`,
+    },
+    description: marca.descripcion,
+    ...(process.env.APP_URL ? { metadataBase: new URL(process.env.APP_URL) } : {}),
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

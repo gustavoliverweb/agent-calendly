@@ -1,5 +1,3 @@
-import { MARCA } from "@/lib/marca";
-
 /**
  * Datos del titular de la web que exigen el aviso legal (LSSI-CE, art. 10) y
  * la política de privacidad (RGPD, art. 13). Mientras un campo valga null, las
@@ -11,7 +9,8 @@ export const TITULAR = {
   domicilio: null as string | null,
   // "Registro Mercantil de …, tomo …, folio …, hoja …". Solo sociedades.
   registro: null as string | null,
-  email: MARCA.email === "hola@example.com" ? null : (MARCA.email as string | null),
+  // Null: el email de contacto de la marca (/admin → Marca), si ya no es el de ejemplo.
+  email: null as string | null,
   telefono: null as string | null,
   // Delegado de protección de datos, si se designa. Opcional.
   dpd: null as string | null,

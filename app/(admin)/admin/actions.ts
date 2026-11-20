@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireAdminPlataforma } from "@/lib/admin";
 import {
@@ -16,9 +16,21 @@ import {
 } from "@/lib/equipo";
 import { borrarEmpresa, type ResultadoBaja } from "@/lib/baja-empresa";
 import { olvidarDominios } from "@/lib/dominio/contexto";
+import {
+  formatoImagen,
+  MAX_BYTES_IMAGEN,
+  marcaPlataformaSchema,
+  TIPOS_IMAGEN,
+  type MarcaPlataformaForm,
+  type TipoImagen,
+} from "@/lib/dominio/marca-form";
+import { TAG_MARCA_PLATAFORMA } from "@/lib/marca";
 import { validarDominioPropio } from "@/lib/dominio/hosts";
 import { anadirDominioRender, borrarDominioRender, comprobarDns, RenderError, verificarDominioRender } from "@/lib/dominio/render";
-import { isConfigured, renderEnv } from "@/lib/env";
+import { buscarVoces, ElevenLabsError, obtenerVoz, type VozElevenLabs } from "@/lib/elevenlabs/client";
+import { elevenLabsAgenteEnv, isConfigured, renderEnv } from "@/lib/env";
+import { VOICE_ID } from "@/lib/guion/guion";
+import { usoDeVoces } from "@/lib/voces";
 import { log } from "@/lib/log";
 import { slugSchema } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -355,6 +367,186 @@ export async function cambiarEstadoSolicitud(id: string, estado: "nueva" | "aten
   }
   const { error } = await createAdminClient().from("solicitudes_contacto").update({ estado }).eq("id", id);
   if (error) return { error: "No se ha podido cambiar el estado." };
+  refresh();
+  return {};
+}
+
+// --- Catálogo de voces -----------------------------------------------------------
+
+const SIN_PERMISO_VOCES =
+  "La clave de la API de ElevenLabs no tiene permiso para leer voces. En ElevenLabs → API keys, edita la clave y activa Voices → Read.";
+
+const errorVoces = (e: unknown, porDefecto: string) =>
+  e instanceof ElevenLabsError && e.status === 401 ? SIN_PERMISO_VOCES : porDefecto;
+
+const textoVoz = z.object({
+  nombre: z.string().trim().min(1, "Falta el nombre").max(60, "Nombre: máximo 60 caracteres"),
+  descripcion: z.string().trim().max(200, "Descripción: máximo 200 caracteres"),
+});
+
+/** Voces de la cuenta de ElevenLabs, para elegir cuál añadir al catálogo. */
+export async function buscarVocesElevenLabs(
+  busqueda: string,
+  pagina?: string,
+): Promise<{ voces: VozElevenLabs[]; siguiente: string | null } | { error: string }> {
+  await requireAdminPlataforma();
+  if (!isConfigured(elevenLabsAgenteEnv)) return { error: "ElevenLabs no está configurado." };
+  try {
+    return await buscarVoces(String(busqueda ?? ""), typeof pagina === "string" ? pagina.slice(0, 500) : undefined);
+  } catch (e) {
+    return { error: errorVoces(e, "No se ha podido leer la lista de voces de ElevenLabs.") };
+  }
+}
+
+/** Añade una voz de la cuenta de ElevenLabs al catálogo que ven las empresas. */
+export async function anadirVoz(voiceId: string, nombre: string, descripcion: string): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  const datos = textoVoz.extend({ voiceId: z.string().regex(VOICE_ID, "Voz no válida") }).safeParse({ voiceId, nombre, descripcion });
+  if (!datos.success) return { error: datos.error.issues[0].message };
+
+  let voz: VozElevenLabs | null;
+  try {
+    voz = await obtenerVoz(datos.data.voiceId);
+  } catch (e) {
+    return { error: errorVoces(e, "No se ha podido comprobar la voz en ElevenLabs.") };
+  }
+  if (!voz) return { error: "Esa voz no está en la cuenta de ElevenLabs." };
+
+  const { error } = await createAdminClient().from("voces").insert({
+    voice_id: voz.voiceId,
+    nombre: datos.data.nombre,
+    descripcion: datos.data.descripcion,
+    muestra_url: voz.muestraUrl?.startsWith("https://") ? voz.muestraUrl.slice(0, 1000) : null,
+  });
+  if (error?.code === UNIQUE_VIOLATION) return { error: "Esa voz ya está en el catálogo." };
+  if (error) {
+    log.error("añadir voz", { code: error.code, message: error.message });
+    return { error: "No se ha podido añadir la voz." };
+  }
+  log.info("voz añadida al catálogo", { voice_id: voz.voiceId, por: admin.id });
+  refresh();
+  return {};
+}
+
+export async function editarVoz(id: string, nombre: string, descripcion: string): Promise<{ error?: string }> {
+  await requireAdminPlataforma();
+  const datos = textoVoz.extend({ id: z.uuid() }).safeParse({ id, nombre, descripcion });
+  if (!datos.success) return { error: datos.error.issues[0].message };
+  const { error } = await createAdminClient()
+    .from("voces")
+    .update({ nombre: datos.data.nombre, descripcion: datos.data.descripcion })
+    .eq("id", datos.data.id);
+  if (error) return { error: "No se ha podido guardar." };
+  refresh();
+  return {};
+}
+
+/** Ofrecer o dejar de ofrecer una voz. Los guiones que ya la usan siguen igual. */
+export async function cambiarVozActiva(id: string, activa: boolean): Promise<{ error?: string }> {
+  await requireAdminPlataforma();
+  if (!z.uuid().safeParse(id).success) return { error: "Voz no válida." };
+  const { error } = await createAdminClient().from("voces").update({ activa: activa === true }).eq("id", id);
+  if (error) return { error: "No se ha podido cambiar." };
+  refresh();
+  return {};
+}
+
+/** Quita una voz del catálogo, si ninguna empresa la tiene en su guion activo. */
+export async function quitarVoz(id: string): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  if (!z.uuid().safeParse(id).success) return { error: "Voz no válida." };
+  const supabase = createAdminClient();
+  const { data: voz } = await supabase.from("voces").select("voice_id").eq("id", id).maybeSingle();
+  if (!voz) return { error: "Voz no encontrada." };
+  const enUso = (await usoDeVoces()).get(voz.voice_id) ?? 0;
+  if (enUso > 0) {
+    return {
+      error: `La usa${enUso === 1 ? " 1 empresa" : `n ${enUso} empresas`} en su guion activo. Desactívala para que no la elijan más.`,
+    };
+  }
+  const { error } = await supabase.from("voces").delete().eq("id", id);
+  if (error) return { error: "No se ha podido quitar." };
+  log.info("voz quitada del catálogo", { voice_id: voz.voice_id, por: admin.id });
+  refresh();
+  return {};
+}
+
+// --- Marca de la plataforma ---------------------------------------------------------
+
+/** Nombre, descripción y email de contacto de la plataforma (vacío = por defecto). */
+export async function guardarMarcaPlataforma(datos: MarcaPlataformaForm): Promise<{ error?: string }> {
+  const admin = await requireAdminPlataforma();
+  const parsed = marcaPlataformaSchema.safeParse(datos);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const d = parsed.data;
+  const { error } = await createAdminClient()
+    .from("ajustes_plataforma")
+    .update({ marca_nombre: d.nombre, marca_descripcion: d.descripcion, marca_email: d.email })
+    .eq("id", true);
+  if (error) {
+    log.error("guardar marca de la plataforma", { code: error.code, message: error.message });
+    return { error: "No se ha podido guardar la marca." };
+  }
+  log.warn("marca de la plataforma cambiada", { por: admin.id });
+  updateTag(TAG_MARCA_PLATAFORMA);
+  refresh();
+  return {};
+}
+
+const RUTA_IMAGEN_PLATAFORMA = "plataforma";
+const COLUMNA_PLATAFORMA = { logo: "marca_logo", favicon: "marca_favicon" } as const;
+
+export async function subirImagenPlataforma(formData: FormData): Promise<{ error?: string }> {
+  await requireAdminPlataforma();
+  const tipo = formData.get("tipo");
+  const archivo = formData.get("archivo");
+  if (!TIPOS_IMAGEN.includes(tipo as TipoImagen)) return { error: "Tipo de imagen no válido." };
+  if (!(archivo instanceof File) || archivo.size === 0) return { error: "Elige una imagen." };
+  if (archivo.size > MAX_BYTES_IMAGEN) return { error: "La imagen no puede pasar de 512 KB." };
+  const bytes = new Uint8Array(await archivo.arrayBuffer());
+  const formato = formatoImagen(bytes);
+  if (!formato) return { error: "Formato no admitido: usa PNG, JPG o WebP." };
+
+  const t = tipo as TipoImagen;
+  const supabase = createAdminClient();
+  const { data: actual } = await supabase.from("ajustes_plataforma").select("marca_logo, marca_favicon").eq("id", true).single();
+  // Nombre nuevo en cada subida: la URL pública cambia y ningún navegador ve la antigua en caché.
+  const ruta = `${RUTA_IMAGEN_PLATAFORMA}/${t}-${Date.now()}.${formato.extension}`;
+  const { error: errSubida } = await supabase.storage
+    .from("marca")
+    .upload(ruta, bytes, { contentType: formato.tipo, cacheControl: "31536000", upsert: false });
+  if (errSubida) {
+    log.error("subir imagen de la plataforma", { message: errSubida.message });
+    return { error: "No se ha podido subir la imagen." };
+  }
+  const { error } = await supabase
+    .from("ajustes_plataforma")
+    .update(t === "logo" ? { marca_logo: ruta } : { marca_favicon: ruta })
+    .eq("id", true);
+  if (error) {
+    await supabase.storage.from("marca").remove([ruta]);
+    return { error: "No se ha podido guardar la imagen." };
+  }
+  const anterior = actual?.[COLUMNA_PLATAFORMA[t]];
+  if (anterior) await supabase.storage.from("marca").remove([anterior]);
+  updateTag(TAG_MARCA_PLATAFORMA);
+  refresh();
+  return {};
+}
+
+export async function quitarImagenPlataforma(tipo: TipoImagen): Promise<{ error?: string }> {
+  await requireAdminPlataforma();
+  if (!TIPOS_IMAGEN.includes(tipo)) return { error: "Tipo de imagen no válido." };
+  const supabase = createAdminClient();
+  const { data: actual } = await supabase.from("ajustes_plataforma").select("marca_logo, marca_favicon").eq("id", true).single();
+  const { error } = await supabase
+    .from("ajustes_plataforma")
+    .update(tipo === "logo" ? { marca_logo: null } : { marca_favicon: null })
+    .eq("id", true);
+  if (error) return { error: "No se ha podido quitar la imagen." };
+  const anterior = actual?.[COLUMNA_PLATAFORMA[tipo]];
+  if (anterior) await supabase.storage.from("marca").remove([anterior]);
+  updateTag(TAG_MARCA_PLATAFORMA);
   refresh();
   return {};
 }

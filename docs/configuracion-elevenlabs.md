@@ -6,7 +6,7 @@ Lo que la app espera del agente de ElevenLabs. Hay **un solo agente para todas l
 
 | Variable | De dónde sale |
 |---|---|
-| `ELEVENLABS_API_KEY` | Perfil → API keys (permiso de Conversational AI) |
+| `ELEVENLABS_API_KEY` | Perfil → API keys (permisos de Conversational AI y **Voices → Read**, para el catálogo de voces de `/admin/voces`) |
 | `ELEVENLABS_AGENT_ID` | URL o ajustes del agente |
 | `ELEVENLABS_PHONE_NUMBER_ID` | Transitorio: línea de la empresa principal mientras no tenga una asignada en `/admin`. La de cada empresa se guarda en la BD (ver [Líneas](#líneas-de-las-empresas)) |
 | `ELEVENLABS_WEBHOOK_SECRET` | Se muestra al crear el webhook post-llamada |
@@ -26,7 +26,7 @@ Sin línea, la empresa puede preparar todo y probar el agente en el navegador; l
 ## Primer mensaje y voz
 
 - **First message** del agente: exactamente `{{primer_mensaje}}`. La app lo envía ya montado, con el nombre del contacto, el del negocio y el del agente. Así no hace falta activar la override del primer mensaje.
-- **Voz:** la configurada en el agente. Cuando haya varias voces para elegir (lista `VOCES` de `lib/guion/guion.ts`), la app enviará la voz como override: antes hay que activar **Security → Overrides → Voice** en el agente; si no, ElevenLabs rechaza la conversación.
+- **Voz:** por defecto, la configurada en el agente. Las demás voces que puede elegir cada empresa en su guion las ofrece el proveedor en `/admin/voces` (desde las voces de su cuenta de ElevenLabs; las de la biblioteca hay que guardarlas antes en la cuenta). Si una empresa elige otra voz, la app la envía como override: antes hay que activar **Security → Overrides → Voice** en el agente; si no, ElevenLabs rechaza la conversación. `/admin/voces` avisa si no está activada.
 
 ## Variables dinámicas que envía la app en cada llamada
 

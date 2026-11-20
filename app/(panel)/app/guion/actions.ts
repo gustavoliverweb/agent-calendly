@@ -10,6 +10,7 @@ import { getEmpresaActual } from "@/lib/empresa";
 import { guionFormSchema, montarGuion, type GuionForm } from "@/lib/guion/guion";
 import { COLUMNAS_GUION_LLAMADA } from "@/lib/guion/queries";
 import { log } from "@/lib/log";
+import { vozPermitida } from "@/lib/voces";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +27,9 @@ export async function guardarGuion(datos: GuionForm, activar: boolean): Promise<
   const parsed = guionFormSchema.safeParse(datos);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const g = parsed.data;
+  if (!(await vozPermitida(empresa.id, g.voz_id))) {
+    return { error: "Esa voz ya no está disponible. Elige otra de la lista." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase

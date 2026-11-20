@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { LogoMarca } from "@/components/marca/logo-marca";
-import { contextoDominio, MARCA_PLATAFORMA, type ContextoDominio } from "@/lib/dominio/contexto";
+import { contextoDominio, marcaDePlataforma, type ContextoDominio } from "@/lib/dominio/contexto";
 import { estiloMarca } from "@/lib/dominio/estilo";
 
 /**
@@ -27,7 +27,7 @@ export async function PaginaAcceso({
 }) {
   const ctx = await contextoDominio();
   if (ctx.tipo === "desconocido") notFound();
-  const marca = ctx.tipo === "empresa" ? ctx.empresa.marca : MARCA_PLATAFORMA;
+  const marca = ctx.tipo === "empresa" ? ctx.empresa.marca : await marcaDePlataforma();
   // En el dominio de una empresa no hay web pública: "/" lleva al panel.
   const destino = volver === "panel" ? { href: "/app", texto: "Volver al panel" } : ctx.tipo === "plataforma" ? { href: "/", texto: "Volver a la web" } : null;
 
@@ -75,7 +75,7 @@ export async function PaginaAcceso({
 /** Título con el nombre de la marca del dominio, su favicon y sin indexar. */
 export async function metadataAcceso(titulo: string): Promise<Metadata> {
   const ctx = await contextoDominio();
-  const marca = ctx.tipo === "empresa" ? ctx.empresa.marca : MARCA_PLATAFORMA;
+  const marca = ctx.tipo === "empresa" ? ctx.empresa.marca : await marcaDePlataforma();
   return {
     title: { absolute: `${titulo} · ${marca.nombre}` },
     robots: { index: false, follow: false },

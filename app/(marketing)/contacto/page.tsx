@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FormularioContacto } from "@/components/landing/formulario-contacto";
 import { cuerpo, entradilla, titularPagina } from "@/components/landing/estilos";
-import { MARCA } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Solicitar una demo",
-  description: `Cuéntanos cómo captas leads y te enseñamos ${MARCA.nombre} con un caso como el tuyo: el agente llamando, conversando y agendando en tu calendario.`,
-  alternates: { canonical: "/contacto" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const marca = await marcaPlataforma();
+  return {
+    title: "Solicitar una demo",
+    description: `Cuéntanos cómo captas leads y te enseñamos ${marca.nombre} con un caso como el tuyo: el agente llamando, conversando y agendando en tu calendario.`,
+    alternates: { canonical: "/contacto" },
+  };
+}
 
 const PASOS = [
   ["Nos cuentas tu caso", "Qué vendes, de dónde vienen tus leads y qué cita quieres conseguir."],
@@ -17,7 +20,8 @@ const PASOS = [
   ["Decides con números", "Te proponemos un plan según tu volumen de minutos y llamadas simultáneas. Sin compromiso."],
 ];
 
-export default function ContactoPage() {
+export default async function ContactoPage() {
+  const marca = await marcaPlataforma();
   return (
     <main className="bg-white">
       <section className="relative -mt-[4.5rem] px-6 pt-36 pb-24 sm:pt-44 lg:pb-32">
@@ -42,8 +46,8 @@ export default function ContactoPage() {
             </ol>
             <p className="mt-10 text-[16px] text-ceniza">
               ¿Prefieres escribirnos?{" "}
-              <a href={`mailto:${MARCA.email}`} className="text-carbon underline underline-offset-4 hover:text-marca-700">
-                {MARCA.email}
+              <a href={`mailto:${marca.email}`} className="text-carbon underline underline-offset-4 hover:text-marca-700">
+                {marca.email}
               </a>
             </p>
           </div>

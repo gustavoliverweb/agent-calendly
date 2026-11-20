@@ -31,16 +31,31 @@ export type Database = {
       }
       ajustes_plataforma: {
         Row: {
+          marca_descripcion: string | null
+          marca_email: string | null
+          marca_favicon: string | null
+          marca_logo: string | null
+          marca_nombre: string | null
           actualizado_en: string
           id: boolean
           max_concurrencia_global: number
         }
         Insert: {
+          marca_descripcion?: string | null
+          marca_email?: string | null
+          marca_favicon?: string | null
+          marca_logo?: string | null
+          marca_nombre?: string | null
           actualizado_en?: string
           id?: boolean
           max_concurrencia_global?: number
         }
         Update: {
+          marca_descripcion?: string | null
+          marca_email?: string | null
+          marca_favicon?: string | null
+          marca_logo?: string | null
+          marca_nombre?: string | null
           actualizado_en?: string
           id?: boolean
           max_concurrencia_global?: number
@@ -931,6 +946,42 @@ export type Database = {
           sector?: string | null
           telefono?: string | null
           volumen?: string | null
+        }
+        Relationships: []
+      }
+      voces: {
+        Row: {
+          activa: boolean
+          actualizado_en: string
+          creado_en: string
+          descripcion: string
+          id: string
+          muestra_url: string | null
+          nombre: string
+          orden: number
+          voice_id: string
+        }
+        Insert: {
+          activa?: boolean
+          actualizado_en?: string
+          creado_en?: string
+          descripcion?: string
+          id?: string
+          muestra_url?: string | null
+          nombre: string
+          orden?: number
+          voice_id: string
+        }
+        Update: {
+          activa?: boolean
+          actualizado_en?: string
+          creado_en?: string
+          descripcion?: string
+          id?: string
+          muestra_url?: string | null
+          nombre?: string
+          orden?: number
+          voice_id?: string
         }
         Relationships: []
       }

@@ -73,6 +73,25 @@ Cifra los tokens de Calendly de todas las empresas. No se puede rotar sin más: 
 
 Criterios: mes natural en la zona horaria de la empresa; los minutos son la suma de segundos de conversación / 60 (sin redondear cada llamada al minuto) e incluyen las pruebas en el navegador, igual que el límite mensual. El CSV usa «;» y coma decimal (Excel en español).
 
+## Marca de la plataforma
+
+`/admin/marca`: nombre, descripción, email de contacto, logo y favicon de la web pública, la pantalla de acceso y `/admin`. Un campo vacío usa el valor por defecto de `lib/marca.ts`. Al guardar, la web lo muestra al momento.
+
+La web pública es estática: la marca se lee en caché y se renueva sola cada hora. Si la base de datos no responde (por ejemplo, durante un despliegue), la web sale con la marca por defecto como mucho durante esa hora.
+
+El email de contacto se usa también como email del titular en los textos legales, salvo que `lib/legal.ts` tenga uno propio. Mientras sea el de ejemplo (`hola@example.com`), los textos legales lo marcan como pendiente.
+
+## Catálogo de voces
+
+`/admin/voces`: las voces que cada empresa puede elegir en su guion, además de la voz por defecto del agente. Se añaden desde las voces de la cuenta de ElevenLabs. Las de la biblioteca hay que guardarlas antes en la cuenta («Add to my voices»).
+
+Requisitos en ElevenLabs:
+
+- La clave de la API necesita el permiso **Voices → Read**. Sin él, la lista de voces da un error que lo explica.
+- El agente tiene que permitir cambiar la voz: **Security → Overrides → Voice**. La página avisa si no está activado. Sin ese permiso, las llamadas de las empresas que elijan otra voz fallan.
+
+Desactivar una voz la quita del selector, pero las empresas que ya la usan siguen llamando con ella. Solo se puede quitar del catálogo una voz que no use ninguna empresa en su guion activo.
+
 ## Dominio propio de una empresa (marca blanca)
 
 1. La empresa crea en su DNS un **CNAME** de un subdominio (p. ej. `llamadas.empresa.com`) hacia el host `onrender.com` del servicio (lo muestra la ficha en `/admin`) y borra los registros AAAA de ese nombre. Mejor subdominio que dominio raíz: el raíz necesita registros A y Render le añade el `www`.

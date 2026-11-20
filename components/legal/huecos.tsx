@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
-import { ETIQUETAS, TEXTOS_REVISADOS, TITULAR, type CampoTitular } from "@/lib/legal";
+import { ETIQUETAS, TEXTOS_REVISADOS, type CampoTitular } from "@/lib/legal";
+import { titularVigente } from "@/lib/legal-vigente";
 
 const marca =
   "rounded-sm border border-dashed border-amber-500 bg-amber-50 px-1 font-mono text-[0.8em] text-amber-900 [box-decoration-break:clone]";
 
 /** Dato del titular, o un hueco marcado si aún no está en lib/legal.ts. */
-export function Dato({ campo }: { campo: CampoTitular }) {
-  const valor = TITULAR[campo];
+export async function Dato({ campo }: { campo: CampoTitular }) {
+  const valor = (await titularVigente())[campo];
   if (valor) return <>{valor}</>;
   return <mark className={marca}>[{ETIQUETAS[campo]}]</mark>;
 }

@@ -7,11 +7,13 @@ import { z } from "zod";
  * llamadas y los tests.
  */
 
-/** Voces que se pueden elegir. null = la configurada en el agente de ElevenLabs. */
-export const VOCES = [{ id: null, nombre: "Voz actual del agente" }] as const satisfies readonly {
-  id: string | null;
-  nombre: string;
-}[];
+/**
+ * Voz del guion: un voice_id de ElevenLabs o null (la configurada en el
+ * agente). Las que se pueden elegir salen del catálogo de /admin/voces; esa
+ * comprobación la hace el servidor al guardar (vozPermitida).
+ */
+export const VOZ_AGENTE = "Voz por defecto del agente";
+export const VOICE_ID = /^[A-Za-z0-9]{1,64}$/;
 
 /** Marcadores que se pueden usar en el primer mensaje. */
 export const MARCADORES = {
@@ -107,7 +109,7 @@ export const guionFormSchema = z
     voz_id: z
       .string()
       .nullable()
-      .refine((v) => VOCES.some((voz) => voz.id === v), "Voz no disponible."),
+      .refine((v) => v == null || VOICE_ID.test(v), "Voz no disponible."),
     ...(Object.fromEntries(
       APARTADOS.map((a) => [a.campo, textoApartado(a.max, a.obligatorio, a.titulo)]),
     ) as Record<CampoApartado, z.ZodType<string, string>>),

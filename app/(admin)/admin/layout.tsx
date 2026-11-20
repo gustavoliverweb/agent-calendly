@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/marca/logo";
+import { LogoPlataforma } from "@/components/marca/logo-plataforma";
 import { UserMenu } from "@/components/panel/user-menu";
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4">
         <div className="flex items-center gap-3">
           <Link href="/admin" aria-label="Administración">
-            <Logo />
+            <LogoPlataforma />
           </Link>
           <span className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">Administración</span>
         </div>

@@ -4,7 +4,8 @@ import { LlamadaDemo } from "@/components/landing/llamada-demo";
 import { OndaPuntos } from "@/components/landing/onda-puntos";
 import { PanelDemo } from "@/components/landing/panel-demo";
 import { botonBorde, botonPrincipal, entradilla, titularPagina } from "@/components/landing/estilos";
-import { enlaceDemo, MARCA } from "@/lib/marca";
+import { enlaceDemo } from "@/lib/marca";
+import { marcaPlataforma } from "@/lib/marca-plataforma";
 import { cn } from "@/lib/utils";
 
 const PASOS = [
@@ -78,7 +79,8 @@ const PREGUNTAS: [string, string][] = [
   ],
 ];
 
-export default function Landing() {
+export default async function Landing() {
+  const marca = await marcaPlataforma();
   return (
     <main className="bg-white">
       <section className="relative -mt-[4.5rem] overflow-hidden px-6 pt-36 pb-16 sm:pt-44 lg:pb-24">
@@ -88,7 +90,7 @@ export default function Landing() {
               Tus leads, llamados en minutos. Sus citas, en tu agenda.
             </h1>
             <p className={cn(entradilla, "mt-8 max-w-xl")}>
-              {MARCA.nombre} llama a cada contacto, conversa con tu guion, consulta tu Calendly en directo y reserva la cita
+              {marca.nombre} llama a cada contacto, conversa con tu guion, consulta tu Calendly en directo y reserva la cita
               sin que nadie de tu equipo descuelgue el teléfono.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">

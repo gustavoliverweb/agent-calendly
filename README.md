@@ -91,7 +91,9 @@ app/auth/confirm            Destino de los enlaces de invitación/recuperación
 app/auth/salir              Cerrar sesión (POST)
 app/cuenta/contrasena       Elegir/cambiar contraseña
 app/(marketing)            Landing pública en / (secciones, demo de llamada, FAQ); componentes en components/landing
-lib/marca.ts                Nombre, descripción y email de contacto de la marca (provisionales)
+lib/marca.ts                Marca de la plataforma por defecto (provisional); la vigente se edita en /admin/marca
+lib/marca-plataforma.ts     Lectura de la marca vigente, en caché ("use cache", se invalida al guardar)
+lib/voces.ts                Catálogo de voces (/admin/voces) para el selector del guion
 app/(panel)/app/…           Panel protegido en /app: resumen, contactos, llamadas, lotes, configuración
 app/(panel)/app/contactos   Listado (filtros, búsqueda, selección), ficha, importación CSV
 lib/contacts/               Teléfonos E.164, lectura de CSV, validación de importación (con tests)

@@ -48,3 +48,17 @@ export function formatoImagen(bytes: Uint8Array): { tipo: string; extension: str
   if (bytes.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return { tipo: "image/webp", extension: "webp" };
   return null;
 }
+
+/** /admin → Marca: la marca de la plataforma. Vacío = el valor por defecto. */
+export const marcaPlataformaSchema = z.object({
+  nombre: opcional(60, "Nombre"),
+  descripcion: opcional(300, "Descripción"),
+  email: z
+    .string()
+    .trim()
+    .max(254)
+    .refine((v) => v === "" || z.email().safeParse(v).success, "Email de contacto no válido")
+    .transform((v) => v || null),
+});
+
+export type MarcaPlataformaForm = z.input<typeof marcaPlataformaSchema>;

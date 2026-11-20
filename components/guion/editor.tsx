@@ -15,7 +15,7 @@ import {
   APARTADOS,
   MARCADORES,
   MAX_TEXTO,
-  VOCES,
+  VOZ_AGENTE,
   montarGuion,
   problemasPrimerMensaje,
   renderPrimerMensaje,
@@ -23,6 +23,7 @@ import {
   type GuionForm,
 } from "@/lib/guion/guion";
 import { cn } from "@/lib/utils";
+import type { VozOfrecida } from "@/lib/voces";
 
 export type VersionGuion = GuionForm & { id: string; version: number; creado_en: string; texto: string };
 
@@ -75,12 +76,14 @@ export function EditorGuion({
   puedeEditar,
   contactos,
   pruebaDisponible,
+  voces,
 }: {
   versiones: VersionGuion[];
   activoId: string | null;
   puedeEditar: boolean;
   contactos: ContactoPrueba[];
   pruebaDisponible: boolean;
+  voces: VozOfrecida[];
 }) {
   const inicial = versiones.find((v) => v.id === activoId) ?? versiones[0];
   const [baseId, setBaseId] = useState<string | null>(inicial?.id ?? null);
@@ -205,20 +208,7 @@ export function EditorGuion({
                 </p>
               )}
 
-              <Campo id="voz" label="Voz" ayuda="Pronto habrá más voces en castellano para elegir.">
-                <select
-                  id="voz"
-                  className="h-9 w-full rounded-lg border bg-background px-3 text-sm sm:w-72"
-                  value={form.voz_id ?? ""}
-                  onChange={(e) => set("voz_id", e.target.value || null)}
-                >
-                  {VOCES.map((v) => (
-                    <option key={v.id ?? ""} value={v.id ?? ""}>
-                      {v.nombre}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
+              <SelectorVoz voces={voces} valor={form.voz_id} onChange={(v) => set("voz_id", v)} />
             </CardContent>
           </Card>
 
@@ -368,5 +358,60 @@ function Campo({
       {children}
       {ayuda && <p className="text-xs text-muted-foreground">{ayuda}</p>}
     </div>
+  );
+}
+
+function SelectorVoz({
+  voces,
+  valor,
+  onChange,
+}: {
+  voces: VozOfrecida[];
+  valor: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  const elegida = voces.find((v) => v.voiceId === valor);
+  // Una versión antigua puede usar una voz que el proveedor ya no ofrece.
+  const retirada = valor != null && !elegida;
+  return (
+    <Campo
+      id="voz"
+      label="Voz"
+      ayuda={
+        retirada
+          ? "Esta voz ya no se ofrece. Puedes mantenerla en este guion o elegir otra."
+          : voces.length
+            ? (elegida?.descripcion ?? "La voz con la que habla el agente en todas las llamadas.")
+            : "Por ahora solo está la voz por defecto. Pronto habrá más voces en castellano para elegir."
+      }
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          id="voz"
+          className="h-9 w-full rounded-lg border bg-background px-3 text-sm sm:w-72"
+          value={valor ?? ""}
+          onChange={(e) => onChange(e.target.value || null)}
+        >
+          <option value="">{VOZ_AGENTE}</option>
+          {voces.map((v) => (
+            <option key={v.voiceId} value={v.voiceId}>
+              {v.nombre}
+            </option>
+          ))}
+          {retirada && <option value={valor}>Voz anterior (ya no disponible)</option>}
+        </select>
+        {elegida?.muestra && (
+          // key: al cambiar de voz se monta un reproductor nuevo con su muestra.
+          <audio
+            key={elegida.voiceId}
+            controls
+            preload="none"
+            className="h-9 max-w-full"
+            src={`/app/guion/muestra/${encodeURIComponent(elegida.voiceId)}`}
+            aria-label={`Muestra de la voz ${elegida.nombre}`}
+          />
+        )}
+      </div>
+    </Campo>
   );
 }
