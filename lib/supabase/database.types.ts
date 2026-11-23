@@ -31,33 +31,33 @@ export type Database = {
       }
       ajustes_plataforma: {
         Row: {
+          actualizado_en: string
+          id: boolean
           marca_descripcion: string | null
           marca_email: string | null
           marca_favicon: string | null
           marca_logo: string | null
           marca_nombre: string | null
-          actualizado_en: string
-          id: boolean
           max_concurrencia_global: number
         }
         Insert: {
+          actualizado_en?: string
+          id?: boolean
           marca_descripcion?: string | null
           marca_email?: string | null
           marca_favicon?: string | null
           marca_logo?: string | null
           marca_nombre?: string | null
-          actualizado_en?: string
-          id?: boolean
           max_concurrencia_global?: number
         }
         Update: {
+          actualizado_en?: string
+          id?: boolean
           marca_descripcion?: string | null
           marca_email?: string | null
           marca_favicon?: string | null
           marca_logo?: string | null
           marca_nombre?: string | null
-          actualizado_en?: string
-          id?: boolean
           max_concurrencia_global?: number
         }
         Relationships: []

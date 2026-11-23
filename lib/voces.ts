@@ -1,4 +1,5 @@
 import "server-only";
+import { formatoAudio } from "@/lib/formato-audio";
 import { log } from "@/lib/log";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -54,11 +55,13 @@ export async function respuestaMuestra(url: string | null): Promise<Response> {
   if (!url?.startsWith("https://")) return new Response(null, { status: 404 });
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000), cache: "no-store" });
-    const tipo = res.headers.get("content-type") ?? "";
     const largo = Number(res.headers.get("content-length") ?? 0);
-    if (!res.ok || !tipo.startsWith("audio/") || largo > MAX_MUESTRA) return new Response(null, { status: 502 });
+    if (!res.ok || largo > MAX_MUESTRA) return new Response(null, { status: 502 });
     const audio = await res.arrayBuffer();
     if (audio.byteLength > MAX_MUESTRA) return new Response(null, { status: 502 });
+    // El tipo se deduce del contenido: el Content-Type de origen no es fiable.
+    const tipo = formatoAudio(new Uint8Array(audio, 0, Math.min(audio.byteLength, 16)));
+    if (!tipo) return new Response(null, { status: 502 });
     return new Response(audio, {
       headers: { "Content-Type": tipo, "Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff" },
     });
