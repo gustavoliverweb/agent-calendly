@@ -27,6 +27,15 @@ function hostDeUrl(url: string | undefined): string | null {
   }
 }
 
+/**
+ * Host local de desarrollo o pruebas: localhost, *.localhost (reservado, nunca
+ * es un dominio público; Chrome lo resuelve a esta máquina) o 127.0.0.1. En
+ * ellos se habla http y se conserva el puerto al construir direcciones.
+ */
+export function esHostLocal(host: string): boolean {
+  return host === "localhost" || host.endsWith(".localhost") || host === "127.0.0.1";
+}
+
 /** Dominio base de la plataforma (BASE_DOMAIN), si lo hay. */
 export function dominioBase(env: Record<string, string | undefined> = process.env): string | null {
   const base = normalizarHost(env.BASE_DOMAIN?.replace(/\s+#.*$/, ""));

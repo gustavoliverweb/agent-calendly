@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CtaFinal, Dialogo, Hero, Lista, Pasos, Preguntas, Seccion } from "@/components/landing/bloques";
 import { solucionPorSlug, SOLUCIONES } from "@/lib/contenido/soluciones";
@@ -15,7 +16,20 @@ export async function generateMetadata({ params }: PageProps<"/soluciones/[slug]
   return { title: s.seo.titulo, description: s.seo.descripcion, alternates: { canonical: `/soluciones/${s.slug}` } };
 }
 
-export default async function SolucionPage({ params }: PageProps<"/soluciones/[slug]">) {
+/**
+ * Con Partial Prefetching, params se lee dentro de <Suspense>: así Next puede
+ * regenerar la página (al cambiar la marca o cada hora) sin error 500. Los
+ * slugs que no existen ya los corta el proxy con un 404 de verdad.
+ */
+export default function SolucionPage({ params }: PageProps<"/soluciones/[slug]">) {
+  return (
+    <Suspense fallback={<main className="flex-1 bg-white" />}>
+      <Contenido params={params} />
+    </Suspense>
+  );
+}
+
+async function Contenido({ params }: Pick<PageProps<"/soluciones/[slug]">, "params">) {
   const s = solucionPorSlug((await params).slug);
   if (!s) notFound();
   const contacto = `/contacto?origen=${encodeURIComponent(`/soluciones/${s.slug}`)}&sector=${encodeURIComponent(s.sector)}`;

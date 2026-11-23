@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon, ArrowUpRightIcon } from "lucide-react";
@@ -81,7 +82,20 @@ function BloqueRecurso({ b }: { b: Bloque }) {
   }
 }
 
-export default async function RecursoPage({ params }: PageProps<"/recursos/[slug]">) {
+/**
+ * Con Partial Prefetching, params se lee dentro de <Suspense>: así Next puede
+ * regenerar la página (al cambiar la marca o cada hora) sin error 500. Los
+ * slugs que no existen ya los corta el proxy con un 404 de verdad.
+ */
+export default function RecursoPage({ params }: PageProps<"/recursos/[slug]">) {
+  return (
+    <Suspense fallback={<main className="flex-1 bg-white" />}>
+      <Contenido params={params} />
+    </Suspense>
+  );
+}
+
+async function Contenido({ params }: Pick<PageProps<"/recursos/[slug]">, "params">) {
   const r = recursoPorSlug((await params).slug);
   if (!r) notFound();
   const otros = RECURSOS.filter((o) => o.slug !== r.slug);

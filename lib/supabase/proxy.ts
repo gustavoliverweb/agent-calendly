@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { RECURSOS } from "@/lib/contenido/recursos";
 import { SOLUCIONES } from "@/lib/contenido/soluciones";
-import { esHostPlataforma, normalizarHost } from "@/lib/dominio/hosts";
+import { esHostLocal, esHostPlataforma, normalizarHost } from "@/lib/dominio/hosts";
 import type { Database } from "./database.types";
 
 /**
@@ -115,7 +115,7 @@ export async function updateSession(request: NextRequest) {
 function redireccion(request: NextRequest, ruta: string) {
   const bruto = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim();
   const host = normalizarHost(bruto);
-  const local = host === "localhost" || host === "127.0.0.1";
+  const local = esHostLocal(host);
   const proto = request.headers.get("x-forwarded-proto")?.split(",")[0].trim() || (local ? "http" : "https");
   const origen = host ? `${proto}://${local ? bruto : host}` : request.nextUrl.origin;
   return NextResponse.redirect(new URL(ruta, origen), 307);

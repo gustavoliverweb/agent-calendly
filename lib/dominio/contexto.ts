@@ -5,7 +5,7 @@ import { log } from "@/lib/log";
 import { marcaPlataforma } from "@/lib/marca-plataforma";
 import { urlImagenMarca } from "./imagen";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { dominioBase, esHostPlataforma, normalizarHost, slugDeSubdominio } from "./hosts";
+import { dominioBase, esHostLocal, esHostPlataforma, normalizarHost, slugDeSubdominio } from "./hosts";
 
 /**
  * Empresa y marca que corresponden al dominio de la petición (marca blanca,
@@ -98,6 +98,7 @@ export function empresaDeFila(f: FilaMarca): EmpresaDominio {
 // --- Host → empresa, con una caché corta en memoria -------------------------
 
 const TTL_MS = 60_000;
+// performance.now(): reloj monotónico, el que Next permite mientras prerenderiza (Date.now() no).
 const cacheHosts = new Map<string, { empresaId: string | null; hasta: number }>();
 
 /** Tras dar de alta o quitar un dominio (o cambiar un slug). */
@@ -107,7 +108,7 @@ export function olvidarDominios() {
 
 async function empresaIdDeHost(host: string): Promise<string | null> {
   const guardado = cacheHosts.get(host);
-  if (guardado && guardado.hasta > Date.now()) return guardado.empresaId;
+  if (guardado && guardado.hasta > performance.now()) return guardado.empresaId;
 
   const supabase = createAdminClient();
   const slug = slugDeSubdominio(host);
@@ -120,7 +121,7 @@ async function empresaIdDeHost(host: string): Promise<string | null> {
     throw new Error("No se ha podido resolver el dominio");
   }
   const empresaId = data?.id ?? null;
-  cacheHosts.set(host, { empresaId, hasta: Date.now() + TTL_MS });
+  cacheHosts.set(host, { empresaId, hasta: performance.now() + TTL_MS });
   return empresaId;
 }
 
@@ -136,7 +137,7 @@ export const hostActual = cache(async (): Promise<string> => {
 export async function origenActual(): Promise<string> {
   const h = await headers();
   const host = await hostActual();
-  const local = host === "localhost" || host === "127.0.0.1";
+  const local = esHostLocal(host);
   const proto = h.get("x-forwarded-proto")?.split(",")[0].trim() || (local ? "http" : "https");
   // En local se conserva el puerto (localhost:3000).
   const bruto = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(",")[0].trim().toLowerCase();
@@ -178,9 +179,14 @@ export async function origenEmpresa(empresaId: string): Promise<string> {
     supabase.from("empresas").select("slug").eq("id", empresaId).maybeSingle(),
   ]);
   if (dominio) return `https://${dominio.dominio}`;
+  const app = new URL(process.env.APP_URL ?? "http://localhost:3000");
   const base = dominioBase();
-  if (base && empresa) return `https://${empresa.slug}.${base}`;
-  return new URL(process.env.APP_URL ?? "http://localhost:3000").origin;
+  if (base && empresa) {
+    const host = `${empresa.slug}.${base}`;
+    // En local (<slug>.localhost) se habla http y con el puerto de la app.
+    return esHostLocal(host) ? `http://${host}${app.port ? `:${app.port}` : ""}` : `https://${host}`;
+  }
+  return app.origin;
 }
 
 /** Si un origen ("https://host") es una dirección válida de esa empresa. */

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  esHostLocal,
   esApex,
   esHostPlataforma,
   hostsPlataforma,
@@ -115,5 +116,14 @@ describe("formulario de marca", () => {
     expect(formatoImagen(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))?.tipo).toBe("image/jpeg");
     expect(formatoImagen(new TextEncoder().encode("RIFF\0\0\0\0WEBPVP8 "))?.tipo).toBe("image/webp");
     expect(formatoImagen(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg">'))).toBeNull();
+  });
+});
+
+describe("esHostLocal", () => {
+  it.each(["localhost", "e2e-b.localhost", "127.0.0.1"])("%s es local", (h) => {
+    expect(esHostLocal(h)).toBe(true);
+  });
+  it.each(["localhost.com", "evil-localhost", "app.empresa.com", "localhost.evil.com"])("%s no es local", (h) => {
+    expect(esHostLocal(h)).toBe(false);
   });
 });
