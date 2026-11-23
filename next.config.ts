@@ -43,6 +43,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Las pruebas e2e compilan aparte (.next-e2e): NEXT_PUBLIC_* se fija al compilar
+  // y apunta al Supabase de pruebas, no al de producción.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,

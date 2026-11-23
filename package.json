@@ -16,6 +16,9 @@
     "db:push": "scripts/db.sh push",
     "db:types": "scripts/db.sh types",
     "db:test": "scripts/db.sh test",
+    "db:pruebas:status": "DB_ENV=.env.test scripts/db.sh status",
+    "db:pruebas:push": "DB_ENV=.env.test scripts/db.sh push",
+    "e2e": "playwright test",
     "invitar": "node --env-file=.env.local scripts/invitar-usuario.ts",
     "crear-usuario": "node --env-file=.env.local scripts/crear-usuario.ts",
     "admin-plataforma": "node --env-file=.env.local scripts/admin-plataforma.ts",
@@ -42,6 +45,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",

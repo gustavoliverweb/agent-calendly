@@ -15,13 +15,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# Solo las variables que usa (el resto de .env.local puede no ser shell válido,
+# Producción (.env.local) por defecto; DB_ENV=.env.test para el proyecto de
+# pruebas e2e (pnpm db:pruebas:*).
+ENV_FILE="${DB_ENV:-.env.local}"
+[ -f "$ENV_FILE" ] || { echo "No existe $ENV_FILE"; exit 1; }
+# Solo las variables que usa (el resto del archivo puede no ser shell válido,
 # p. ej. valores con espacios sin comillas).
 set -a
-source <(grep -E '^(SUPABASE_PROJECT_REF|SUPABASE_DB_PASSWORD|SUPABASE_POOLER_HOST)=' .env.local | sed 's/[[:space:]]*#.*$//')
+source <(grep -E '^(SUPABASE_PROJECT_REF|SUPABASE_DB_PASSWORD|SUPABASE_POOLER_HOST)=' "$ENV_FILE" | sed 's/[[:space:]]*#.*$//')
 set +a
-: "${SUPABASE_PROJECT_REF:?Falta SUPABASE_PROJECT_REF en .env.local}"
-: "${SUPABASE_DB_PASSWORD:?Falta SUPABASE_DB_PASSWORD en .env.local}"
+: "${SUPABASE_PROJECT_REF:?Falta SUPABASE_PROJECT_REF en $ENV_FILE}"
+: "${SUPABASE_DB_PASSWORD:?Falta SUPABASE_DB_PASSWORD en $ENV_FILE}"
+echo "Base de datos: $SUPABASE_PROJECT_REF ($ENV_FILE)" >&2
 
 PW=$(python3 -c 'import urllib.parse,os;print(urllib.parse.quote(os.environ["SUPABASE_DB_PASSWORD"],safe=""))')
 HOST="${SUPABASE_POOLER_HOST:-aws-1-eu-central-1.pooler.supabase.com}"
