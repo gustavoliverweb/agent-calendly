@@ -3,15 +3,20 @@
  * HTTP: las rutas no se pisan (/v1 y /v2 de ElevenLabs, /users, /invitees…
  * de la API de Calendly y /oauth/* de su autorización).
  *
- * Guarda cada petición en memoria. Las pruebas la consultan en
- * GET /__peticiones y la vacían con POST /__reiniciar.
+ * Atiende la API por HTTPS (certificado autofirmado, como los servicios
+ * reales van por https) y el control por HTTP en otro puerto: las pruebas
+ * consultan las peticiones recibidas en GET /__peticiones y las vacían con
+ * POST /__reiniciar.
  *
- * Se arranca con: node --experimental-strip-types e2e/simulador/servidor.mts <puerto>
+ * Se arranca con: node e2e/simulador/servidor.mts <puerto> <puerto control> <clave.pem> <cert.pem>
  */
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { readFileSync } from "node:fs";
+import { createServer as crearHttp, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer as crearHttps } from "node:https";
 
-const puerto = Number(process.argv[2] ?? 3124);
-const base = `http://localhost:${puerto}`;
+const [puerto, puertoControl] = [Number(process.argv[2] ?? 3124), Number(process.argv[3] ?? 3125)];
+const tls = { key: readFileSync(process.argv[4] ?? "e2e/.certs/clave.pem"), cert: readFileSync(process.argv[5] ?? "e2e/.certs/cert.pem") };
+const base = `https://localhost:${puerto}`;
 
 type Peticion = { metodo: string; ruta: string; query: Record<string, string>; cuerpo: unknown; en: string };
 let peticiones: Peticion[] = [];
@@ -73,19 +78,24 @@ async function leerCuerpo(req: IncomingMessage): Promise<unknown> {
   }
 }
 
-const servidor = createServer(async (req, res) => {
+// --- Control de las pruebas (HTTP) ----------------------------------------------
+crearHttp((req, res) => {
+  const ruta = new URL(req.url ?? "/", "http://localhost").pathname;
+  if (ruta === "/__salud") return json(res, 200, { ok: true });
+  if (ruta === "/__peticiones") return json(res, 200, peticiones);
+  if (ruta === "/__reiniciar" && req.method === "POST") {
+    peticiones = [];
+    return json(res, 200, { ok: true });
+  }
+  json(res, 404, {});
+}).listen(puertoControl);
+
+// --- API simulada (HTTPS) ------------------------------------------------------------
+const servidor = crearHttps(tls, async (req, res) => {
   const url = new URL(req.url ?? "/", base);
   const ruta = url.pathname;
   const metodo = req.method ?? "GET";
   const cuerpo = await leerCuerpo(req);
-
-  // --- Control de las pruebas -------------------------------------------------
-  if (ruta === "/__salud") return json(res, 200, { ok: true });
-  if (ruta === "/__peticiones") return json(res, 200, peticiones);
-  if (ruta === "/__reiniciar" && metodo === "POST") {
-    peticiones = [];
-    return json(res, 200, { ok: true });
-  }
 
   peticiones.push({ metodo, ruta, query: Object.fromEntries(url.searchParams), cuerpo, en: new Date().toISOString() });
 
@@ -101,7 +111,7 @@ const servidor = createServer(async (req, res) => {
     return json(res, 200, { success: true, message: "ok", conversation_id: `conv_e2e_${n}`, sip_call_id: `sip_e2e_${n}` });
   }
   if (ruta === "/v1/convai/conversation/get-signed-url") {
-    return json(res, 200, { signed_url: `ws://localhost:${puerto}/conversacion-simulada` });
+    return json(res, 200, { signed_url: `wss://localhost:${puerto}/conversacion-simulada` });
   }
   if (ruta.startsWith("/v1/convai/conversations/")) {
     const id = decodeURIComponent(ruta.split("/").pop() ?? "");
@@ -196,4 +206,4 @@ const servidor = createServer(async (req, res) => {
   json(res, 404, { error: "ruta no simulada", ruta });
 });
 
-servidor.listen(puerto, () => console.log(`simulador e2e en ${base}`));
+servidor.listen(puerto, () => console.log(`simulador e2e en ${base} (control en http://localhost:${puertoControl})`));

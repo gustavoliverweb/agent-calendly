@@ -17,6 +17,7 @@
 /.next/
 /.next-e2e/
 /e2e/resultados/
+/e2e/.certs/
 /playwright-report/
 /out/
 

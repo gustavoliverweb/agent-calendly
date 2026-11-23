@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-import { APP_URL, entornoApp, PUERTO_APP, PUERTO_SIMULADOR, SIMULADOR_URL } from "./e2e/entorno";
+import { APP_URL, CERTIFICADO, CONTROL_URL, entornoApp, PUERTO_APP, PUERTO_CONTROL, PUERTO_SIMULADOR } from "./e2e/entorno";
 
 /**
  * Pruebas e2e (pnpm e2e): la app compilada aparte (.next-e2e) contra el
@@ -23,13 +23,15 @@ export default defineConfig({
     headless: true,
     locale: "es-ES",
     timezoneId: "Europe/Madrid",
+    // El simulador usa un certificado autofirmado (autorización de Calendly).
+    ignoreHTTPSErrors: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   webServer: [
     {
-      command: `node --experimental-strip-types e2e/simulador/servidor.mts ${PUERTO_SIMULADOR}`,
-      url: `${SIMULADOR_URL}/__salud`,
+      command: `node e2e/simulador/servidor.mts ${PUERTO_SIMULADOR} ${PUERTO_CONTROL} ${CERTIFICADO.clave} ${CERTIFICADO.cert}`,
+      url: `${CONTROL_URL}/__salud`,
       reuseExistingServer: false,
       stdout: "ignore",
     },

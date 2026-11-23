@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
 
 /**
@@ -15,8 +16,29 @@ import { createHash, randomBytes } from "node:crypto";
 
 export const PUERTO_APP = 3123;
 export const PUERTO_SIMULADOR = 3124;
+export const PUERTO_CONTROL = 3125;
 export const APP_URL = `http://localhost:${PUERTO_APP}`;
-export const SIMULADOR_URL = `http://localhost:${PUERTO_SIMULADOR}`;
+/** Dirección de una empresa en su propio dominio (marca blanca). */
+export const urlEmpresa = (slug: string, ruta = "/") => `http://${slug}.localhost:${PUERTO_APP}${ruta}`;
+/** API simulada, por HTTPS como las reales (la app solo acepta muestras de audio https). */
+export const SIMULADOR_URL = `https://localhost:${PUERTO_SIMULADOR}`;
+/** Control del simulador (peticiones recibidas, reinicio, salud), por HTTP. */
+export const CONTROL_URL = `http://localhost:${PUERTO_CONTROL}`;
+
+/**
+ * Certificado autofirmado para localhost, solo para el simulador. La app de
+ * pruebas lo acepta con NODE_EXTRA_CA_CERTS (no afecta a nada más) y Chrome
+ * con ignoreHTTPSErrors. Se crea la primera vez y dura 30 días.
+ */
+export const CERTIFICADO = { clave: "e2e/.certs/clave.pem", cert: "e2e/.certs/cert.pem" };
+if (!existsSync(CERTIFICADO.cert)) {
+  mkdirSync("e2e/.certs", { recursive: true });
+  execFileSync("openssl", [
+    "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "30",
+    "-keyout", CERTIFICADO.clave, "-out", CERTIFICADO.cert,
+    "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost,IP:127.0.0.1",
+  ], { stdio: "ignore" });
+}
 
 function leer(archivo: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -70,9 +92,12 @@ export function entornoApp(): Record<string, string> {
     NODE_ENV: "production",
     NEXT_DIST_DIR: ".next-e2e",
     NEXT_TELEMETRY_DISABLED: "1",
+    NODE_EXTRA_CA_CERTS: CERTIFICADO.cert,
     APP_URL,
     PLATFORM_HOSTS: "",
-    BASE_DOMAIN: "",
+    // Marca blanca en local: <slug>.localhost es el dominio de cada empresa
+    // (Chrome resuelve *.localhost a esta máquina sin tocar /etc/hosts).
+    BASE_DOMAIN: "localhost",
     INVITACIONES_POR_EMAIL: "false",
     COSTE_MINUTO_ESTIMADO: "0.12",
     NEGOCIO_NOMBRE: "Empresa de pruebas",
@@ -88,19 +113,19 @@ export function entornoApp(): Record<string, string> {
     ENCRYPTION_KEY: SECRETOS.encryptionKey,
     // ElevenLabs simulado.
     ELEVENLABS_API_BASE: SIMULADOR_URL,
-    ELEVENLABS_API_KEY: "e2e-clave-falsa",
+    ELEVENLABS_API_KEY: "e2e-clave-falsa-elevenlabs-0000",
     ELEVENLABS_AGENT_ID: "agent_e2e",
     ELEVENLABS_PHONE_NUMBER_ID: "phnum_e2e_plataforma",
     ELEVENLABS_WEBHOOK_SECRET: SECRETOS.webhookElevenLabs,
     // Calendly simulado (cuenta de entorno de la empresa principal y OAuth).
     CALENDLY_API_BASE: SIMULADOR_URL,
     CALENDLY_AUTH_BASE: SIMULADOR_URL,
-    CALENDLY_TOKEN: "e2e-calendly-token",
+    CALENDLY_TOKEN: "e2e-calendly-token-falso-000000",
     CALENDLY_EVENT_TYPE_URI: `${SIMULADOR_URL}/event_types/e2e`,
     CALENDLY_LOCATION_KIND: "google_conference",
     CALENDLY_WEBHOOK_SIGNING_KEY: SECRETOS.webhookCalendly,
-    CALENDLY_OAUTH_CLIENT_ID: "e2e-client",
-    CALENDLY_OAUTH_CLIENT_SECRET: "e2e-client-secret",
+    CALENDLY_OAUTH_CLIENT_ID: "e2e-cliente-oauth-falso-0000000",
+    CALENDLY_OAUTH_CLIENT_SECRET: "e2e-secreto-oauth-falso-0000000",
     CALENDLY_OAUTH_WEBHOOK_SIGNING_KEY: SECRETOS.webhookCalendlyOAuth,
     // Sin API de Render: los dominios solo se comprueban por DNS.
     RENDER_API_KEY: "",

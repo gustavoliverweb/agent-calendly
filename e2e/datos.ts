@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import type { Database } from "../lib/supabase/database.types";
-import { SIMULADOR_URL, SUPABASE } from "./entorno";
+import { CONTROL_URL, SUPABASE } from "./entorno";
 
 /** Cliente con service role del Supabase de PRUEBAS (entorno.ts ya comprobó que no es producción). */
 export const db = createClient<Database>(SUPABASE.url, SUPABASE.serviceKey, { auth: { persistSession: false } });
@@ -30,17 +30,17 @@ export async function entrar(page: Page, email: string, destino = "/app") {
   await page.goto(`/login?next=${encodeURIComponent(destino)}`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Contraseña").fill(CONTRASENA);
-  await page.getByRole("button", { name: /entrar/i }).click();
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await page.waitForURL((u) => u.pathname.startsWith(destino));
 }
 
 /** Peticiones que ha recibido el simulador de ElevenLabs y Calendly. */
 export async function peticionesSimulador(): Promise<{ metodo: string; ruta: string; query: Record<string, string>; cuerpo: unknown }[]> {
-  return (await fetch(`${SIMULADOR_URL}/__peticiones`)).json();
+  return (await fetch(`${CONTROL_URL}/__peticiones`)).json();
 }
 
 export async function reiniciarSimulador() {
-  await fetch(`${SIMULADOR_URL}/__reiniciar`, { method: "POST" });
+  await fetch(`${CONTROL_URL}/__reiniciar`, { method: "POST" });
 }
 
 /**
@@ -61,4 +61,47 @@ export async function limpiar() {
     for (const u of data.users) if (u.email?.endsWith(`@${DOMINIO_EMAIL}`)) await db.auth.admin.deleteUser(u.id);
     if (data.users.length < 200) break;
   }
+}
+
+/** Empresa de pruebas con su propietario (y, si se pide, un operador), creada directamente en la BD. */
+export async function empresaDePrueba(slug: string, nombre: string, opciones: { operador?: string } = {}) {
+  // Si ya existe (un worker que se reinicia tras un fallo), se reutiliza con
+  // el mismo id: el servidor guarda en caché qué empresa es cada dominio.
+  const { data: existente } = await db.from("empresas").select("id").eq("slug", slug).maybeSingle();
+  if (existente) {
+    await db.from("contactos").delete().eq("empresa_id", existente.id);
+    await db.from("miembros").delete().eq("empresa_id", existente.id).neq("rol", "propietario");
+    await db.from("empresas").update({ nombre, marca_nombre: null, estado: "activa" }).eq("id", existente.id);
+  }
+  const { data: empresa, error } = existente
+    ? { data: existente, error: null }
+    : await db.from("empresas").insert({ nombre, slug }).select("id").single();
+  if (error || !empresa) throw new Error(`crear empresa ${slug}: ${error?.message}`);
+  const propietario = `propietario-${slug}@${DOMINIO_EMAIL}`;
+  const miembros: { empresa_id: string; usuario_id: string; rol: "propietario" | "operador" }[] = [
+    { empresa_id: empresa.id, usuario_id: await usuario(propietario), rol: "propietario" },
+  ];
+  if (opciones.operador) miembros.push({ empresa_id: empresa.id, usuario_id: await usuario(opciones.operador), rol: "operador" });
+  const { error: e } = await db.from("miembros").upsert(miembros, { onConflict: "empresa_id,usuario_id" });
+  if (e) throw new Error(`miembros de ${slug}: ${e.message}`);
+  return { id: empresa.id, slug, nombre, propietario };
+}
+
+export async function contactoDePrueba(empresaId: string, nombre: string, telefono: string) {
+  const { data, error } = await db
+    .from("contactos")
+    .insert({ empresa_id: empresaId, nombre, telefono, consentimiento: true })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(`contacto ${nombre}: ${error?.message}`);
+  return data.id;
+}
+
+/**
+ * Página «no existe». Se comprueba por el contenido, no por el código: el
+ * panel responde por partes (streaming) y, cuando la página decide que no
+ * existe, la cabecera ya salió con 200.
+ */
+export async function esperarNoExiste(page: Page) {
+  await expect(page.getByRole("heading", { name: "Esta página no existe" })).toBeVisible();
 }
