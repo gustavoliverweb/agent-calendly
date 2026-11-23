@@ -54,13 +54,15 @@ const MAX_MUESTRA = 3 * 1024 * 1024;
 export async function respuestaMuestra(url: string | null): Promise<Response> {
   if (!url?.startsWith("https://")) return new Response(null, { status: 404 });
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000), cache: "no-store" });
+    // Sin redirecciones: una https externa no puede desviar la petición a la
+    // red interna (las muestras de ElevenLabs se sirven sin redirigir).
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000), cache: "no-store", redirect: "error" });
     const largo = Number(res.headers.get("content-length") ?? 0);
-    if (!res.ok || largo > MAX_MUESTRA) return new Response(null, { status: 502 });
-    const audio = await res.arrayBuffer();
-    if (audio.byteLength > MAX_MUESTRA) return new Response(null, { status: 502 });
+    if (!res.ok || !res.body || largo > MAX_MUESTRA) return new Response(null, { status: 502 });
+    const audio = await leerConTope(res.body, MAX_MUESTRA);
+    if (!audio) return new Response(null, { status: 502 });
     // El tipo se deduce del contenido: el Content-Type de origen no es fiable.
-    const tipo = formatoAudio(new Uint8Array(audio, 0, Math.min(audio.byteLength, 16)));
+    const tipo = formatoAudio(audio.subarray(0, 16));
     if (!tipo) return new Response(null, { status: 502 });
     return new Response(audio, {
       headers: { "Content-Type": tipo, "Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff" },
@@ -68,6 +70,33 @@ export async function respuestaMuestra(url: string | null): Promise<Response> {
   } catch {
     return new Response(null, { status: 502 });
   }
+}
+
+/**
+ * Lee el cuerpo entero si no pasa de `max` bytes; si pasa, corta la descarga
+ * y devuelve null (sin Content-Length el tope no se puede comprobar antes).
+ */
+async function leerConTope(cuerpo: ReadableStream<Uint8Array>, max: number): Promise<Uint8Array<ArrayBuffer> | null> {
+  const lector = cuerpo.getReader();
+  const trozos: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await lector.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await lector.cancel();
+      return null;
+    }
+    trozos.push(value);
+  }
+  const audio = new Uint8Array(total);
+  let i = 0;
+  for (const t of trozos) {
+    audio.set(t, i);
+    i += t.byteLength;
+  }
+  return audio;
 }
 
 /** Cuántas empresas usan cada voz en su guion activo (voice_id → empresas). */
