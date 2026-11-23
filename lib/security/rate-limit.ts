@@ -34,9 +34,18 @@ export function crearLimitador({ max, ventanaMs }: { max: number; ventanaMs: num
   };
 }
 
-/** IP del cliente tras el proxy de Render (primer salto de x-forwarded-for). */
-export function ipCliente(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "desconocida";
+/**
+ * IP del cliente. En Render la petición pasa por Cloudflare, que pone la IP
+ * real en CF-Connecting-IP y True-Client-IP y no deja que el cliente las
+ * falsee (comprobado en producción el 2026-11-23). X-Forwarded-For no sirve:
+ * Render añade al final, y lo que va delante lo escribe el cliente.
+ * Sin esas cabeceras (en local) todas las peticiones comparten clave.
+ */
+type ConCabeceras = { get(nombre: string): string | null };
+
+export function ipCliente(origen: Request | ConCabeceras): string {
+  const h = origen instanceof Request ? origen.headers : origen;
+  return h.get("cf-connecting-ip")?.trim() || h.get("true-client-ip")?.trim() || "desconocida";
 }
 
 /** Intentos con token incorrecto por IP: 20 por minuto. */

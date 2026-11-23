@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { solicitudSchema } from "@/lib/contenido/contacto";
 import { log } from "@/lib/log";
-import { crearLimitador } from "@/lib/security/rate-limit";
+import { crearLimitador, ipCliente } from "@/lib/security/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type EnvioState = { ok?: boolean; error?: string };
@@ -11,8 +11,8 @@ export type EnvioState = { ok?: boolean; error?: string };
 /** 5 solicitudes por IP cada 10 minutos. */
 const limitar = crearLimitador({ max: 5, ventanaMs: 10 * 60_000 });
 /**
- * Tope total por instancia: la IP sale de X-Forwarded-For, que el cliente
- * puede rellenar. Con esto, aunque falsee la IP, no puede llenar la tabla.
+ * Tope total por instancia: aunque alguien reparta los envíos entre muchas
+ * IPs, no puede llenar la tabla.
  */
 const limitarTotal = crearLimitador({ max: 60, ventanaMs: 60 * 60_000 });
 
@@ -25,7 +25,7 @@ export async function enviarSolicitud(_prev: EnvioState, formData: FormData): Pr
   if (String(formData.get("web") ?? "").trim()) return { ok: true };
 
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "desconocida";
+  const ip = ipCliente(h);
   if (!limitar(ip) || !limitarTotal("todas")) {
     return { error: "Has enviado varias solicitudes seguidas. Espera unos minutos y vuelve a intentarlo." };
   }
