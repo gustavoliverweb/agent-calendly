@@ -55,7 +55,11 @@ export function PruebaNavegador({
   // Salir de la página cuelga la conversación.
   useEffect(() => () => void sesion.current?.endSession(), []);
 
-  useEffect(() => finalTurnos.current?.scrollIntoView({ block: "nearest" }), [turnos]);
+  // Con llaves: en navegadores recientes scrollIntoView devuelve una promesa, y
+  // si el efecto la devolviera React intentaría llamarla como limpieza.
+  useEffect(() => {
+    finalTurnos.current?.scrollIntoView({ block: "nearest" });
+  }, [turnos]);
 
   async function empezar() {
     setEstado("preparando");
